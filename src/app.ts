@@ -13,6 +13,7 @@ import { ResponseHandler } from './utils/response/responseHandler';
 import userRouter from './modules/users/routes';
 import messageRouter from './modules/messages/routes';
 import transactionRouter from './modules/transactions/routes';
+import outletRouter from './modules/outlets/routes';
 
 const app = express();
 
@@ -28,6 +29,7 @@ const router = Router();
 router.use(`${config.apiPrefix}/v1/users`, userRouter);
 router.use(`${config.apiPrefix}/v1/messages`, messageRouter);
 router.use(`${config.apiPrefix}/v1/transactions`, transactionRouter);
+router.use(`${config.apiPrefix}/v1/outlets`, outletRouter);
 
 app.use(router);
 
