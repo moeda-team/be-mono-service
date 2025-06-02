@@ -1,5 +1,5 @@
 {
-  "name": "be-user-services",
+  "name": "be-mono-services",
   "version": "1.0.0",
   "description": "Backend API service with Node.js and TypeScript",
   "main": "dist/index.js",
