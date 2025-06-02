@@ -28,6 +28,7 @@ app.use(router);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   if (err.timeout && req.timedout) {
     return ResponseHandler.error(res, {
