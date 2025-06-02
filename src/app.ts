@@ -10,8 +10,9 @@ import { config } from './config';
 import { errorHandler, notFoundHandler } from './middlewares';
 import { logger } from './utils/logger';
 import { ResponseHandler } from './utils/response/responseHandler';
-import userRouter from './modules/users/routes/users.routes';
-import messageRouter from './modules/messages/routes/message.routes';
+import userRouter from './modules/users/routes';
+import messageRouter from './modules/messages/routes';
+import transactionRouter from './modules/transactions/routes';
 
 const app = express();
 
@@ -26,6 +27,7 @@ const router = Router();
 
 router.use(`${config.apiPrefix}/v1/users`, userRouter);
 router.use(`${config.apiPrefix}/v1/messages`, messageRouter);
+router.use(`${config.apiPrefix}/v1/transactions`, transactionRouter);
 
 app.use(router);
 

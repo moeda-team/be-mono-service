@@ -22,3 +22,18 @@ export function jwtAuth(req: Request, res: Response, next: NextFunction) {
     });
   }
 }
+export function jwtAuthNotRequired(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    next();
+    return;
+  }
+  const token = authHeader.split(' ')[1];
+  try {
+    const payload = verifyToken(token);
+    (req as Request & { user?: JwtPayload }).user = payload;
+    next();
+  } catch (err) {
+    next();
+  }
+}

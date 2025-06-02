@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { logger } from '../../../utils/logger';
-import { CreateMessageDTO } from '../types/message';
+import { CreateMessageDTO } from '../models/message';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../lib/prisma';
 
