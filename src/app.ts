@@ -14,6 +14,7 @@ import userRouter from './modules/users/routes';
 import messageRouter from './modules/messages/routes';
 import transactionRouter from './modules/transactions/routes';
 import outletRouter from './modules/outlets/routes';
+import menuRouter from './modules/menus/routes';
 
 const app = express();
 
@@ -30,6 +31,7 @@ router.use(`${config.apiPrefix}/v1/users`, userRouter);
 router.use(`${config.apiPrefix}/v1/messages`, messageRouter);
 router.use(`${config.apiPrefix}/v1/transactions`, transactionRouter);
 router.use(`${config.apiPrefix}/v1/outlets`, outletRouter);
+router.use(`${config.apiPrefix}/v1/menus`, menuRouter);
 
 app.use(router);
 
