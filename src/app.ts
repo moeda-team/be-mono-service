@@ -11,6 +11,7 @@ import { errorHandler, notFoundHandler } from './middlewares';
 import { logger } from './utils/logger';
 import { ResponseHandler } from './utils/response/responseHandler';
 import userRouter from './modules/users/routes/users.routes';
+import messageRouter from './modules/messages/routes/message.routes';
 
 const app = express();
 
@@ -22,7 +23,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const router = Router();
+
 router.use(`${config.apiPrefix}/v1/users`, userRouter);
+router.use(`${config.apiPrefix}/v1/messages`, messageRouter);
+
 app.use(router);
 
 app.use(notFoundHandler);
