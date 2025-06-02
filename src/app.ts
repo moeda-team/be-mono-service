@@ -10,7 +10,7 @@ import { config } from './config';
 import { errorHandler, notFoundHandler } from './middlewares';
 import { logger } from './utils/logger';
 import { ResponseHandler } from './utils/response/responseHandler';
-import userRouter from './users/routes/users.routes';
+import userRouter from './modules/users/routes/users.routes';
 
 const app = express();
 

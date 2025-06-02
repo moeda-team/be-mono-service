@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { config } from '../../config';
+import { config } from '../../../config';
 import { BaseController } from './base.controller';
 
 interface HealthStatus {

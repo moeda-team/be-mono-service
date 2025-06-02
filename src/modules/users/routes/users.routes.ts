@@ -2,9 +2,9 @@ import { Router } from 'express';
 import { UserController } from '../controllers/user.controller';
 import { HealthController } from '../controllers/health.controller';
 import { AuthController } from '../controllers/auth.controller';
-import { jwtAuth } from '../../middlewares/jwtAuth.middlewares';
-import { roleAuth } from '../../middlewares/roleAuth.middlewares';
-import { UserRole } from '../../utils/jwt';
+import { jwtAuth } from '../../../middlewares/jwtAuth.middlewares';
+import { roleAuth } from '../../../middlewares/roleAuth.middlewares';
+import { UserRole } from '../../../utils/jwt';
 import { validateCreateUser, validateUpdateUser } from '../validators/user.validator';
 
 const router = Router();
