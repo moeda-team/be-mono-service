@@ -1,6 +1,6 @@
 import { Response } from 'express';
-import { ResponseHandler } from '../utils/response/responseHandler';
-import { ApiSuccessResponse, ApiErrorResponse } from '../types/response.types';
+import { ResponseHandler } from '../../utils/response/responseHandler';
+import { ApiSuccessResponse, ApiErrorResponse } from '../../types/response.types';
 
 export abstract class BaseController {
   protected sendSuccess<T>(

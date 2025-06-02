@@ -13,7 +13,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["users"]
+  schemas  = ["mono"]
 }
 
 model User {
@@ -32,5 +32,5 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@schema("users")
+  @@schema("mono")
 }
