@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ResponseHandler } from '../utils/response/responseHandler';
-import { hasPermission, UserRole } from '../utils/jwt';
+import { hasPermission, UserRole } from '../utils/auth/jwt';
 import prisma from '../lib/prisma';
 
 export function roleAuth(requiredRole: UserRole) {

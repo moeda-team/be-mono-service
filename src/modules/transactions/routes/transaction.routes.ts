@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { validateCreateTransaction } from '../validators/transaction.validator';
 import { HealthController } from '../controllers/health.controller';
 import { jwtAuth, jwtAuthNotRequired, roleAuth } from '../../../middlewares';
-import { UserRole } from '../../../utils/jwt';
+import { UserRole } from '../../../utils/auth/jwt';
 import { TransactionController } from '../controllers/transaction.controller';
 
 const router = Router();

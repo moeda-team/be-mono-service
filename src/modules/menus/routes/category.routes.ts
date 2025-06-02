@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { CategoryController } from '../controllers/category.controller';
 import { jwtAuth, roleAuth, basicAuth } from '../../../middlewares';
-import { UserRole } from '../../../utils/jwt';
+import { UserRole } from '../../../utils/auth/jwt';
 
 const router = Router();
 const categoryController = new CategoryController();

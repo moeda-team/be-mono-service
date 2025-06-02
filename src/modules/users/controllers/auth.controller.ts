@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import prisma from '../../../lib/prisma';
-import { comparePassword } from '../../../utils/hash';
-import { signToken } from '../../../utils/jwt';
+import { comparePassword } from '../../../utils/auth/hash';
+import { signToken } from '../../../utils/auth/jwt';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
-import { logger } from '../../../utils/logger';
+import { logger } from '../../../utils/common/logger';
 
 export class AuthController {
   async login(req: Request, res: Response) {

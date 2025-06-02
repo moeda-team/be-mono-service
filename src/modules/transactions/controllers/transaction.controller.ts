@@ -1,9 +1,12 @@
 import { Request, Response } from 'express';
-import { logger } from '../../../utils/logger';
+import { logger } from '../../../utils/common/logger';
 import { CreateTransactionDTO } from '../models/transaction';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../lib/prisma';
-import { generateOrderNumber, generatePaymentNumber } from '../../../utils/generate';
+import {
+  generateOrderNumber,
+  generatePaymentNumber,
+} from '../../../utils/generator/generate.number';
 import { JwtPayload } from 'jsonwebtoken';
 
 export class TransactionController {

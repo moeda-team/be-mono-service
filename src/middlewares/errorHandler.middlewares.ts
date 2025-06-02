@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/common/logger';
 import { isProduction } from '../config';
 import { ResponseHandler } from '../utils/response/responseHandler';
 

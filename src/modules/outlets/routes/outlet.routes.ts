@@ -3,7 +3,7 @@ import { OutletController } from '../controllers/outlet.controller';
 import { validateCreateOutlet, validateUpdateOutlet } from '../validators/outlet.validator';
 import { HealthController } from '../controllers/health.controller';
 import { jwtAuth, roleAuth } from '../../../middlewares';
-import { UserRole } from '../../../utils/jwt';
+import { UserRole } from '../../../utils/auth/jwt';
 
 const router = Router();
 const outletController = new OutletController();

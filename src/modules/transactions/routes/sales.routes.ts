@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { jwtAuth, roleAuth } from '../../../middlewares';
-import { UserRole } from '../../../utils/jwt';
+import { UserRole } from '../../../utils/auth/jwt';
 import { SalesController } from '../controllers/sales.controller';
 
 const router = Router();

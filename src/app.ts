@@ -8,7 +8,7 @@ import { NextFunction, Request, Response } from 'express';
 
 import { config } from './config';
 import { errorHandler, notFoundHandler } from './middlewares';
-import { logger } from './utils/logger';
+import { logger } from './utils/common/logger';
 import { ResponseHandler } from './utils/response/responseHandler';
 import userRouter from './modules/users/routes';
 import messageRouter from './modules/messages/routes';

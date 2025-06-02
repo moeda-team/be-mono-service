@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { logger } from '../../../utils/logger';
+import { logger } from '../../../utils/common/logger';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../lib/prisma';
 

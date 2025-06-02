@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { validateUpdateTransactionStatus } from '../validators/transaction.validator';
 import { jwtAuth, roleAuth } from '../../../middlewares';
-import { UserRole } from '../../../utils/jwt';
+import { UserRole } from '../../../utils/auth/jwt';
 import { OrderController } from '../controllers/order.controller';
 
 const router = Router();
