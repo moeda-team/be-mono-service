@@ -13,7 +13,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["users"]
+  schemas  = ["mono"]
 }
 
 model User {
@@ -32,5 +32,128 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@schema("users")
+  outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  transactions Transaction[]
+
+  @@schema("mono")
+}
+
+model Message {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  outletId  String?
+  name      String   @db.VarChar(100)
+  email     String   @db.VarChar(100)
+  message   String
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  @@schema("mono")
+}
+
+model Transaction {
+  id                  String   @id @default(uuid()) @db.VarChar(36)
+  userId              String?  @db.VarChar(36)
+  outletId            String?  @db.VarChar(36)
+  number              String   @db.VarChar(20)
+  transactionType     String   @db.VarChar(50)
+  tableNumber         Int?     @db.Integer
+  paymentNumber       String   @db.VarChar(20)
+  paymentMethod       String   @db.VarChar(50)
+  customerName        String?  @db.VarChar(100)
+  totalSubTransaction Int      @default(0) @db.Integer
+  subTotal            Decimal  @default(0.0) @db.Decimal
+  discount            Decimal  @default(0.0) @db.Decimal
+  serviceCharge       Decimal  @default(0.0) @db.Decimal
+  tax                 Decimal  @default(0.0) @db.Decimal
+  total               Decimal  @default(0.0) @db.Decimal
+  additionalNote      String?  @db.VarChar(255)
+  status              String   @default("pending") @db.VarChar(20)
+  fraudStatus         String   @default("pending") @db.VarChar(20)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  subTransactions SubTransaction[]
+
+  @@schema("mono")
+}
+
+model SubTransaction {
+  id            String   @id @default(uuid()) @db.VarChar(36)
+  transactionId String   @db.VarChar(36)
+  menuId        String   @db.VarChar(36)
+  menuName      String   @db.VarChar(100)
+  quantity      Int      @db.Integer
+  price         Decimal  @db.Decimal
+  subTotal      Decimal  @db.Decimal
+  addOn         String   @db.VarChar(255)
+  note          String   @db.VarChar(255)
+  status        String   @default("preparation") @db.VarChar(20)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@schema("mono")
+}
+
+model Outlet {
+  id         String   @id @default(uuid()) @db.VarChar(36)
+  outletType String   @db.VarChar(50)
+  name       String   @db.VarChar(100)
+  address    String?
+  number     String?  @db.VarChar(20)
+  province   String?  @db.VarChar(50)
+  city       String?  @db.VarChar(50)
+  postalCode String?  @db.VarChar(5)
+  status     String   @default("active") @db.VarChar(20)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  transactions Transaction[]
+  messages     Message[]
+  users        User[]
+  categories   Category[]
+  menus        Menu[]
+
+  @@schema("mono")
+}
+
+model Category {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  outletId  String?  @db.VarChar(36)
+  name      String   @db.VarChar(100)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  menus  Menu[]
+  outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  @@schema("mono")
+}
+
+model Menu {
+  id         String   @id @default(uuid()) @db.VarChar(36)
+  outletId   String?  @db.VarChar(36)
+  name       String   @db.VarChar(100)
+  desc       String
+  img        String
+  price      Decimal
+  pdf        String?  @db.VarChar(255)
+  categoryId String   @db.VarChar(36)
+  isNew      Boolean  @default(true)
+  isBest     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  outlet   Outlet?  @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@schema("mono")
 }

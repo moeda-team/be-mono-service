@@ -9,7 +9,7 @@ services:
       - '3000:3000'
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/user_service?schema=users
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/defaultdb?schema=mono
     depends_on:
       - db
     volumes:
@@ -24,7 +24,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=user_service
+      - POSTGRES_DB=defaultdb
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

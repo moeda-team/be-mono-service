@@ -10,6 +10,12 @@
     "ecmaVersion": 2022,
     "sourceType": "module"
   },
+  "ignorePatterns": [
+    "node_modules/",
+    "**/node_modules/",
+    "**/.prisma/client/",
+    "**/generated/"
+  ],
   "rules": {
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/no-explicit-any": "warn",
