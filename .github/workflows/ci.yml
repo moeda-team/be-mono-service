@@ -64,6 +64,15 @@ jobs:
       - name: List files after download
         run: ls -R build-output
 
+      - name: Clean target directory on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            rm -rf ~/apps/moeda/*
+
       - name: Copy files to VPS
         uses: appleboy/scp-action@v0.1.6
         with:
