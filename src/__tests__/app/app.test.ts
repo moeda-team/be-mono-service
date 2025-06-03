@@ -211,8 +211,11 @@ describe('Express App', () => {
 
   it('should handle timeout errors', async () => {
     // This test simulates a timeout by triggering the timeout middleware directly
+    // Find the timeout middleware in the app stack
     const timeoutHandler = app._router.stack.find(
-      (layer: Record<string, unknown>) => layer.name === 'timeoutHandler',
+      (layer: Record<string, unknown>) => 
+        layer.name === 'timeoutHandler' || 
+        (layer.handle && typeof layer.handle === 'function' && layer.handle.name === 'timeoutHandler')
     );
 
     if (timeoutHandler && timeoutHandler.handle) {
@@ -225,7 +228,10 @@ describe('Express App', () => {
       } as MockResponse;
       const mockNext = jest.fn();
 
-      timeoutHandler.handle(new Error('timeout'), mockReq, mockRes, mockNext);
+      // Call the timeout handler with a timeout error
+      const timeoutError = new Error('timeout') as Error & { timeout: boolean };
+      timeoutError.timeout = true;
+      timeoutHandler.handle(timeoutError, mockReq, mockRes, mockNext);
 
       expect(mockRes.status).toHaveBeenCalledWith(503);
       expect(mockRes.json).toHaveBeenCalledWith(
@@ -236,8 +242,42 @@ describe('Express App', () => {
         }),
       );
     } else {
-      // If we can't find the timeout handler, skip this test
-      expect(true).toBe(true); // Always pass
+      // If we can't find the timeout handler directly, test it through the error handler
+      // This is a more direct way to test the timeout middleware at the end of app.ts
+      const mockReq = { timedout: true } as Record<string, unknown>;
+      const mockRes = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as MockResponse;
+      const mockNext = jest.fn();
+      const timeoutError = new Error('timeout') as Error & { timeout: boolean };
+      timeoutError.timeout = true;
+
+      // Find the error handler that handles timeouts (the last middleware in app.ts)
+      const lastMiddleware = app._router.stack[app._router.stack.length - 1];
+      if (lastMiddleware && lastMiddleware.handle) {
+        lastMiddleware.handle(timeoutError, mockReq, mockRes, mockNext);
+        
+        expect(mockRes.status).toHaveBeenCalledWith(503);
+        expect(mockRes.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            status: 'error',
+            message: 'Request timed out',
+          }),
+        );
+        // The next function should not be called for timeout errors
+        expect(mockNext).not.toHaveBeenCalled();
+      } else {
+        // Direct test of the timeout handler function
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const app = require('../../app').app;
+        const timeoutMiddleware = app._router.stack.pop().handle;
+        
+        timeoutMiddleware(timeoutError, mockReq, mockRes, mockNext);
+        
+        expect(mockRes.status).toHaveBeenCalled();
+        expect(mockRes.json).toHaveBeenCalled();
+      }
     }
   });
 
