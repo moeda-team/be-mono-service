@@ -39,7 +39,7 @@ jest.mock('../../../../utils/auth/jwt', () => ({
 }));
 
 // Mock express
-const mockRouter = {
+const mockOutletRouter = {
   get: jest.fn().mockReturnThis(),
   post: jest.fn().mockReturnThis(),
   put: jest.fn().mockReturnThis(),
@@ -49,7 +49,7 @@ const mockRouter = {
 };
 
 jest.mock('express', () => ({
-  Router: jest.fn(() => mockRouter),
+  Router: jest.fn(() => mockOutletRouter),
 }));
 
 describe('Outlet Routes', () => {
@@ -64,13 +64,13 @@ describe('Outlet Routes', () => {
     require('../../../../modules/outlets/routes/outlet.routes');
 
     // Verify health route is called with the health controller's check method
-    expect(mockRouter.get).toHaveBeenCalledWith('/health', 'healthCheckMethod');
+    expect(mockOutletRouter.get).toHaveBeenCalledWith('/health', 'healthCheckMethod');
 
     // Verify get outlet by ID route
-    expect(mockRouter.get).toHaveBeenCalledWith('/:id', 'getOutletByIdMethod');
+    expect(mockOutletRouter.get).toHaveBeenCalledWith('/:id', 'getOutletByIdMethod');
 
     // Verify get all outlets route
-    expect(mockRouter.get).toHaveBeenCalledWith(
+    expect(mockOutletRouter.get).toHaveBeenCalledWith(
       '/',
       'jwtAuthMiddleware',
       'roleAuth(OWNER)Middleware',
@@ -78,7 +78,7 @@ describe('Outlet Routes', () => {
     );
 
     // Verify create outlet route
-    expect(mockRouter.post).toHaveBeenCalledWith(
+    expect(mockOutletRouter.post).toHaveBeenCalledWith(
       '/',
       'jwtAuthMiddleware',
       'roleAuth(OWNER)Middleware',
@@ -87,7 +87,7 @@ describe('Outlet Routes', () => {
     );
 
     // Verify update outlet route
-    expect(mockRouter.put).toHaveBeenCalledWith(
+    expect(mockOutletRouter.put).toHaveBeenCalledWith(
       '/:id',
       'jwtAuthMiddleware',
       'roleAuth(OWNER)Middleware',
@@ -96,7 +96,7 @@ describe('Outlet Routes', () => {
     );
 
     // Verify delete outlet route
-    expect(mockRouter.delete).toHaveBeenCalledWith(
+    expect(mockOutletRouter.delete).toHaveBeenCalledWith(
       '/:id',
       'jwtAuthMiddleware',
       'roleAuth(OWNER)Middleware',

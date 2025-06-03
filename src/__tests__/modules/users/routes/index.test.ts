@@ -3,21 +3,21 @@
 // Mock user routes before other imports
 jest.mock('../../../../modules/users/routes/user.routes', () => ({
   __esModule: true,
-  default: 'mockUserRouter',
+  default: 'mockUserIndexRouter',
 }));
 
 // Mock express
-const mockRouter = {
+const mockUserIndexRouter = {
   get: jest.fn().mockReturnThis(),
   post: jest.fn().mockReturnThis(),
   put: jest.fn().mockReturnThis(),
   delete: jest.fn().mockReturnThis(),
   use: jest.fn().mockReturnThis(),
-  mockRouterInstance: true,
+  mockUserIndexRouterInstance: true,
 };
 
 jest.mock('express', () => ({
-  Router: jest.fn(() => mockRouter),
+  Router: jest.fn(() => mockUserIndexRouter),
 }));
 
 describe('User Routes Index', () => {
@@ -32,13 +32,13 @@ describe('User Routes Index', () => {
     require('../../../../modules/users/routes/index');
 
     // Verify the user routes are mounted at the root path
-    expect(mockRouter.use).toHaveBeenCalledWith('/', 'mockUserRouter');
+    expect(mockUserIndexRouter.use).toHaveBeenCalledWith('/', 'mockUserIndexRouter');
   });
 
   it('should export the router', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const indexRouter = require('../../../../modules/users/routes/index').default;
     expect(indexRouter).toBeDefined();
-    expect(indexRouter.mockRouterInstance).toBe(true);
+    expect(indexRouter.mockUserIndexRouterInstance).toBe(true);
   });
 });

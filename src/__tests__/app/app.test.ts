@@ -282,12 +282,9 @@ describe('Express App', () => {
   });
 
   it('should pass non-timeout errors to next middleware', async () => {
-    // Find the error handler middleware
-    const errorMiddleware = app._router.stack.find(
-      (layer: Record<string, unknown>) => layer.name === 'timeoutHandler',
-    );
-
-    if (errorMiddleware && errorMiddleware.handle) {
+    // Find the error handler middleware (the last middleware in app.ts)
+    const lastMiddleware = app._router.stack[app._router.stack.length - 1];
+    if (lastMiddleware && lastMiddleware.handle) {
       const mockReq = { timedout: false } as Record<string, unknown>;
       const mockRes = {
         status: jest.fn().mockReturnThis(),
@@ -298,7 +295,7 @@ describe('Express App', () => {
       const mockNext = jest.fn();
       const mockError = new Error('Some other error');
 
-      errorMiddleware.handle(mockError, mockReq, mockRes, mockNext);
+      lastMiddleware.handle(mockError, mockReq, mockRes, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(mockError);
       expect(mockRes.status).not.toHaveBeenCalled();

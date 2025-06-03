@@ -42,17 +42,17 @@ jest.mock('../../../../utils/auth/jwt', () => ({
 }));
 
 // Mock express
-const mockRouter = {
+const mockMenuRouter = {
   get: jest.fn().mockReturnThis(),
   post: jest.fn().mockReturnThis(),
   put: jest.fn().mockReturnThis(),
   delete: jest.fn().mockReturnThis(),
   use: jest.fn().mockReturnThis(),
-  mockRouterInstance: true,
+  mockMenuRouterInstance: true,
 };
 
 jest.mock('express', () => ({
-  Router: jest.fn(() => mockRouter),
+  Router: jest.fn(() => mockMenuRouter),
 }));
 
 describe('Menu Routes', () => {
@@ -67,24 +67,24 @@ describe('Menu Routes', () => {
     require('../../../../modules/menus/routes/menu.routes');
 
     // Verify health route is called with the health controller's check method
-    expect(mockRouter.get).toHaveBeenCalledWith('/health', 'healthCheckMethod');
+    expect(mockMenuRouter.get).toHaveBeenCalledWith('/health', 'healthCheckMethod');
 
     // Verify get all menus route
-    expect(mockRouter.get).toHaveBeenCalledWith(
+    expect(mockMenuRouter.get).toHaveBeenCalledWith(
       '/:outletId',
       'basicAuthMiddleware',
       'getAllMenusMethod',
     );
 
     // Verify get menu by ID route
-    expect(mockRouter.get).toHaveBeenCalledWith(
+    expect(mockMenuRouter.get).toHaveBeenCalledWith(
       '/:outletId/:id',
       'basicAuthMiddleware',
       'getMenuByIdMethod',
     );
 
     // Verify create menu route
-    expect(mockRouter.post).toHaveBeenCalledWith(
+    expect(mockMenuRouter.post).toHaveBeenCalledWith(
       '/',
       'jwtAuthMiddleware',
       'roleAuth(STORE_MANAGER)Middleware',
@@ -93,7 +93,7 @@ describe('Menu Routes', () => {
     );
 
     // Verify update menu route
-    expect(mockRouter.put).toHaveBeenCalledWith(
+    expect(mockMenuRouter.put).toHaveBeenCalledWith(
       '/:id',
       'jwtAuthMiddleware',
       'roleAuth(STORE_MANAGER)Middleware',
@@ -102,7 +102,7 @@ describe('Menu Routes', () => {
     );
 
     // Verify delete menu route
-    expect(mockRouter.delete).toHaveBeenCalledWith(
+    expect(mockMenuRouter.delete).toHaveBeenCalledWith(
       '/:id',
       'jwtAuthMiddleware',
       'roleAuth(STORE_MANAGER)Middleware',
@@ -110,14 +110,14 @@ describe('Menu Routes', () => {
     );
 
     // Verify get best menus route
-    expect(mockRouter.get).toHaveBeenCalledWith(
+    expect(mockMenuRouter.get).toHaveBeenCalledWith(
       '/list/best/:outletId',
       'basicAuthMiddleware',
       'getBestMenusMethod',
     );
 
     // Verify get menus by category route
-    expect(mockRouter.get).toHaveBeenCalledWith(
+    expect(mockMenuRouter.get).toHaveBeenCalledWith(
       '/list/category/:outletId/:categoryId',
       'basicAuthMiddleware',
       'getMenusByCategoryMethod',
@@ -128,6 +128,6 @@ describe('Menu Routes', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const menuRouter = require('../../../../modules/menus/routes/menu.routes').default;
     expect(menuRouter).toBeDefined();
-    expect(menuRouter.mockRouterInstance).toBe(true);
+    expect(menuRouter.mockMenuRouterInstance).toBe(true);
   });
 });

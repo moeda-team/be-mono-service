@@ -12,17 +12,17 @@ jest.mock('../../../../modules/menus/routes/category.routes', () => ({
 }));
 
 // Mock express
-const mockRouter = {
+const mockMenusRouter = {
   get: jest.fn().mockReturnThis(),
   post: jest.fn().mockReturnThis(),
   put: jest.fn().mockReturnThis(),
   delete: jest.fn().mockReturnThis(),
   use: jest.fn().mockReturnThis(),
-  mockRouterInstance: true,
+  mockMenusRouterInstance: true,
 };
 
 jest.mock('express', () => ({
-  Router: jest.fn(() => mockRouter),
+  Router: jest.fn(() => mockMenusRouter),
 }));
 
 describe('Menu Routes Index', () => {
@@ -37,14 +37,14 @@ describe('Menu Routes Index', () => {
     require('../../../../modules/menus/routes/index');
 
     // Verify the menu routes are mounted at the correct paths
-    expect(mockRouter.use).toHaveBeenCalledWith('/main', 'mockMenuRouter');
-    expect(mockRouter.use).toHaveBeenCalledWith('/categories', 'mockCategoryRouter');
+    expect(mockMenusRouter.use).toHaveBeenCalledWith('/main', 'mockMenuRouter');
+    expect(mockMenusRouter.use).toHaveBeenCalledWith('/categories', 'mockCategoryRouter');
   });
 
   it('should export the router', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const indexRouter = require('../../../../modules/menus/routes/index').default;
     expect(indexRouter).toBeDefined();
-    expect(indexRouter.mockRouterInstance).toBe(true);
+    expect(indexRouter.mockMenusRouterInstance).toBe(true);
   });
 });

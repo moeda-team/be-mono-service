@@ -24,17 +24,17 @@ jest.mock('../../../../middlewares', () => ({
 }));
 
 // Mock express
-const mockRouter = {
+const mockPaymentRouter = {
   get: jest.fn().mockReturnThis(),
   post: jest.fn().mockReturnThis(),
   put: jest.fn().mockReturnThis(),
   delete: jest.fn().mockReturnThis(),
   use: jest.fn().mockReturnThis(),
-  mockRouterInstance: true,
+  mockPaymentRouterInstance: true,
 };
 
 jest.mock('express', () => ({
-  Router: jest.fn(() => mockRouter),
+  Router: jest.fn(() => mockPaymentRouter),
 }));
 
 describe('Payment Routes', () => {
@@ -49,14 +49,14 @@ describe('Payment Routes', () => {
     require('../../../../modules/transactions/routes/payment.routes');
 
     // Verify payment notification route
-    expect(mockRouter.post).toHaveBeenCalledWith(
+    expect(mockPaymentRouter.post).toHaveBeenCalledWith(
       '/notification',
       'validatePaymentNotificationMiddleware',
       'handlePaymentNotificationMethod',
     );
 
     // Verify payment transaction route
-    expect(mockRouter.post).toHaveBeenCalledWith(
+    expect(mockPaymentRouter.post).toHaveBeenCalledWith(
       '/',
       'jwtAuthNotRequiredMiddleware',
       'validatePaymentMiddleware',
@@ -64,7 +64,7 @@ describe('Payment Routes', () => {
     );
 
     // Verify get payment status route
-    expect(mockRouter.get).toHaveBeenCalledWith(
+    expect(mockPaymentRouter.get).toHaveBeenCalledWith(
       '/status/:paymentNumber',
       'basicAuthMiddleware',
       'getPaymentStatusMethod',
@@ -75,6 +75,6 @@ describe('Payment Routes', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const paymentRouter = require('../../../../modules/transactions/routes/payment.routes').default;
     expect(paymentRouter).toBeDefined();
-    expect(paymentRouter.mockRouterInstance).toBe(true);
+    expect(paymentRouter.mockPaymentRouterInstance).toBe(true);
   });
 });

@@ -47,17 +47,17 @@ jest.mock('../../../../utils/auth/jwt', () => ({
 }));
 
 // Mock express
-const mockRouter = {
+const mockUserRouter = {
   get: jest.fn().mockReturnThis(),
   post: jest.fn().mockReturnThis(),
   put: jest.fn().mockReturnThis(),
   delete: jest.fn().mockReturnThis(),
   use: jest.fn().mockReturnThis(),
-  mockRouterInstance: true,
+  mockUserRouterInstance: true,
 };
 
 jest.mock('express', () => ({
-  Router: jest.fn(() => mockRouter),
+  Router: jest.fn(() => mockUserRouter),
 }));
 
 describe('User Routes', () => {
@@ -72,13 +72,13 @@ describe('User Routes', () => {
     require('../../../../modules/users/routes/user.routes');
 
     // Verify health route is called with the health controller's check method
-    expect(mockRouter.get).toHaveBeenCalledWith('/health', 'healthCheckMethod');
+    expect(mockUserRouter.get).toHaveBeenCalledWith('/health', 'healthCheckMethod');
 
     // Verify login route
-    expect(mockRouter.post).toHaveBeenCalledWith('/login', 'loginMethod');
+    expect(mockUserRouter.post).toHaveBeenCalledWith('/login', 'loginMethod');
 
     // Verify get user by ID route
-    expect(mockRouter.get).toHaveBeenCalledWith(
+    expect(mockUserRouter.get).toHaveBeenCalledWith(
       '/:id',
       'jwtAuthMiddleware',
       'roleAuth(EMPLOYEE)Middleware',
@@ -86,7 +86,7 @@ describe('User Routes', () => {
     );
 
     // Verify get all users route
-    expect(mockRouter.get).toHaveBeenCalledWith(
+    expect(mockUserRouter.get).toHaveBeenCalledWith(
       '/',
       'jwtAuthMiddleware',
       'roleAuth(STORE_MANAGER)Middleware',
@@ -94,7 +94,7 @@ describe('User Routes', () => {
     );
 
     // Verify create user route
-    expect(mockRouter.post).toHaveBeenCalledWith(
+    expect(mockUserRouter.post).toHaveBeenCalledWith(
       '/',
       'jwtAuthMiddleware',
       'roleAuth(STORE_MANAGER)Middleware',
@@ -103,7 +103,7 @@ describe('User Routes', () => {
     );
 
     // Verify update user route
-    expect(mockRouter.put).toHaveBeenCalledWith(
+    expect(mockUserRouter.put).toHaveBeenCalledWith(
       '/:id',
       'jwtAuthMiddleware',
       'roleAuth(STORE_MANAGER)Middleware',
@@ -112,7 +112,7 @@ describe('User Routes', () => {
     );
 
     // Verify delete user route
-    expect(mockRouter.delete).toHaveBeenCalledWith(
+    expect(mockUserRouter.delete).toHaveBeenCalledWith(
       '/:id',
       'jwtAuthMiddleware',
       'roleAuth(OWNER)Middleware',
@@ -124,6 +124,6 @@ describe('User Routes', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const userRouter = require('../../../../modules/users/routes/user.routes').default;
     expect(userRouter).toBeDefined();
-    expect(userRouter.mockRouterInstance).toBe(true);
+    expect(userRouter.mockUserRouterInstance).toBe(true);
   });
 });

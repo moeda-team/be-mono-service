@@ -7,17 +7,17 @@ jest.mock('../../../../modules/messages/routes/message.routes', () => ({
 }));
 
 // Mock express
-const mockRouter = {
+const mockMessagesRouter = {
   get: jest.fn().mockReturnThis(),
   post: jest.fn().mockReturnThis(),
   put: jest.fn().mockReturnThis(),
   delete: jest.fn().mockReturnThis(),
   use: jest.fn().mockReturnThis(),
-  mockRouterInstance: true,
+  mockMessagesRouterInstance: true,
 };
 
 jest.mock('express', () => ({
-  Router: jest.fn(() => mockRouter),
+  Router: jest.fn(() => mockMessagesRouter),
 }));
 
 describe('Message Routes Index', () => {
@@ -32,13 +32,13 @@ describe('Message Routes Index', () => {
     require('../../../../modules/messages/routes/index');
 
     // Verify the message routes are mounted at the root path
-    expect(mockRouter.use).toHaveBeenCalledWith('/', 'mockMessageRouter');
+    expect(mockMessagesRouter.use).toHaveBeenCalledWith('/', 'mockMessageRouter');
   });
 
   it('should export the router', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const indexRouter = require('../../../../modules/messages/routes/index').default;
     expect(indexRouter).toBeDefined();
-    expect(indexRouter.mockRouterInstance).toBe(true);
+    expect(indexRouter.mockMessagesRouterInstance).toBe(true);
   });
 });

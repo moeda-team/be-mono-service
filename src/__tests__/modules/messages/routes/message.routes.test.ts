@@ -41,17 +41,17 @@ jest.mock('../../../../utils/auth/jwt', () => ({
 }));
 
 // Mock express
-const mockRouter = {
+const mockMessageRouter = {
   get: jest.fn().mockReturnThis(),
   post: jest.fn().mockReturnThis(),
   put: jest.fn().mockReturnThis(),
   delete: jest.fn().mockReturnThis(),
   use: jest.fn().mockReturnThis(),
-  mockRouterInstance: true,
+  mockMessageRouterInstance: true,
 };
 
 jest.mock('express', () => ({
-  Router: jest.fn(() => mockRouter),
+  Router: jest.fn(() => mockMessageRouter),
 }));
 
 describe('Message Routes', () => {
@@ -66,10 +66,10 @@ describe('Message Routes', () => {
     require('../../../../modules/messages/routes/message.routes');
 
     // Verify health route is called with the health controller's check method
-    expect(mockRouter.get).toHaveBeenCalledWith('/health', 'healthCheckMethod');
+    expect(mockMessageRouter.get).toHaveBeenCalledWith('/health', 'healthCheckMethod');
 
     // Verify get message by ID route
-    expect(mockRouter.get).toHaveBeenCalledWith(
+    expect(mockMessageRouter.get).toHaveBeenCalledWith(
       '/:id',
       'jwtAuthMiddleware',
       'roleAuth(STORE_MANAGER)Middleware',
@@ -77,7 +77,7 @@ describe('Message Routes', () => {
     );
 
     // Verify get all messages route
-    expect(mockRouter.get).toHaveBeenCalledWith(
+    expect(mockMessageRouter.get).toHaveBeenCalledWith(
       '/',
       'jwtAuthMiddleware',
       'roleAuth(STORE_MANAGER)Middleware',
@@ -85,7 +85,7 @@ describe('Message Routes', () => {
     );
 
     // Verify create message route
-    expect(mockRouter.post).toHaveBeenCalledWith(
+    expect(mockMessageRouter.post).toHaveBeenCalledWith(
       '/',
       'basicAuthMiddleware',
       'validateCreateMessageMiddleware',
@@ -99,6 +99,6 @@ describe('Message Routes', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const messageRouter = require('../../../../modules/messages/routes/message.routes').default;
     expect(messageRouter).toBeDefined();
-    expect(messageRouter.mockRouterInstance).toBe(true);
+    expect(messageRouter.mockMessageRouterInstance).toBe(true);
   });
 });

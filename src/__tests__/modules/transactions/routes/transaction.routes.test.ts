@@ -38,7 +38,7 @@ jest.mock('../../../../utils/auth/jwt', () => ({
 }));
 
 // Mock express
-const mockRouter = {
+const mockTransactionRouter = {
   get: jest.fn().mockReturnThis(),
   post: jest.fn().mockReturnThis(),
   put: jest.fn().mockReturnThis(),
@@ -48,7 +48,7 @@ const mockRouter = {
 };
 
 jest.mock('express', () => ({
-  Router: jest.fn(() => mockRouter),
+  Router: jest.fn(() => mockTransactionRouter),
 }));
 
 describe('Transaction Routes', () => {
@@ -63,10 +63,10 @@ describe('Transaction Routes', () => {
     require('../../../../modules/transactions/routes/transaction.routes');
 
     // Verify health route is called with the health controller's check method
-    expect(mockRouter.get).toHaveBeenCalledWith('/health', 'healthCheckMethod');
+    expect(mockTransactionRouter.get).toHaveBeenCalledWith('/health', 'healthCheckMethod');
 
     // Verify get transaction by ID route
-    expect(mockRouter.get).toHaveBeenCalledWith(
+    expect(mockTransactionRouter.get).toHaveBeenCalledWith(
       '/:id',
       'jwtAuthMiddleware',
       'roleAuth(EMPLOYEE)Middleware',
@@ -74,7 +74,7 @@ describe('Transaction Routes', () => {
     );
 
     // Verify get all transactions route
-    expect(mockRouter.get).toHaveBeenCalledWith(
+    expect(mockTransactionRouter.get).toHaveBeenCalledWith(
       '/',
       'jwtAuthMiddleware',
       'roleAuth(EMPLOYEE)Middleware',
@@ -82,7 +82,7 @@ describe('Transaction Routes', () => {
     );
 
     // Verify create transaction route
-    expect(mockRouter.post).toHaveBeenCalledWith(
+    expect(mockTransactionRouter.post).toHaveBeenCalledWith(
       '/',
       'jwtAuthNotRequiredMiddleware',
       'validateCreateTransactionMiddleware',
@@ -90,7 +90,7 @@ describe('Transaction Routes', () => {
     );
 
     // Verify delete transaction route
-    expect(mockRouter.delete).toHaveBeenCalledWith(
+    expect(mockTransactionRouter.delete).toHaveBeenCalledWith(
       '/:id',
       'jwtAuthMiddleware',
       'roleAuth(EMPLOYEE)Middleware',
