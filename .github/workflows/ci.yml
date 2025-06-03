@@ -70,7 +70,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             rm -rf ~/apps/moeda/*
-            echo "${{ secrets.ENV_CONTENTS }}" > ~/apps/moeda/.env
+            echo "${{ secrets.ENV_CONTENTS }}" > /home/${{ secrets.VPS_USER }}/apps/moeda/build-output/dist/.env
             pm2 stop all
             pm2 delete all
 
