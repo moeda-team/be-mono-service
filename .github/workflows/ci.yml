@@ -61,13 +61,16 @@ jobs:
           name: build
           path: build-output
 
+      - name: List files after download
+        run: ls -R build-output
+
       - name: Copy files to VPS
         uses: appleboy/scp-action@v0.1.6
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: 'build-output/*'
+          source: 'build-output/**'
           target: '/home/${{ secrets.VPS_USER }}/apps/moeda'
 
       - name: SSH and restart app using PM2
