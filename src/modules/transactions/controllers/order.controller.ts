@@ -42,7 +42,7 @@ export class OrderController {
       for (const tx of transactions) {
         const orders = tx.subTransactions;
 
-        orders.sort((a, b) => {
+        orders.sort((a: { status: string }, b: { status: string }) => {
           return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
         });
 
