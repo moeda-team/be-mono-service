@@ -35,14 +35,12 @@ export class PaymentController {
         });
       }
 
-      const itemDetails = subTransactions.map(
-        (item: { id: string; price: number; quantity: number; menuName: string }) => ({
-          id: item.id,
-          price: item.price,
-          quantity: item.quantity,
-          name: item.menuName,
-        }),
-      );
+      const itemDetails = subTransactions.map(item => ({
+        id: item.id,
+        price: item.price,
+        quantity: item.quantity,
+        name: item.menuName,
+      }));
       itemDetails.push({
         id: 'service_charge',
         price: findTransaction.serviceCharge,
