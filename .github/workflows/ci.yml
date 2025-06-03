@@ -86,7 +86,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd ~/apps/moeda
+            cd ~/apps/moeda/build-output
             npm install --omit=dev
             pm2 start pm2.config.js || pm2 reload moeda
             pm2 save
