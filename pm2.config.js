@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'my-node-app',
+      name: 'moeda',
       script: 'dist/index.js',
       max_memory_restart: '300M',
     },
