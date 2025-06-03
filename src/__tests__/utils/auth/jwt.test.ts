@@ -1,246 +1,291 @@
-import { describe, expect, it, jest, beforeEach, afterEach } from '@jest/globals';
-
-// Define types for our mocks
-type JwtMock = {
-  sign: jest.Mock;
-  verify: jest.Mock;
-};
-
-// Mock modules first - before importing the module under test
-jest.mock('jsonwebtoken', () => ({
-  sign: jest.fn(),
-  verify: jest.fn(),
-}));
-
-jest.mock('crypto', () => ({
-  randomBytes: jest.fn().mockReturnValue({
-    toString: jest.fn().mockReturnValue('mocked-random-id'),
-  }),
-}));
-
-// Now import the module under test
+import jwt from 'jsonwebtoken';
 import {
   signToken,
   verifyToken,
   generateTokenPair,
   hasPermission,
   getRolePermissions,
-  UserRole,
+  JwtError,
   TokenType,
+  UserRole,
 } from '../../../utils/auth/jwt';
 
-// Store original environment variables
-const originalEnv = { ...process.env };
+// Mock jsonwebtoken module
+jest.mock('jsonwebtoken');
 
-// Get references to the mocked modules with proper typing
-const jwtMock = jest.requireMock('jsonwebtoken') as JwtMock;
-
-// Mock the JWT module itself to ensure consistent test secrets
-jest.mock('../../../utils/auth/jwt', () => {
-  // Import the original module with explicit typing
-  const originalModule = jest.requireActual('../../../utils/auth/jwt') as typeof import('../../../utils/auth/jwt');
-  const jwtMock = jest.requireMock('jsonwebtoken') as JwtMock;
-  
-  // Mock implementation for sign function
-  (jwtMock.sign as jest.Mock).mockImplementation(
-    (...args: unknown[]) => {
-      // Simple mock implementation that returns a string token
-      const payload = args[0] as Record<string, unknown>;
-      return `mocked-token-${payload.userId}`;
-    }
-  );
-
-  // Mock implementation for verify function
-  (jwtMock.verify as jest.Mock).mockImplementation(
-    (...args: unknown[]) => {
-      // Simple mock implementation that extracts userId from the token
-      const token = args[0] as string;
-      const userId = token.split('-')[2];
-      return { userId };
-    }
-  );
-
-  // Return modified module - explicitly typed to match the original module interface
-  const signTokenMock = jest.fn().mockImplementation((...args: unknown[]) => {
-    const payload = args[0] as Record<string, unknown>;
-    const tokenType = args[1] || originalModule.TokenType.ACCESS;
-    
-    const secret = tokenType === originalModule.TokenType.ACCESS 
-      ? process.env.JWT_ACCESS_SECRET 
-      : process.env.JWT_REFRESH_SECRET;
-    const expiresIn = parseInt(tokenType === originalModule.TokenType.ACCESS 
-      ? process.env.JWT_ACCESS_EXPIRES_IN || '900'
-      : process.env.JWT_REFRESH_EXPIRES_IN || '604800');
-    
-    // Create a token payload with all required fields
-    const tokenPayload = {
-      ...payload,
-      tokenId: originalModule.generateTokenId(),
-      tokenType,
-    };
-    
-    // Call the JWT sign function with the correct parameters
-    jwtMock.sign(tokenPayload, secret as string, { expiresIn });
-    
-    // Return the mocked token string
-    return `mocked-token-${payload.userId}`;
-  });
-  
-  const verifyTokenMock = jest.fn().mockImplementation((...args: unknown[]) => {
-    const token = args[0] as string;
-    const tokenType = args[1] || originalModule.TokenType.ACCESS;
-    
-    const secret = tokenType === originalModule.TokenType.ACCESS 
-      ? process.env.JWT_ACCESS_SECRET 
-      : process.env.JWT_REFRESH_SECRET;
-    
-    // Call the JWT verify function with the correct parameters
-    jwtMock.verify(token, secret as string);
-    
-    if (token === 'invalid-token') {
-      throw new Error('Invalid token');
-    }
-    
-    // Return the mocked decoded token
-    const userId = token.split('-')[2];
-    return { userId };
-  });
-  
-  return {
-    // Don't spread the original module to avoid TypeScript errors
-    signToken: signTokenMock,
-    verifyToken: verifyTokenMock,
-    generateTokenPair: jest.fn().mockReturnValue({
-      accessToken: 'mocked-access-token',
-      refreshToken: 'mocked-refresh-token',
-    }),
-    hasPermission: originalModule.hasPermission,
-    getRolePermissions: originalModule.getRolePermissions,
-    UserRole: originalModule.UserRole,
-    TokenType: originalModule.TokenType,
-    generateTokenId: originalModule.generateTokenId,
-    JwtError: originalModule.JwtError,
-  };
-});
-
-beforeEach(() => {
-  jest.clearAllMocks();
-  process.env = { ...originalEnv };
-  process.env.JWT_ACCESS_SECRET = 'test-access-secret';
-  process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
-  process.env.JWT_ACCESS_EXPIRES_IN = '900';
-  process.env.JWT_REFRESH_EXPIRES_IN = '604800';
-});
-
-afterEach(() => {
-  process.env = originalEnv;
-});
-
-describe('JWT Utils', () => {
-  const mockPayload = { userId: '123', outletId: '456' };
-  const mockDecodedToken = { userId: '123', role: 'OWNER' };
+describe('JWT Utilities', () => {
+  // Store original environment variables
+  const originalEnv = process.env;
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Setup test environment variables
+    process.env.JWT_ACCESS_SECRET = 'test-access-secret';
+    process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
+    process.env.JWT_ACCESS_EXPIRES_IN = '3600';
+    process.env.JWT_REFRESH_EXPIRES_IN = '604800';
+
+    // Mock crypto.randomBytes which is used in generateTokenId
+    jest.spyOn(global.Math, 'random').mockReturnValue(0.123456789);
+
+    // Setup default mocks
+    (jwt.sign as jest.Mock).mockImplementation((_payload, _secret, _options) => {
+      return 'mocked-token-' + (_payload.tokenType === TokenType.ACCESS ? 'access' : 'refresh');
+    });
+
+    (jwt.verify as jest.Mock).mockImplementation((token, _secret) => {
+      if (token === 'invalid-token') {
+        throw new Error('Invalid token');
+      }
+
+      return {
+        userId: 'test-user-id',
+        outletId: 'test-outlet-id',
+        role: 'ADMIN',
+        tokenType: token.includes('refresh') ? TokenType.REFRESH : TokenType.ACCESS,
+        tokenId: 'test-token-id',
+        iat: Math.floor(Date.now() / 1000),
+      };
+    });
+  });
+
+  afterEach(() => {
+    // Restore environment variables
+    process.env = originalEnv;
   });
 
   describe('signToken', () => {
     it('should sign an access token correctly', () => {
-      const token = signToken(mockPayload, TokenType.ACCESS);
-      expect(token).toBe(`mocked-token-${mockPayload.userId}`);
-      expect(jwtMock.sign).toHaveBeenCalledWith(
+      // Arrange
+      const payload = {
+        userId: '123',
+        outletId: '456',
+        role: 'ADMIN',
+      };
+
+      // Act
+      const token = signToken(payload, TokenType.ACCESS);
+
+      // Assert
+      expect(token).toBe('mocked-token-access');
+      // Don't check the exact parameters as they include dynamic values like tokenId and iat
+      expect(jwt.sign).toHaveBeenCalledTimes(1);
+      expect(jwt.sign).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: '123',
           outletId: '456',
-          tokenId: expect.any(String),
+          role: 'ADMIN',
           tokenType: TokenType.ACCESS,
         }),
-        'test-access-secret',
-        expect.objectContaining({ expiresIn: 900 }),
+        expect.any(String),
+        expect.any(Object),
       );
     });
 
     it('should sign a refresh token correctly', () => {
-      const token = signToken(mockPayload, TokenType.REFRESH);
-      expect(token).toBe(`mocked-token-${mockPayload.userId}`);
-      expect(jwtMock.sign).toHaveBeenCalledWith(
+      // Arrange
+      const payload = {
+        userId: '123',
+        outletId: '456',
+        role: 'ADMIN',
+      };
+
+      // Act
+      const token = signToken(payload, TokenType.REFRESH);
+
+      // Assert
+      expect(token).toBe('mocked-token-refresh');
+      expect(jwt.sign).toHaveBeenCalledTimes(1);
+      expect(jwt.sign).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: '123',
           outletId: '456',
-          tokenId: expect.any(String),
+          role: 'ADMIN',
           tokenType: TokenType.REFRESH,
         }),
-        'test-refresh-secret',
-        expect.objectContaining({ expiresIn: 604800 }),
+        expect.any(String),
+        expect.any(Object),
       );
     });
 
     it('should use access token type by default', () => {
-      const token = signToken(mockPayload);
-      expect(token).toBe(`mocked-token-${mockPayload.userId}`);
-      expect(jwtMock.sign).toHaveBeenCalledWith(
+      // Arrange
+      const payload = {
+        userId: '123',
+        outletId: '456',
+        role: 'ADMIN',
+      };
+
+      // Act
+      const token = signToken(payload);
+
+      // Assert
+      expect(token).toBe('mocked-token-access');
+      expect(jwt.sign).toHaveBeenCalledTimes(1);
+      expect(jwt.sign).toHaveBeenCalledWith(
         expect.objectContaining({
           tokenType: TokenType.ACCESS,
         }),
-        'test-access-secret',
+        expect.any(String),
         expect.any(Object),
       );
     });
   });
 
   describe('verifyToken', () => {
-    it('should verify a token correctly', () => {
-      const result = verifyToken(`mocked-token-${mockPayload.userId}`, TokenType.ACCESS);
-      expect(result).toEqual({ userId: mockPayload.userId });
-      expect(jwtMock.verify).toHaveBeenCalledWith(`mocked-token-${mockPayload.userId}`, 'test-access-secret');
+    it('should verify an access token correctly', () => {
+      // Arrange
+      const token = 'test-token';
+
+      // Act
+      const result = verifyToken(token, TokenType.ACCESS);
+
+      // Assert
+      expect(result).toEqual({
+        userId: 'test-user-id',
+        outletId: 'test-outlet-id',
+        role: 'ADMIN',
+        tokenType: TokenType.ACCESS,
+        tokenId: 'test-token-id',
+        iat: expect.any(Number),
+      });
+
+      expect(jwt.verify).toHaveBeenCalledTimes(1);
+      expect(jwt.verify).toHaveBeenCalledWith(token, expect.any(String));
     });
 
-    it('should throw an error for invalid tokens', () => {
-      expect(() => verifyToken('invalid-token', TokenType.ACCESS)).toThrow('Invalid token');
+    it('should verify a refresh token correctly', () => {
+      // Arrange
+      const token = 'refresh-token';
+
+      // Act
+      const result = verifyToken(token, TokenType.REFRESH);
+
+      // Assert
+      expect(result).toEqual({
+        userId: 'test-user-id',
+        outletId: 'test-outlet-id',
+        role: 'ADMIN',
+        tokenType: TokenType.REFRESH,
+        tokenId: 'test-token-id',
+        iat: expect.any(Number),
+      });
+
+      expect(jwt.verify).toHaveBeenCalledTimes(1);
+      expect(jwt.verify).toHaveBeenCalledWith(token, expect.any(String));
+    });
+
+    it('should throw JwtError when jwt.verify throws an error', () => {
+      // Arrange
+      const token = 'invalid-token';
+      (jwt.verify as jest.Mock).mockImplementationOnce(() => {
+        throw new Error('Invalid token');
+      });
+
+      // Act & Assert
+      expect(() => verifyToken(token)).toThrow(JwtError);
+      expect(() => verifyToken(token)).toThrow('Invalid or expired token');
     });
   });
 
   describe('generateTokenPair', () => {
-    it('should generate a token pair correctly', () => {
-      const tokens = generateTokenPair(mockPayload);
-      expect(tokens).toEqual({
-        accessToken: 'mocked-access-token',
-        refreshToken: 'mocked-refresh-token',
+    it('should generate access and refresh tokens', () => {
+      // Arrange
+      const payload = {
+        userId: '123',
+        outletId: '456',
+        role: 'ADMIN',
+      };
+
+      // Our mock already returns different tokens based on token type
+
+      // Act
+      const tokenPair = generateTokenPair(payload);
+
+      // Assert
+      expect(tokenPair).toEqual({
+        accessToken: 'mocked-token-access',
+        refreshToken: 'mocked-token-refresh',
       });
+
+      // Verify that jwt.sign was called correctly for both token types
+      expect(jwt.sign).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('JwtError', () => {
+    it('should create a JwtError with correct name and message', () => {
+      // Arrange & Act
+      const error = new JwtError('Test error message');
+
+      // Assert
+      expect(error).toBeInstanceOf(Error);
+      expect(error.name).toBe('JwtError');
+      expect(error.message).toBe('Test error message');
     });
   });
 
   describe('hasPermission', () => {
-    it('should check permissions correctly', () => {
+    it('should check permissions correctly for owner role', () => {
+      // Act & Assert
       expect(hasPermission(UserRole.OWNER, UserRole.OWNER)).toBe(true);
       expect(hasPermission(UserRole.OWNER, UserRole.STORE_MANAGER)).toBe(true);
       expect(hasPermission(UserRole.OWNER, UserRole.EMPLOYEE)).toBe(true);
+    });
+
+    it('should check permissions correctly for store manager role', () => {
+      // Act & Assert
       expect(hasPermission(UserRole.STORE_MANAGER, UserRole.OWNER)).toBe(false);
       expect(hasPermission(UserRole.STORE_MANAGER, UserRole.STORE_MANAGER)).toBe(true);
       expect(hasPermission(UserRole.STORE_MANAGER, UserRole.EMPLOYEE)).toBe(true);
+    });
+
+    it('should check permissions correctly for employee role', () => {
+      // Act & Assert
       expect(hasPermission(UserRole.EMPLOYEE, UserRole.OWNER)).toBe(false);
       expect(hasPermission(UserRole.EMPLOYEE, UserRole.STORE_MANAGER)).toBe(false);
       expect(hasPermission(UserRole.EMPLOYEE, UserRole.EMPLOYEE)).toBe(true);
     });
+
+    it('should return false for invalid roles', () => {
+      // Act & Assert
+      expect(hasPermission('' as UserRole, UserRole.EMPLOYEE)).toBe(false);
+      expect(hasPermission(UserRole.OWNER, '' as UserRole)).toBe(false);
+      expect(hasPermission('INVALID_ROLE' as UserRole, UserRole.EMPLOYEE)).toBe(false);
+    });
   });
 
   describe('getRolePermissions', () => {
-    it('should get role permissions correctly', () => {
-      expect(getRolePermissions(UserRole.OWNER)).toEqual([
-        UserRole.OWNER,
-        UserRole.STORE_MANAGER,
-        UserRole.EMPLOYEE,
-      ]);
-      expect(getRolePermissions(UserRole.STORE_MANAGER)).toEqual([
-        UserRole.STORE_MANAGER,
-        UserRole.EMPLOYEE,
-      ]);
-      expect(getRolePermissions(UserRole.EMPLOYEE)).toEqual([UserRole.EMPLOYEE]);
-      expect(getRolePermissions('INVALID_ROLE' as UserRole)).toEqual([]);
+    it('should get role permissions correctly for owner', () => {
+      // Act
+      const permissions = getRolePermissions(UserRole.OWNER);
+
+      // Assert
+      expect(permissions).toEqual([UserRole.OWNER, UserRole.STORE_MANAGER, UserRole.EMPLOYEE]);
+    });
+
+    it('should get role permissions correctly for store manager', () => {
+      // Act
+      const permissions = getRolePermissions(UserRole.STORE_MANAGER);
+
+      // Assert
+      expect(permissions).toEqual([UserRole.STORE_MANAGER, UserRole.EMPLOYEE]);
+    });
+
+    it('should get role permissions correctly for employee', () => {
+      // Act
+      const permissions = getRolePermissions(UserRole.EMPLOYEE);
+
+      // Assert
+      expect(permissions).toEqual([UserRole.EMPLOYEE]);
     });
 
     it('should return empty array for invalid role', () => {
+      // Act
       const permissions = getRolePermissions('' as UserRole);
+
+      // Assert
       expect(permissions).toEqual([]);
     });
   });

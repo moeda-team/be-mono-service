@@ -10,12 +10,7 @@
     "ecmaVersion": 2022,
     "sourceType": "module"
   },
-  "ignorePatterns": [
-    "node_modules/",
-    "**/node_modules/",
-    "**/.prisma/client/",
-    "**/generated/"
-  ],
+  "ignorePatterns": ["node_modules/", "**/node_modules/", "**/.prisma/client/", "**/generated/"],
   "rules": {
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/no-explicit-any": "warn",
@@ -26,5 +21,17 @@
   "env": {
     "node": true,
     "es6": true
-  }
+  },
+  "overrides": [
+    {
+      "files": ["**/__tests__/*.test.ts", "**/__tests__/*.spec.ts"],
+      "env": {
+        "jest": true
+      },
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off",
+        "no-console": "off"
+      }
+    }
+  ]
 }
