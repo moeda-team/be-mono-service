@@ -15,6 +15,7 @@ export class MenuController {
           createdAt: 'desc',
         },
       });
+
       return ResponseHandler.success(res, {
         message: 'Menus retrieved successfully',
         data: menus,
@@ -61,6 +62,9 @@ export class MenuController {
     try {
       const menus = await prisma.menu.findMany({
         where: { categoryId, outletId },
+        orderBy: {
+          createdAt: 'desc',
+        },
       });
       return ResponseHandler.success(res, {
         message: 'Menus retrieved successfully',
@@ -82,6 +86,26 @@ export class MenuController {
     const user = (req as Request & { user?: { outletId: string } }).user;
     const outletId = user?.outletId;
 
+    for (const option of menuData.options) {
+      const checkOption = await prisma.option.findUnique({
+        where: { id: option },
+      });
+      if (!checkOption) {
+        return ResponseHandler.error(res, {
+          message: `Option ${option} not found, failed to create menu`,
+          statusCode: 404,
+        });
+      }
+    }
+
+    const sortedOptions = menuData.options.sort((a, b) => {
+      const optionA = a.toLowerCase();
+      const optionB = b.toLowerCase();
+      if (optionA < optionB) return -1;
+      if (optionA > optionB) return 1;
+      return 0;
+    });
+
     try {
       const menu = await prisma.menu.create({
         data: {
@@ -92,7 +116,7 @@ export class MenuController {
           img: menuData.img,
           price: menuData.price,
           pdf: menuData.pdf,
-          options: menuData.options,
+          options: sortedOptions,
         },
       });
       return ResponseHandler.success(res, {
