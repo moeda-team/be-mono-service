@@ -92,6 +92,7 @@ export class MenuController {
           img: menuData.img,
           price: menuData.price,
           pdf: menuData.pdf,
+          options: menuData.options,
         },
       });
       return ResponseHandler.success(res, {
@@ -145,6 +146,7 @@ export class MenuController {
           img: menuData.img,
           price: menuData.price,
           pdf: menuData.pdf,
+          options: menuData.options,
         },
       });
 
