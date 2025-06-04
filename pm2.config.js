@@ -3,7 +3,10 @@ module.exports = {
     {
       name: 'moeda',
       script: 'dist/index.js',
-      max_memory_restart: '300M',
+      autorestart: true,
+      restart_delay: 5000,
+      max_restarts: 5,
+      watch: false,
     },
   ],
 };
