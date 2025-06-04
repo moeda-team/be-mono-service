@@ -18,6 +18,7 @@ export const validateCreateMenu = [
     .withMessage('Price must be a number')
     .custom(value => value >= 0)
     .withMessage('Price must be non-negative'),
+  body('options').optional().isArray().withMessage('Options must be an array'),
   body('pdf').optional().isURL().withMessage('Invalid PDF URL'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
