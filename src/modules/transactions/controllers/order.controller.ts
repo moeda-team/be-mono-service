@@ -115,4 +115,37 @@ export class OrderController {
       });
     }
   }
+
+  async getTransaction(req: Request, res: Response) {
+    const { id } = req.params;
+
+    try {
+      const transaction = await prisma.subTransaction.findUnique({
+        where: { id },
+      });
+      if (!transaction) {
+        return ResponseHandler.error(res, {
+          message: 'Transaction not found',
+          statusCode: 404,
+        });
+      }
+
+      return ResponseHandler.success(res, {
+        message: 'Retrieved transaction successfully',
+        data: transaction,
+      });
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'P2025') {
+        return ResponseHandler.error(res, {
+          message: 'Transaction not found',
+          statusCode: 404,
+        });
+      }
+      logger.error('Error updating transaction status:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
 }
