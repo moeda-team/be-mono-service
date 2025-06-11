@@ -120,8 +120,9 @@ export class OrderController {
     const { id } = req.params;
 
     try {
-      const transaction = await prisma.subTransaction.findUnique({
+      const transaction = await prisma.transaction.findUnique({
         where: { id },
+        include: { subTransactions: true },
       });
       if (!transaction) {
         return ResponseHandler.error(res, {
