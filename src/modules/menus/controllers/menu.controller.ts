@@ -107,6 +107,16 @@ export class MenuController {
     });
 
     try {
+      const category = await prisma.category.findUnique({
+        where: { id: menuData.categoryId },
+      });
+      if (!category) {
+        return ResponseHandler.error(res, {
+          message: 'Category not found',
+          statusCode: 404,
+        });
+      }
+
       const menu = await prisma.menu.create({
         data: {
           outletId,

@@ -53,21 +53,11 @@ export class OptionController {
     res: Response,
   ) {
     try {
-      const existingOption = await prisma.option.findFirst({
-        where: {
-          name: req.body.name,
-        },
-      });
-      if (existingOption) {
-        return ResponseHandler.error(res, {
-          message: 'Option already exists',
-          statusCode: 400,
-        });
-      }
       const option = await prisma.option.create({
         data: {
           name: req.body.name,
           value: req.body.value,
+          addPrices: req.body.addPrices,
         },
       });
       return ResponseHandler.success(res, {
