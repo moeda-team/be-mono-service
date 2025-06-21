@@ -21,7 +21,12 @@ const app = express();
 app.use(rateLimiter);
 app.use(timeout('5s'));
 app.use(helmet());
-app.use(cors({ origin: config.corsOrigin.split(',').map(origin => origin.trim()) }));
+app.use(
+  cors({
+    origin: config.corsOrigin.split(',').map(origin => origin.trim()),
+    credentials: true,
+  }),
+);
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
