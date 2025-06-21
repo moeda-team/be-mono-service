@@ -164,7 +164,12 @@ export class TransactionController {
       }
       return ResponseHandler.success(res, {
         message: 'Transaction created successfully',
-        data: transaction,
+        data: {
+          ...transaction,
+          details: await prisma.subTransaction.findMany({
+            where: { transactionId: transaction.id },
+          }),
+        },
       });
     } catch (error) {
       logger.error('Error creating transaction:', error);
