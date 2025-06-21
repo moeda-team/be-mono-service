@@ -7,7 +7,7 @@ import { Router } from 'express';
 import { NextFunction, Request, Response } from 'express';
 
 import { config } from './config';
-import { errorHandler, notFoundHandler } from './middlewares';
+import { errorHandler, notFoundHandler, rateLimiter } from './middlewares';
 import { logger } from './utils/common/logger';
 import { ResponseHandler } from './utils/response/responseHandler';
 import userRouter from './modules/users/routes';
@@ -18,9 +18,10 @@ import menuRouter from './modules/menus/routes';
 
 const app = express();
 
+app.use(rateLimiter);
 app.use(timeout('5s'));
 app.use(helmet());
-app.use(cors({ origin: config.corsOrigin }));
+app.use(cors({ origin: config.corsOrigin.split(',').map(origin => origin.trim()) }));
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
