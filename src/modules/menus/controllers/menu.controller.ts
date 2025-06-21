@@ -63,7 +63,8 @@ export class MenuController {
       const menus = await prisma.menu.findMany({
         where: { categoryId, outletId },
         orderBy: {
-          createdAt: 'desc',
+          name: 'asc',
+          categoryId: 'desc',
         },
       });
       return ResponseHandler.success(res, {
@@ -243,6 +244,10 @@ export class MenuController {
     try {
       const menus = await prisma.menu.findMany({
         where: { outletId, isBest: true },
+        orderBy: {
+          name: 'asc',
+          categoryId: 'desc',
+        },
       });
       return ResponseHandler.success(res, {
         message: 'Menus retrieved successfully',
