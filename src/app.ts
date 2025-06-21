@@ -17,16 +17,24 @@ import outletRouter from './modules/outlets/routes';
 import menuRouter from './modules/menus/routes';
 
 const app = express();
+const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
 
 app.use(rateLimiter);
 app.use(timeout('5s'));
 app.use(helmet());
 app.use(
   cors({
-    origin: config.corsOrigin.split(',').map(origin => origin.trim()),
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   }),
 );
+
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
