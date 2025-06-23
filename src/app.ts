@@ -20,7 +20,7 @@ const app = express();
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
 
 app.use(rateLimiter);
-app.use(timeout('5s'));
+app.use(timeout('10s'));
 app.use(helmet());
 app.use(
   cors({

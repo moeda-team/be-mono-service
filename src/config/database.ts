@@ -12,6 +12,7 @@ const poolConfig: PoolConfig = {
   database: process.env.DB_NAME || 'cafe_db',
   password: process.env.DB_PASSWORD || 'postgres',
   port: parseInt(process.env.DB_PORT || '5432'),
+  max: 20,
 };
 
 const pool = new Pool(poolConfig);
