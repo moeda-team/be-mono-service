@@ -421,31 +421,31 @@ export class SalesController {
         });
       }
 
-      const result = await Promise.all(
-        dateGroups.map(async ({ label, start, end }) => {
-          const cashTotals = await prisma.transaction.groupBy({
-            by: ['paymentMethod'],
-            _sum: { total: true },
-            where: {
-              outletId,
-              createdAt: { gte: start, lte: end },
-            },
-          });
+      const result: { date: string; paymentMethodGroup: { name: string; total: number }[] }[] = [];
 
-          const paymentMethodGroup = methodList.map(paymentMethod => {
-            const found = cashTotals.find(ct => ct.paymentMethod === paymentMethod);
-            return {
-              name: paymentMethod,
-              total: found?._sum.total ?? 0,
-            };
-          });
+      for (const { label, start, end } of dateGroups) {
+        const cashTotals = await prisma.transaction.groupBy({
+          by: ['paymentMethod'],
+          _sum: { total: true },
+          where: {
+            outletId,
+            createdAt: { gte: start, lte: end },
+          },
+        });
 
+        const paymentMethodGroup = methodList.map(paymentMethod => {
+          const found = cashTotals.find(ct => ct.paymentMethod === paymentMethod);
           return {
-            date: label,
-            paymentMethodGroup,
+            name: paymentMethod,
+            total: Number(found?._sum.total ?? 0),
           };
-        }),
-      );
+        });
+
+        result.push({
+          date: label,
+          paymentMethodGroup,
+        });
+      }
 
       return {
         message: 'Transaction cashflow retrieved successfully',
