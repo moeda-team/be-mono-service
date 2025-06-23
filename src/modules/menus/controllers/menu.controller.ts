@@ -279,7 +279,6 @@ export class MenuController {
         where: { outletId, isBest: true },
         orderBy: {
           name: 'asc',
-          categoryId: 'desc',
         },
       });
       return ResponseHandler.success(res, {
