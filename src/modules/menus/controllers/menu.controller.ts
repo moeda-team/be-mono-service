@@ -64,7 +64,6 @@ export class MenuController {
         where: { categoryId, outletId },
         orderBy: {
           name: 'asc',
-          categoryId: 'desc',
         },
       });
       return ResponseHandler.success(res, {
