@@ -6,7 +6,6 @@
 
 generator client {
   provider        = "prisma-client-js"
-  output          = "../src/generated/prisma"
   previewFeatures = ["multiSchema"]
 }
 
@@ -145,6 +144,7 @@ model Menu {
   desc       String
   img        String
   price      Decimal
+  options    String[]
   pdf        String?  @db.VarChar(255)
   categoryId String   @db.VarChar(36)
   isNew      Boolean  @default(true)
@@ -154,6 +154,17 @@ model Menu {
 
   outlet   Outlet?  @relation(fields: [outletId], references: [id], onDelete: Cascade)
   category Category @relation(fields: [categoryId], references: [id])
+
+  @@schema("mono")
+}
+
+model Option {
+  id        String    @id @default(uuid()) @db.VarChar(36)
+  name      String    @db.VarChar(100)
+  value     String[]
+  addPrices Decimal[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@schema("mono")
 }

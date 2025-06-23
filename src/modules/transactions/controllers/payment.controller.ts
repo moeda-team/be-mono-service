@@ -195,6 +195,9 @@ export class PaymentController {
         where: {
           paymentNumber,
         },
+        include: {
+          subTransactions: true,
+        },
       });
 
       if (!transaction) {
@@ -207,6 +210,7 @@ export class PaymentController {
       return ResponseHandler.success(res, {
         message: 'Payment status retrieved successfully',
         data: {
+          details: transaction,
           paymentNumber,
           status: transaction.status,
           updatedAt: transaction.updatedAt,

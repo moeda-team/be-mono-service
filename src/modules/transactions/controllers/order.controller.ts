@@ -42,7 +42,7 @@ export class OrderController {
       for (const tx of transactions) {
         const orders = tx.subTransactions;
 
-        orders.sort((a, b) => {
+        orders.sort((a: { status: string }, b: { status: string }) => {
           return statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status);
         });
 
@@ -100,6 +100,40 @@ export class OrderController {
       return ResponseHandler.success(res, {
         message: 'Transaction status updated successfully',
         data: null,
+      });
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'P2025') {
+        return ResponseHandler.error(res, {
+          message: 'Transaction not found',
+          statusCode: 404,
+        });
+      }
+      logger.error('Error updating transaction status:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async getTransaction(req: Request, res: Response) {
+    const { id } = req.params;
+
+    try {
+      const transaction = await prisma.transaction.findUnique({
+        where: { id },
+        include: { subTransactions: true },
+      });
+      if (!transaction) {
+        return ResponseHandler.error(res, {
+          message: 'Transaction not found',
+          statusCode: 404,
+        });
+      }
+
+      return ResponseHandler.success(res, {
+        message: 'Retrieved transaction successfully',
+        data: transaction,
       });
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'P2025') {

@@ -108,8 +108,23 @@ export class TransactionController {
       const paymentNumber = await generatePaymentNumber(transactionData.outletId);
       const subTotal = transactionData.cart.reduce((total, item) => total + item.subTotal, 0);
       const tax = subTotal * 0.11;
-      const serviceCharge = Math.ceil((subTotal + tax) * 0.07 + 500);
+
+      let serviceCharge = 0;
+      if (transactionData.paymentMethod === 'qris') {
+        serviceCharge = Math.ceil((subTotal + tax) * 0.0007 + 500);
+      } else if (transactionData.paymentMethod === 'gopay') {
+        serviceCharge = Math.ceil((subTotal + tax) * 0.002 + 500);
+      } else {
+        serviceCharge = 500;
+      }
       const total = subTotal + tax + serviceCharge - transactionData.discount;
+
+      let transactionStatus = 'paid';
+      if (transactionData.paymentMethod !== 'cash') {
+        transactionStatus = transactionData.status;
+      } else {
+        transactionStatus = 'completed';
+      }
 
       const transaction = await prisma.transaction.create({
         data: {
@@ -128,7 +143,7 @@ export class TransactionController {
           discount: transactionData.discount,
           total: total,
           additionalNote: transactionData.additionalNote,
-          status: transactionData.status,
+          status: transactionStatus,
         },
       });
 
@@ -149,7 +164,12 @@ export class TransactionController {
       }
       return ResponseHandler.success(res, {
         message: 'Transaction created successfully',
-        data: transaction,
+        data: {
+          ...transaction,
+          details: await prisma.subTransaction.findMany({
+            where: { transactionId: transaction.id },
+          }),
+        },
       });
     } catch (error) {
       logger.error('Error creating transaction:', error);
