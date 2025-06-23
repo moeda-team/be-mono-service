@@ -1,10 +1,10 @@
 import { Pool, PoolConfig } from 'pg';
 import dotenv from 'dotenv';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/common/logger';
 
 dotenv.config();
 
-const defaultSchema = process.env.DB_SCHEMA || 'users';
+const defaultSchema = process.env.DB_SCHEMA || 'mono';
 
 const poolConfig: PoolConfig = {
   user: process.env.DB_USER || 'postgres',

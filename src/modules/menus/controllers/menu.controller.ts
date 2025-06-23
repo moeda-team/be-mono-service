@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { logger } from '../../../utils/logger';
+import { logger } from '../../../utils/common/logger';
 import { CreateMenuDTO, UpdateMenuDTO } from '../models/menu';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../lib/prisma';
@@ -7,14 +7,32 @@ import prisma from '../../../lib/prisma';
 export class MenuController {
   async getAllMenus(req: Request, res: Response) {
     const { outletId } = req.params;
+    let { search } = req.query;
+    if (Array.isArray(search)) {
+      search = search[0];
+    }
+    if (typeof search !== 'string') {
+      search = undefined;
+    }
 
     try {
-      const menus = await prisma.menu.findMany({
-        where: { outletId },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
+      let menus;
+      if (search) {
+        menus = await prisma.menu.findMany({
+          where: { outletId, name: { contains: search } },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+      } else {
+        menus = await prisma.menu.findMany({
+          where: { outletId },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+      }
+
       return ResponseHandler.success(res, {
         message: 'Menus retrieved successfully',
         data: menus,
@@ -57,11 +75,31 @@ export class MenuController {
 
   async getMenusByCategory(req: Request, res: Response) {
     const { outletId, categoryId } = req.params;
+    let { search } = req.query;
+    if (Array.isArray(search)) {
+      search = search[0];
+    }
+    if (typeof search !== 'string') {
+      search = undefined;
+    }
 
     try {
-      const menus = await prisma.menu.findMany({
-        where: { categoryId, outletId },
-      });
+      let menus;
+      if (search) {
+        menus = await prisma.menu.findMany({
+          where: { categoryId, outletId, name: { contains: search } },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+      } else {
+        menus = await prisma.menu.findMany({
+          where: { categoryId, outletId },
+          orderBy: {
+            name: 'asc',
+          },
+        });
+      }
       return ResponseHandler.success(res, {
         message: 'Menus retrieved successfully',
         data: menus,
@@ -82,7 +120,37 @@ export class MenuController {
     const user = (req as Request & { user?: { outletId: string } }).user;
     const outletId = user?.outletId;
 
+    for (const option of menuData.options) {
+      const checkOption = await prisma.option.findUnique({
+        where: { id: option },
+      });
+      if (!checkOption) {
+        return ResponseHandler.error(res, {
+          message: `Option ${option} not found, failed to create menu`,
+          statusCode: 404,
+        });
+      }
+    }
+
+    const sortedOptions = menuData.options.sort((a, b) => {
+      const optionA = a.toLowerCase();
+      const optionB = b.toLowerCase();
+      if (optionA < optionB) return -1;
+      if (optionA > optionB) return 1;
+      return 0;
+    });
+
     try {
+      const category = await prisma.category.findUnique({
+        where: { id: menuData.categoryId },
+      });
+      if (!category) {
+        return ResponseHandler.error(res, {
+          message: 'Category not found',
+          statusCode: 404,
+        });
+      }
+
       const menu = await prisma.menu.create({
         data: {
           outletId,
@@ -92,6 +160,7 @@ export class MenuController {
           img: menuData.img,
           price: menuData.price,
           pdf: menuData.pdf,
+          options: sortedOptions,
         },
       });
       return ResponseHandler.success(res, {
@@ -145,6 +214,7 @@ export class MenuController {
           img: menuData.img,
           price: menuData.price,
           pdf: menuData.pdf,
+          options: menuData.options,
         },
       });
 
@@ -207,6 +277,9 @@ export class MenuController {
     try {
       const menus = await prisma.menu.findMany({
         where: { outletId, isBest: true },
+        orderBy: {
+          name: 'asc',
+        },
       });
       return ResponseHandler.success(res, {
         message: 'Menus retrieved successfully',

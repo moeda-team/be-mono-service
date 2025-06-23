@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { logger } from '../../../utils/logger';
+import { logger } from '../../../utils/common/logger';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../lib/prisma';
 
@@ -217,10 +217,12 @@ export class SalesController {
       const result = [];
 
       for (const { label, start, end } of dateGroup) {
-        const paymentMethodGroupForPeriod = distinctPaymentMethods.map(item => ({
-          name: item.paymentMethod,
-          count: 0,
-        }));
+        const paymentMethodGroupForPeriod = distinctPaymentMethods.map(
+          (item: { paymentMethod: string }) => ({
+            name: item.paymentMethod,
+            count: 0,
+          }),
+        );
 
         for (const paymentMethod of paymentMethodGroupForPeriod) {
           const transactions = await prisma.transaction.findMany({
@@ -352,10 +354,12 @@ export class SalesController {
       const result = [];
 
       for (const { label, start, end } of dateGroup) {
-        const paymentMethodGroupForPeriod = distinctPaymentMethods.map(item => ({
-          name: item.paymentMethod,
-          total: 0,
-        }));
+        const paymentMethodGroupForPeriod = distinctPaymentMethods.map(
+          (item: { paymentMethod: string }) => ({
+            name: item.paymentMethod,
+            total: 0,
+          }),
+        );
 
         for (const paymentMethod of paymentMethodGroupForPeriod) {
           const totalCash = await prisma.transaction.aggregate({

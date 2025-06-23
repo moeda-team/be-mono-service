@@ -3,7 +3,7 @@ import { MenuController } from '../controllers/menu.controller';
 import { validateCreateMenu, validateUpdateMenu } from '../validators/menu.validator';
 import { HealthController } from '../controllers/health.controller';
 import { basicAuth, jwtAuth, roleAuth } from '../../../middlewares';
-import { UserRole } from '../../../utils/jwt';
+import { UserRole } from '../../../utils/auth/jwt';
 
 const router = Router();
 const menuController = new MenuController();

@@ -3,7 +3,7 @@ import { UserController } from '../controllers/user.controller';
 import { HealthController } from '../controllers/health.controller';
 import { AuthController } from '../controllers/auth.controller';
 import { jwtAuth, roleAuth } from '../../../middlewares';
-import { UserRole } from '../../../utils/jwt';
+import { UserRole } from '../../../utils/auth/jwt';
 import { validateCreateUser, validateUpdateUser } from '../validators/user.validator';
 
 const router = Router();

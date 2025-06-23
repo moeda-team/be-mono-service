@@ -1,10 +1,11 @@
 import { app } from './app';
 import { config } from './config';
-import { logger } from './utils/logger';
+import { logger } from './utils/common/logger';
 
 const startServer = () => {
   try {
     app.listen(config.port, () => {
+      logger.info('Starting');
       logger.info(`Server is running on port ${config.port}`);
       logger.info(`API is available at ${config.apiPrefix}`);
     });

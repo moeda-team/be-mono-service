@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken, JwtPayload } from '../utils/jwt';
+import { verifyToken, JwtPayload } from '../utils/auth/jwt';
 import { ResponseHandler } from '../utils/response/responseHandler';
 
 export function jwtAuth(req: Request, res: Response, next: NextFunction) {

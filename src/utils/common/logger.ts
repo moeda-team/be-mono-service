@@ -1,5 +1,5 @@
 import winston from 'winston';
-import { isProduction } from '../config';
+import { isProduction } from '../../config';
 
 export const logger = winston.createLogger({
   level: isProduction ? 'info' : 'debug',

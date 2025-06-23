@@ -3,7 +3,7 @@ import { MessageController } from '../controllers/message.controller';
 import { validateCreateMessage } from '../validators/message.validator';
 import { HealthController } from '../controllers/health.controller';
 import { basicAuth, jwtAuth, roleAuth } from '../../../middlewares';
-import { UserRole } from '../../../utils/jwt';
+import { UserRole } from '../../../utils/auth/jwt';
 
 const router = Router();
 const messageController = new MessageController();
