@@ -65,7 +65,6 @@ export class MessageController {
       const findDuplicate = await prisma.message.findFirst({
         where: {
           outletId: userData.outletId,
-          email: userData.email,
           createdAt: {
             gte: `${today}T00:00:00.000Z`,
             lt: `${today}T23:59:59.999Z`,
@@ -83,7 +82,6 @@ export class MessageController {
         data: {
           outletId: userData.outletId,
           name: userData.name,
-          email: userData.email,
           message: userData.message,
           rating: Number(userData.rating),
         },
