@@ -111,13 +111,25 @@ export class TransactionController {
 
       let serviceCharge = 0;
       if (transactionData.paymentMethod === 'qris') {
-        serviceCharge = Math.ceil((subTotal + tax) * 0.0007 + 500);
+        serviceCharge = Math.ceil((subTotal + tax) * 0.007 + 500);
       } else if (transactionData.paymentMethod === 'gopay') {
-        serviceCharge = Math.ceil((subTotal + tax) * 0.002 + 500);
+        serviceCharge = Math.ceil((subTotal + tax) * 0.02 + 500);
       } else {
         serviceCharge = 500;
       }
-      const total = subTotal + tax + serviceCharge - transactionData.discount;
+
+      const totalBeforeRounding = subTotal + tax + serviceCharge - transactionData.discount;
+      let rounding = 0;
+      const remainder = totalBeforeRounding % 1000;
+      if (remainder === 0) {
+        rounding = 0;
+      } else if (remainder <= 500) {
+        rounding = 500 - remainder;
+      } else {
+        rounding = 1000 - remainder;
+      }
+
+      const total = subTotal + tax + serviceCharge - transactionData.discount + rounding;
 
       let transactionStatus = 'paid';
       if (transactionData.paymentMethod !== 'cash') {
@@ -140,6 +152,7 @@ export class TransactionController {
           subTotal: subTotal,
           serviceCharge: serviceCharge,
           tax: tax,
+          rounding: rounding,
           discount: transactionData.discount,
           total: total,
           additionalNote: transactionData.additionalNote,

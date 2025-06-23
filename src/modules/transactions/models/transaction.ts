@@ -16,6 +16,7 @@ export interface Transaction {
   discount: number;
   serviceCharge: number;
   tax: number;
+  rounding: number;
   total: number;
   additionalNote: string;
   status: string;
