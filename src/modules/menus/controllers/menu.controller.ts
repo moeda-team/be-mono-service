@@ -7,14 +7,31 @@ import prisma from '../../../lib/prisma';
 export class MenuController {
   async getAllMenus(req: Request, res: Response) {
     const { outletId } = req.params;
+    let { search } = req.query;
+    if (Array.isArray(search)) {
+      search = search[0];
+    }
+    if (typeof search !== 'string') {
+      search = undefined;
+    }
 
     try {
-      const menus = await prisma.menu.findMany({
-        where: { outletId },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
+      let menus;
+      if (search) {
+        menus = await prisma.menu.findMany({
+          where: { outletId, name: { contains: search } },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+      } else {
+        menus = await prisma.menu.findMany({
+          where: { outletId },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+      }
 
       return ResponseHandler.success(res, {
         message: 'Menus retrieved successfully',
@@ -58,14 +75,31 @@ export class MenuController {
 
   async getMenusByCategory(req: Request, res: Response) {
     const { outletId, categoryId } = req.params;
+    let { search } = req.query;
+    if (Array.isArray(search)) {
+      search = search[0];
+    }
+    if (typeof search !== 'string') {
+      search = undefined;
+    }
 
     try {
-      const menus = await prisma.menu.findMany({
-        where: { categoryId, outletId },
-        orderBy: {
-          name: 'asc',
-        },
-      });
+      let menus;
+      if (search) {
+        menus = await prisma.menu.findMany({
+          where: { categoryId, outletId, name: { contains: search } },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+      } else {
+        menus = await prisma.menu.findMany({
+          where: { categoryId, outletId },
+          orderBy: {
+            name: 'asc',
+          },
+        });
+      }
       return ResponseHandler.success(res, {
         message: 'Menus retrieved successfully',
         data: menus,
