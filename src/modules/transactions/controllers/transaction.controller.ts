@@ -131,10 +131,10 @@ export class TransactionController {
 
       const total = subTotal + tax + serviceCharge - transactionData.discount + rounding;
 
-      let transactionStatus = 'paid';
+      let transactionStatus = 'pending';
       if (transactionData.paymentMethod !== 'cash') {
         transactionStatus = transactionData.status;
-      } else {
+      } else if (transactionData.paymentMethod === 'cash') {
         transactionStatus = 'completed';
       }
 
