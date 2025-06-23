@@ -19,11 +19,11 @@ describe('Config', () => {
       process.env.PORT = '4000';
       process.env.API_PREFIX = '/test-api';
       process.env.CORS_ORIGIN = 'https://test.example.com';
-      
+
       // Act
       jest.isolateModules(() => {
         const { config } = require('../../config');
-        
+
         // Assert
         expect(config.nodeEnv).toBe('test');
         expect(config.port).toBe(4000);
@@ -38,16 +38,16 @@ describe('Config', () => {
       delete process.env.PORT;
       delete process.env.API_PREFIX;
       delete process.env.CORS_ORIGIN;
-      
+
       // Act
       jest.isolateModules(() => {
         const { config } = require('../../config');
-        
+
         // Assert
         expect(config.nodeEnv).toBe('development');
         expect(config.port).toBe(3000);
         expect(config.apiPrefix).toBe('/api');
-        expect(config.corsOrigin).toBe('*');
+        expect(config.corsOrigin).toBe('http://localhost:3000,https://moeda-coffe.vercel.app');
       });
     });
   });
@@ -56,11 +56,11 @@ describe('Config', () => {
     it('should be true when NODE_ENV is production', () => {
       // Arrange
       process.env.NODE_ENV = 'production';
-      
+
       // Act
       jest.isolateModules(() => {
         const { isProduction } = require('../../config');
-        
+
         // Assert
         expect(isProduction).toBe(true);
       });
@@ -69,11 +69,11 @@ describe('Config', () => {
     it('should be false when NODE_ENV is not production', () => {
       // Arrange
       process.env.NODE_ENV = 'development';
-      
+
       // Act
       jest.isolateModules(() => {
         const { isProduction } = require('../../config');
-        
+
         // Assert
         expect(isProduction).toBe(false);
       });
@@ -82,11 +82,11 @@ describe('Config', () => {
     it('should be false when NODE_ENV is not set', () => {
       // Arrange
       delete process.env.NODE_ENV;
-      
+
       // Act
       jest.isolateModules(() => {
         const { isProduction } = require('../../config');
-        
+
         // Assert
         expect(isProduction).toBe(false);
       });

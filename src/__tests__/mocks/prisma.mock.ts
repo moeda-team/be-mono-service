@@ -28,7 +28,7 @@ const mockPrisma = {
   },
   category: {
     findMany: jest.fn(),
-    findUnique: jest.fn(),
+    findUnique: jest.fn().mockResolvedValue({ id: 'category-123' }),
     findFirst: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
@@ -50,6 +50,14 @@ const mockPrisma = {
     update: jest.fn(),
     delete: jest.fn(),
   },
+  option: {
+    findMany: jest.fn(),
+    findUnique: jest.fn().mockResolvedValue({ id: 'option-123' }),
+    findFirst: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  },
   // Add other models as needed
 };
 
@@ -65,5 +73,6 @@ describe('Prisma Mock', () => {
     expect(mockPrisma.category.findMany).toBeDefined();
     expect(mockPrisma.transaction.findMany).toBeDefined();
     expect(mockPrisma.message.findMany).toBeDefined();
+    expect(mockPrisma.option.findMany).toBeDefined();
   });
 });

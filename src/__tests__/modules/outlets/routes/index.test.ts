@@ -1,3 +1,4 @@
+export {};
 // Outlet routes index test
 
 // Mock outlet routes before other imports

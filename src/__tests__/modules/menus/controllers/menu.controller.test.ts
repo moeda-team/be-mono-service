@@ -170,6 +170,9 @@ describe('MenuController', () => {
       // Assert
       expect(mockPrisma.menu.findMany).toHaveBeenCalledWith({
         where: { categoryId: 'category-123', outletId: 'outlet-123' },
+        orderBy: {
+          name: 'asc',
+        },
       });
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
@@ -212,6 +215,7 @@ describe('MenuController', () => {
         img: 'burger.jpg',
         price: 9.99,
         pdf: 'menu.pdf',
+        options: ['option-123'],
       };
 
       const req = mockRequest({
@@ -243,6 +247,7 @@ describe('MenuController', () => {
           img: menuData.img,
           price: menuData.price,
           pdf: menuData.pdf,
+          options: menuData.options,
         },
       });
       expect(res.status).toHaveBeenCalledWith(200);
@@ -262,6 +267,7 @@ describe('MenuController', () => {
         img: 'burger.jpg',
         price: 9.99,
         pdf: 'menu.pdf',
+        options: ['option-123'],
       };
 
       const req = mockRequest({
@@ -296,6 +302,7 @@ describe('MenuController', () => {
         img: 'updated.jpg',
         price: 10.99,
         pdf: 'updated.pdf',
+        options: ['option-123'],
       };
 
       const req = mockRequest({
@@ -348,6 +355,7 @@ describe('MenuController', () => {
           img: menuData.img,
           price: menuData.price,
           pdf: menuData.pdf,
+          options: menuData.options,
         },
       });
       expect(res.status).toHaveBeenCalledWith(200);
@@ -611,6 +619,9 @@ describe('MenuController', () => {
       // Assert
       expect(mockPrisma.menu.findMany).toHaveBeenCalledWith({
         where: { outletId: 'outlet-123', isBest: true },
+        orderBy: {
+          name: 'asc',
+        },
       });
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({

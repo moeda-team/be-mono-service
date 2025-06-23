@@ -71,6 +71,7 @@ describe('Category Routes', () => {
       '/',
       'jwtAuthMiddleware',
       'roleAuth(STORE_MANAGER)Middleware',
+      [expect.any(Function), expect.any(Function)],
       'createMethod',
     );
 
@@ -79,6 +80,7 @@ describe('Category Routes', () => {
       '/:id',
       'jwtAuthMiddleware',
       'roleAuth(STORE_MANAGER)Middleware',
+      [expect.any(Function), expect.any(Function)],
       'updateMethod',
     );
 

@@ -17,6 +17,7 @@ jest.mock('../../../../middlewares', () => ({
   roleAuth: jest.fn().mockImplementation(role => `roleAuth(${role})Middleware`),
 }));
 
+export {};
 // Mock UserRole enum
 jest.mock('../../../../utils/auth/jwt', () => ({
   UserRole: {

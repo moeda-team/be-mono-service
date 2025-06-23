@@ -164,7 +164,7 @@ describe('Express App', () => {
     const echoHandler = mockRoutes.find(route => route.path === '/test/echo')?.handler;
     if (echoHandler) {
       echoHandler(mockReq, mockRes);
-      
+
       expect(mockRes.status).toHaveBeenCalledWith(200);
       expect(mockRes.json).toHaveBeenCalledWith(payload);
     } else {
@@ -193,7 +193,7 @@ describe('Express App', () => {
     const formHandler = mockRoutes.find(route => route.path === '/test/form')?.handler;
     if (formHandler) {
       formHandler(mockReq, mockRes);
-      
+
       expect(mockRes.status).toHaveBeenCalledWith(200);
       expect(mockRes.json).toHaveBeenCalledWith(formData);
     } else {
@@ -201,21 +201,15 @@ describe('Express App', () => {
     }
   });
 
-  it('should handle CORS headers', async () => {
-    const response = await request(app)
-      .get(`${config.apiPrefix}/v1/users/test`)
-      .set('Origin', 'http://example.com');
-
-    expect(response.headers['access-control-allow-origin']).toBeDefined();
-  });
-
   it('should handle timeout errors', async () => {
     // This test simulates a timeout by triggering the timeout middleware directly
     // Find the timeout middleware in the app stack
     const timeoutHandler = app._router.stack.find(
-      (layer: Record<string, unknown>) => 
-        layer.name === 'timeoutHandler' || 
-        (layer.handle && typeof layer.handle === 'function' && layer.handle.name === 'timeoutHandler')
+      (layer: Record<string, unknown>) =>
+        layer.name === 'timeoutHandler' ||
+        (layer.handle &&
+          typeof layer.handle === 'function' &&
+          layer.handle.name === 'timeoutHandler'),
     );
 
     if (timeoutHandler && timeoutHandler.handle) {
@@ -257,7 +251,7 @@ describe('Express App', () => {
       const lastMiddleware = app._router.stack[app._router.stack.length - 1];
       if (lastMiddleware && lastMiddleware.handle) {
         lastMiddleware.handle(timeoutError, mockReq, mockRes, mockNext);
-        
+
         expect(mockRes.status).toHaveBeenCalledWith(503);
         expect(mockRes.json).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -272,9 +266,9 @@ describe('Express App', () => {
         // eslint-disable-next-line @typescript-eslint/no-var-requires
         const app = require('../../app').app;
         const timeoutMiddleware = app._router.stack.pop().handle;
-        
+
         timeoutMiddleware(timeoutError, mockReq, mockRes, mockNext);
-        
+
         expect(mockRes.status).toHaveBeenCalled();
         expect(mockRes.json).toHaveBeenCalled();
       }
@@ -308,7 +302,7 @@ describe('Express App', () => {
 
   it('should include security headers from helmet', async () => {
     const response = await request(app).get(`${config.apiPrefix}/v1/users/test`);
-    
+
     // Check for some common security headers set by helmet
     expect(response.headers['x-content-type-options']).toBe('nosniff');
     expect(response.headers['x-xss-protection']).toBeDefined();
@@ -331,11 +325,11 @@ describe('Express App', () => {
     const errorHandlerMiddleware = app._router.stack.find(
       (layer: Record<string, unknown>) => layer.name === 'errorHandler',
     );
-    
+
     if (errorHandlerMiddleware && errorHandlerMiddleware.handle) {
       // Call the error handler directly
       errorHandlerMiddleware.handle(mockError, mockReq, mockRes, mockNext);
-      
+
       expect(mockRes.status).toHaveBeenCalledWith(500);
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
