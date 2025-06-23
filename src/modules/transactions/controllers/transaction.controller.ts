@@ -8,24 +8,80 @@ import {
   generatePaymentNumber,
 } from '../../../utils/generator/generate.number';
 import { JwtPayload } from 'jsonwebtoken';
+import { Prisma } from '@prisma/client';
 
 export class TransactionController {
   async getAllTransactions(req: Request, res: Response) {
     const { user } = req as Request & { user?: { outletId: string } };
     const outletId = user?.outletId;
 
+    const page = parseInt(req.query.page as string) || null;
+    const limit = parseInt(req.query.limit as string) || null;
+    const search = (req.query.search as string)?.trim() || null;
+    const active = req.query.active === 'true';
+
+    const skip = page && limit ? (page - 1) * limit : undefined;
+    const take = limit || undefined;
+
     try {
+      const whereClause: Prisma.TransactionWhereInput = {
+        outletId,
+      };
+
+      const orFilters: Prisma.TransactionWhereInput[] = [];
+
+      if (search) {
+        orFilters.push({ customerName: { contains: search, mode: 'insensitive' } });
+        const tableNumber = Number(search);
+        if (!isNaN(tableNumber)) {
+          orFilters.push({ tableNumber: { equals: tableNumber } });
+        }
+
+        whereClause.OR = orFilters;
+      }
+
+      if (active) {
+        whereClause.subTransactions = {
+          some: {
+            status: {
+              not: 'completed',
+            },
+          },
+        };
+      }
+
       const transactions = await prisma.transaction.findMany({
-        where: {
-          outletId,
+        where: whereClause,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          subTransactions: {
+            orderBy: {
+              status: 'desc',
+            },
+          },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
+
+        skip,
+        take,
       });
+
+      const responseData: Record<string, unknown> = {
+        transactions,
+      };
+
+      if (page && limit) {
+        const total = await prisma.transaction.count({ where: whereClause });
+        responseData.pagination = {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        };
+      }
+
       return ResponseHandler.success(res, {
         message: 'Transactions retrieved successfully',
-        data: transactions,
+        data: responseData,
       });
     } catch (error) {
       logger.error('Error getting transactions:', error);
@@ -42,6 +98,7 @@ export class TransactionController {
     try {
       const transaction = await prisma.transaction.findUnique({
         where: { id },
+        include: { subTransactions: true },
       });
       if (!transaction) {
         return ResponseHandler.error(res, {
@@ -54,11 +111,6 @@ export class TransactionController {
         message: 'Transaction retrieved successfully',
         data: {
           ...transaction,
-          subTransactions: await prisma.subTransaction.findMany({
-            where: {
-              transactionId: transaction.id,
-            },
-          }),
         },
       });
     } catch (error) {
@@ -226,6 +278,47 @@ export class TransactionController {
         });
       }
       logger.error('Error deleting transaction:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async updateTransactionStatus(req: Request, res: Response) {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    try {
+      const transaction = await prisma.subTransaction.findUnique({
+        where: { id },
+      });
+      if (!transaction) {
+        return ResponseHandler.error(res, {
+          message: 'Transaction not found',
+          statusCode: 404,
+        });
+      }
+
+      await prisma.subTransaction.update({
+        where: { id },
+        data: {
+          status,
+        },
+      });
+
+      return ResponseHandler.success(res, {
+        message: 'Transaction status updated successfully',
+        data: null,
+      });
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'P2025') {
+        return ResponseHandler.error(res, {
+          message: 'Transaction not found',
+          statusCode: 404,
+        });
+      }
+      logger.error('Error updating transaction status:', error);
       return ResponseHandler.error(res, {
         message: 'Internal server error',
         statusCode: 500,

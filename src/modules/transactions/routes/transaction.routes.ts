@@ -1,7 +1,10 @@
 import { Router } from 'express';
-import { validateCreateTransaction } from '../validators/transaction.validator';
+import {
+  validateCreateTransaction,
+  validateUpdateTransactionStatus,
+} from '../validators/transaction.validator';
 import { HealthController } from '../controllers/health.controller';
-import { jwtAuth, jwtAuthNotRequired, roleAuth } from '../../../middlewares';
+import { basicAuth, jwtAuth, jwtAuthNotRequired, roleAuth } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
 import { TransactionController } from '../controllers/transaction.controller';
 
@@ -10,13 +13,20 @@ const transactionController = new TransactionController();
 const healthController = new HealthController();
 
 router.get('/health', healthController.check);
-router.get('/:id', jwtAuth, roleAuth(UserRole.EMPLOYEE), transactionController.getTransactionById);
+router.get('/:id', basicAuth, transactionController.getTransactionById);
 router.get('/', jwtAuth, roleAuth(UserRole.EMPLOYEE), transactionController.getAllTransactions);
 router.post(
   '/',
   jwtAuthNotRequired,
   validateCreateTransaction,
   transactionController.createTransaction,
+);
+router.patch(
+  '/status/:id',
+  jwtAuth,
+  roleAuth(UserRole.EMPLOYEE),
+  validateUpdateTransactionStatus,
+  transactionController.updateTransactionStatus,
 );
 router.delete(
   '/:id',
