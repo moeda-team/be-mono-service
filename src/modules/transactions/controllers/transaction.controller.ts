@@ -60,13 +60,20 @@ export class TransactionController {
             },
           },
         },
-
         skip,
         take,
       });
 
+      const transactionsWithStatus = transactions.map(transaction => {
+        const firstSub = transaction.subTransactions[0];
+        return {
+          ...transaction,
+          status: firstSub?.status || 'unknown',
+        };
+      });
+
       const responseData: Record<string, unknown> = {
-        transactions,
+        transactions: transactionsWithStatus,
       };
 
       if (page && limit) {
