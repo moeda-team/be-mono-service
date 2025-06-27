@@ -59,12 +59,18 @@ export class PaymentController {
         quantity: 1,
         name: 'Discount',
       });
+      itemDetails.push({
+        id: 'rounding',
+        price: findTransaction.rounding,
+        quantity: 1,
+        name: 'Rounding',
+      });
 
       const payload: MidtransPayload = {
         payment_type: transactionData.paymentType,
         transaction_details: {
           order_id: transactionData.transactionDetails.orderId,
-          gross_amount: transactionData.transactionDetails.grossAmount,
+          gross_amount: findTransaction.total.toNumber(),
         },
         customer_details: {
           first_name: findTransaction.customerName,
@@ -72,6 +78,7 @@ export class PaymentController {
         },
         item_details: itemDetails,
       };
+      console.log(payload);
 
       if (transactionData.paymentType === 'gopay') {
         payload.gopay = {
@@ -102,6 +109,8 @@ export class PaymentController {
           Authorization: `Basic ${BASE64_AUTH}`,
         },
       });
+      console.log(result);
+
       if (result.status_code !== '201') {
         return ResponseHandler.error(res, {
           message: result.status_message,
