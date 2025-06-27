@@ -98,7 +98,13 @@ export class TransactionController {
     try {
       const transaction = await prisma.transaction.findUnique({
         where: { id },
-        include: { subTransactions: true },
+        include: {
+          subTransactions: {
+            include: {
+              menu: true,
+            },
+          },
+        },
       });
       if (!transaction) {
         return ResponseHandler.error(res, {
