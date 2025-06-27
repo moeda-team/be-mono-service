@@ -78,7 +78,6 @@ export class PaymentController {
         },
         item_details: itemDetails,
       };
-      console.log(payload);
 
       if (transactionData.paymentType === 'gopay') {
         payload.gopay = {
@@ -109,7 +108,6 @@ export class PaymentController {
           Authorization: `Basic ${BASE64_AUTH}`,
         },
       });
-      console.log(result);
 
       if (result.status_code !== '201') {
         return ResponseHandler.error(res, {
