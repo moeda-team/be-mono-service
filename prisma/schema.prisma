@@ -41,7 +41,6 @@ model User {
 model Message {
   id        String   @id @default(uuid()) @db.VarChar(36)
   outletId  String?
-  name      String   @db.VarChar(100)
   message   String
   rating    Int
   createdAt DateTime @default(now())
