@@ -19,6 +19,7 @@ export class TransactionController {
     const limit = parseInt(req.query.limit as string) || null;
     const search = (req.query.search as string)?.trim() || null;
     const active = req.query.active === 'true';
+    const table = parseInt(req.query.table as string) || null;
 
     const skip = page && limit ? (page - 1) * limit : undefined;
     const take = limit || undefined;
@@ -48,6 +49,10 @@ export class TransactionController {
             },
           },
         };
+      }
+
+      if (table) {
+        whereClause.tableNumber = { equals: table };
       }
 
       const transactions = await prisma.transaction.findMany({
