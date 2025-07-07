@@ -8,7 +8,7 @@ import {
   generatePaymentNumber,
 } from '../../../utils/generator/generate.number';
 import { JwtPayload } from 'jsonwebtoken';
-import { Prisma } from '@prisma/client';
+import { Prisma, Transaction } from '@prisma/client';
 
 export class TransactionController {
   async getAllTransactions(req: Request, res: Response) {
@@ -94,6 +94,53 @@ export class TransactionController {
       return ResponseHandler.success(res, {
         message: 'Transactions retrieved successfully',
         data: responseData,
+      });
+    } catch (error) {
+      logger.error('Error getting transactions:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async getAllTransactionsByTable(req: Request, res: Response) {
+    try {
+      const transactions = await prisma.transaction.findMany({
+        include: {
+          subTransactions: {
+            orderBy: {
+              status: 'desc',
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+      });
+
+      // Initialize grouped result for 30 tables
+      const grouped: Record<string, Transaction[]> = {};
+      for (let i = 1; i <= 30; i++) {
+        grouped[i.toString()] = [];
+      }
+
+      transactions.forEach(transaction => {
+        const firstSub = transaction.subTransactions[0];
+        const status = firstSub?.status || 'unknown';
+        const tableNumber = String(transaction.tableNumber ?? 'unknown');
+
+        if (grouped[tableNumber]) {
+          grouped[tableNumber].push({
+            ...transaction,
+            status,
+          });
+        }
+      });
+
+      return ResponseHandler.success(res, {
+        message: 'Transactions grouped by table retrieved successfully',
+        data: grouped,
       });
     } catch (error) {
       logger.error('Error getting transactions:', error);
