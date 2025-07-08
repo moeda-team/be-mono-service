@@ -109,6 +109,9 @@ export class TransactionController {
       const transactions = await prisma.transaction.findMany({
         include: {
           subTransactions: {
+            include: {
+              menu: true,
+            },
             orderBy: {
               status: 'desc',
             },
