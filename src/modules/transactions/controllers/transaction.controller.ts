@@ -57,7 +57,7 @@ export class TransactionController {
 
       const transactions = await prisma.transaction.findMany({
         where: whereClause,
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: 'desc' },
         include: {
           subTransactions: {
             include: {
