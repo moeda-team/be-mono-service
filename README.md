@@ -1,6 +1,6 @@
 # Backend Mono Services API
 
-A Node.js TypeScript REST API service for managing restaurant with industry-standard practices.
+A Node.js TypeScript REST API service for managing restaurant with industry-standard practices...
 
 ## Features
 
