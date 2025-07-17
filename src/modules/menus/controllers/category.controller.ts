@@ -77,6 +77,7 @@ export class CategoryController {
         data: {
           outletId,
           name: req.body.name,
+          icon: req.body.icon,
         },
       });
       return ResponseHandler.success(res, {
@@ -117,6 +118,7 @@ export class CategoryController {
         data: {
           outletId,
           name: req.body.name,
+          icon: req.body.icon,
         },
       });
       return ResponseHandler.success(res, {

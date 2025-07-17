@@ -128,6 +128,7 @@ model Category {
   id        String   @id @default(uuid()) @db.VarChar(36)
   outletId  String?  @db.VarChar(36)
   name      String   @db.VarChar(100)
+  icon      String   @default("https://moeda-space.s3.ap-southeast-1.amazonaws.com/icon/default.png")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -142,7 +143,7 @@ model Menu {
   outletId   String?  @db.VarChar(36)
   name       String   @db.VarChar(100)
   desc       String
-  img        String
+  img        String   @default("https://moeda-space.s3.ap-southeast-1.amazonaws.com/default.png")
   price      Decimal
   options    String[]
   pdf        String?  @db.VarChar(255)
