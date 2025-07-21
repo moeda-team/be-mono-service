@@ -177,19 +177,64 @@ export class TransactionController {
         });
       }
 
+      let voucherData;
+      if (transactionData.voucher) {
+        voucherData = await prisma.voucher.findFirst({
+          where: {
+            outletId: transactionData.outletId,
+            name: transactionData.voucher,
+          },
+        });
+        if (voucherData) {
+          if (Number(voucherData.amount) + 1 > Number(voucherData.maxAmount)) {
+            return ResponseHandler.error(res, {
+              message: 'This voucher has reached its usage limit.',
+              statusCode: 400,
+            });
+          }
+          if (voucherData?.expiredAt < new Date()) {
+            return ResponseHandler.error(res, {
+              message: 'This voucher has expired. Please try another one.',
+              statusCode: 400,
+            });
+          }
+        }
+
+        if (!voucherData) {
+          return ResponseHandler.error(res, {
+            message: 'Invalid voucher code. Please check and try again.',
+            statusCode: 404,
+          });
+        }
+      }
+
       const orderNumber = await generateOrderNumber(transactionData.outletId);
       const paymentNumber = await generatePaymentNumber(transactionData.outletId);
       const subTotal = transactionData.cart.reduce((total, item) => total + item.subTotal, 0);
-      let serviceCharge = 0;
-      if (transactionData.paymentMethod === 'qris') {
-        serviceCharge = Math.ceil(subTotal * 0.007 + 500);
-      } else if (transactionData.paymentMethod === 'gopay') {
-        serviceCharge = Math.ceil(subTotal * 0.02 + 500);
-      } else {
-        serviceCharge = 500;
+
+      let discountAmount = 0;
+      if (voucherData) {
+        if (voucherData.type === 'percent') {
+          discountAmount = (subTotal * Number(voucherData.discount)) / 100;
+        } else {
+          discountAmount = Number(voucherData.discount);
+        }
       }
 
-      const totalBeforeRounding = subTotal + serviceCharge - transactionData.discount;
+      let serviceCharge = 0;
+      if (voucherData?.type === 'percent' && Number(voucherData?.discount) === 100) {
+        serviceCharge = 0;
+      } else {
+        if (transactionData.paymentMethod === 'qris') {
+          serviceCharge = Math.ceil((subTotal - discountAmount) * 0.007 + 500);
+        } else if (transactionData.paymentMethod === 'gopay') {
+          serviceCharge = Math.ceil((subTotal - discountAmount) * 0.02 + 500);
+        } else {
+          serviceCharge = 500;
+        }
+      }
+
+      const totalBeforeRounding = subTotal - discountAmount + serviceCharge;
       let rounding = 0;
       const remainder = totalBeforeRounding % 1000;
       if (remainder === 0) {
@@ -199,11 +244,12 @@ export class TransactionController {
       } else {
         rounding = 1000 - remainder;
       }
-
-      const total = subTotal + serviceCharge - transactionData.discount + rounding;
+      const total = totalBeforeRounding + rounding;
 
       let transactionStatus = 'pending';
-      if (transactionData.paymentMethod !== 'cash') {
+      if (voucherData && total === 0) {
+        transactionStatus = 'completed';
+      } else if (transactionData.paymentMethod !== 'cash') {
         transactionStatus = transactionData.status;
       } else if (transactionData.paymentMethod === 'cash') {
         transactionStatus = 'completed';
@@ -223,9 +269,10 @@ export class TransactionController {
           subTotal: subTotal,
           serviceCharge: serviceCharge,
           rounding: rounding,
-          discount: transactionData.discount,
+          discount: discountAmount,
           total: total,
           additionalNote: transactionData.additionalNote,
+          voucherId: voucherData?.id,
           status: transactionStatus,
         },
       });
@@ -245,6 +292,16 @@ export class TransactionController {
           },
         });
       }
+
+      if (voucherData) {
+        await prisma.voucher.update({
+          where: { id: voucherData.id },
+          data: {
+            amount: Number(voucherData.amount) + 1,
+          },
+        });
+      }
+
       return ResponseHandler.success(res, {
         message: 'Transaction created successfully',
         data: {

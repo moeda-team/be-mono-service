@@ -50,6 +50,7 @@ export const validateCreateTransaction = [
     .withMessage('subTotal must be a positive number'),
   body('cart.*.addOn').optional(),
   body('cart.*.note').optional(),
+  body('voucher').optional(),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
