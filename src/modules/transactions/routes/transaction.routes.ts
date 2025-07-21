@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   validateCreateTransaction,
   validateUpdateTransactionStatus,
+  validateUpdateTransactionTable,
 } from '../validators/transaction.validator';
 import { HealthController } from '../controllers/health.controller';
 import { basicAuth, jwtAuth, jwtAuthNotRequired, roleAuth } from '../../../middlewares';
@@ -27,6 +28,13 @@ router.patch(
   roleAuth(UserRole.EMPLOYEE),
   validateUpdateTransactionStatus,
   transactionController.updateTransactionStatus,
+);
+router.patch(
+  '/table/:id',
+  jwtAuth,
+  roleAuth(UserRole.EMPLOYEE),
+  validateUpdateTransactionTable,
+  transactionController.updateTransactionTable,
 );
 router.delete(
   '/:id',

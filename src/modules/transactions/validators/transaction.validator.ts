@@ -88,3 +88,26 @@ export const validateUpdateTransactionStatus = [
     next();
   },
 ];
+
+export const validateUpdateTransactionTable = [
+  body('tableNumber')
+    .trim()
+    .notEmpty()
+    .withMessage('Table number is required for dine-in')
+    .isNumeric()
+    .withMessage('Table number must be numeric'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return ResponseHandler.error(res, {
+        message: 'Validation failed',
+        statusCode: 400,
+        error: {
+          code: 'VALIDATION_FAILED',
+          details: errors.array(),
+        },
+      });
+    }
+    next();
+  },
+];

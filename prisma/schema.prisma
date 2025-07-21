@@ -85,13 +85,28 @@ model LogVoucher {
   @@schema("mono")
 }
 
+model LogTableMove {
+  id              String   @id @default(uuid()) @db.VarChar(36)
+  outletId        String?
+  transactionId   String   @db.VarChar(36)
+  prevTableNumber Int      @db.Integer
+  newTableNumber  Int      @db.Integer
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  outlet      Outlet?      @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@schema("mono")
+}
+
 model Transaction {
   id                  String   @id @default(uuid()) @db.VarChar(36)
   userId              String?  @db.VarChar(36)
   outletId            String?  @db.VarChar(36)
   number              String   @db.VarChar(20)
   transactionType     String   @db.VarChar(50)
-  tableNumber         Int?     @db.Integer
+  tableNumber         Int      @db.Integer
   paymentNumber       String   @db.VarChar(20)
   paymentMethod       String   @db.VarChar(50)
   customerName        String?  @db.VarChar(100)
@@ -114,6 +129,7 @@ model Transaction {
 
   logVoucher      LogVoucher[]
   subTransactions SubTransaction[]
+  LogTableMove    LogTableMove[]
 
   @@schema("mono")
 }
@@ -158,6 +174,7 @@ model Outlet {
   menus        Menu[]
   Voucher      Voucher[]
   LogVoucher   LogVoucher[]
+  LogTableMove LogTableMove[]
 
   @@schema("mono")
 }

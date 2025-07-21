@@ -423,4 +423,54 @@ export class TransactionController {
       });
     }
   }
+
+  async updateTransactionTable(req: Request, res: Response) {
+    const { id } = req.params;
+    const { tableNumber } = req.body;
+
+    try {
+      const transaction = await prisma.transaction.findUnique({
+        where: { id },
+      });
+      if (!transaction) {
+        return ResponseHandler.error(res, {
+          message: 'Transaction not found',
+          statusCode: 404,
+        });
+      }
+
+      await prisma.logTableMove.create({
+        data: {
+          outletId: transaction.outletId,
+          transactionId: transaction.id,
+          prevTableNumber: transaction?.tableNumber || 1,
+          newTableNumber: parseInt(tableNumber),
+        },
+      });
+
+      await prisma.transaction.update({
+        where: { id },
+        data: {
+          tableNumber: parseInt(tableNumber),
+        },
+      });
+
+      return ResponseHandler.success(res, {
+        message: 'Transaction table updated successfully',
+        data: null,
+      });
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'P2025') {
+        return ResponseHandler.error(res, {
+          message: 'Transaction not found',
+          statusCode: 404,
+        });
+      }
+      logger.error('Error updating transaction table:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
 }
