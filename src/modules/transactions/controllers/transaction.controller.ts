@@ -185,6 +185,23 @@ export class TransactionController {
           },
         });
         if (voucherData) {
+          if (voucherData.type === 'percent' && Number(voucherData.discount) === 100) {
+            const logVoucher = await prisma.logVoucher.findFirst({
+              where: {
+                voucherId: voucherData.id,
+                createdAt: {
+                  gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                  lte: new Date(new Date().setHours(23, 59, 59, 999)),
+                },
+              },
+            });
+            if (logVoucher) {
+              return ResponseHandler.error(res, {
+                message: 'This employee voucher has been used for today.',
+                statusCode: 400,
+              });
+            }
+          }
           if (Number(voucherData.amount) + 1 > Number(voucherData.maxAmount)) {
             return ResponseHandler.error(res, {
               message: 'This voucher has reached its usage limit.',
@@ -297,6 +314,13 @@ export class TransactionController {
           where: { id: voucherData.id },
           data: {
             amount: Number(voucherData.amount) + 1,
+          },
+        });
+        await prisma.logVoucher.create({
+          data: {
+            outletId: transactionData.outletId,
+            transactionId: transaction.id,
+            voucherId: voucherData.id,
           },
         });
       }
