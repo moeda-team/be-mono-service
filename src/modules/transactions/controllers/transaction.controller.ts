@@ -59,6 +59,7 @@ export class TransactionController {
         where: whereClause,
         orderBy: { createdAt: 'desc' },
         include: {
+          logTableMove: true,
           subTransactions: {
             include: {
               menu: true,
@@ -114,6 +115,7 @@ export class TransactionController {
       const transaction = await prisma.transaction.findUnique({
         where: { id },
         include: {
+          logTableMove: true,
           subTransactions: {
             include: {
               menu: true,
@@ -436,6 +438,22 @@ export class TransactionController {
         return ResponseHandler.error(res, {
           message: 'Transaction not found',
           statusCode: 404,
+        });
+      }
+
+      const findLogTableMove = await prisma.logTableMove.findFirst({
+        where: {
+          transactionId: id,
+          createdAt: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+            lte: new Date(new Date().setHours(23, 59, 59, 999)),
+          },
+        },
+      });
+      if (findLogTableMove) {
+        return ResponseHandler.error(res, {
+          message: 'Table already moved, you can only move table once per transaction',
+          statusCode: 400,
         });
       }
 

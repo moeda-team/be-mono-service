@@ -129,7 +129,7 @@ model Transaction {
 
   logVoucher      LogVoucher[]
   subTransactions SubTransaction[]
-  LogTableMove    LogTableMove[]
+  logTableMove    LogTableMove[]
 
   @@schema("mono")
 }
