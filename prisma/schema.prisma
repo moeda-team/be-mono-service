@@ -65,7 +65,6 @@ model Transaction {
   subTotal            Decimal  @default(0.0) @db.Decimal
   discount            Decimal  @default(0.0) @db.Decimal
   serviceCharge       Decimal  @default(0.0) @db.Decimal
-  tax                 Decimal  @default(0.0) @db.Decimal
   rounding            Decimal  @default(0.0) @db.Decimal
   total               Decimal  @default(0.0) @db.Decimal
   additionalNote      String?  @db.VarChar(255)

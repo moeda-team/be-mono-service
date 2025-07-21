@@ -317,7 +317,6 @@ export class SalesController {
               subTotal: true,
               discount: true,
               serviceCharge: true,
-              tax: true,
               total: true,
               paymentMethod: true,
               createdAt: true,

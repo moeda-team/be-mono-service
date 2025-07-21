@@ -48,12 +48,6 @@ export class PaymentController {
         name: 'Service Charge',
       });
       itemDetails.push({
-        id: 'tax',
-        price: findTransaction.tax,
-        quantity: 1,
-        name: 'Tax',
-      });
-      itemDetails.push({
         id: 'discount',
         price: findTransaction.discount,
         quantity: 1,

@@ -180,18 +180,16 @@ export class TransactionController {
       const orderNumber = await generateOrderNumber(transactionData.outletId);
       const paymentNumber = await generatePaymentNumber(transactionData.outletId);
       const subTotal = transactionData.cart.reduce((total, item) => total + item.subTotal, 0);
-      const tax = subTotal * 0.11;
-
       let serviceCharge = 0;
       if (transactionData.paymentMethod === 'qris') {
-        serviceCharge = Math.ceil((subTotal + tax) * 0.007 + 500);
+        serviceCharge = Math.ceil(subTotal * 0.007 + 500);
       } else if (transactionData.paymentMethod === 'gopay') {
-        serviceCharge = Math.ceil((subTotal + tax) * 0.02 + 500);
+        serviceCharge = Math.ceil(subTotal * 0.02 + 500);
       } else {
         serviceCharge = 500;
       }
 
-      const totalBeforeRounding = subTotal + tax + serviceCharge - transactionData.discount;
+      const totalBeforeRounding = subTotal + serviceCharge - transactionData.discount;
       let rounding = 0;
       const remainder = totalBeforeRounding % 1000;
       if (remainder === 0) {
@@ -202,7 +200,7 @@ export class TransactionController {
         rounding = 1000 - remainder;
       }
 
-      const total = subTotal + tax + serviceCharge - transactionData.discount + rounding;
+      const total = subTotal + serviceCharge - transactionData.discount + rounding;
 
       let transactionStatus = 'pending';
       if (transactionData.paymentMethod !== 'cash') {
@@ -224,7 +222,6 @@ export class TransactionController {
           totalSubTransaction: transactionData.cart.length,
           subTotal: subTotal,
           serviceCharge: serviceCharge,
-          tax: tax,
           rounding: rounding,
           discount: transactionData.discount,
           total: total,
