@@ -1,0 +1,191 @@
+import { Request, Response } from 'express';
+import { logger } from '../../../utils/common/logger';
+import { CreateVoucherDTO } from '../models/voucher';
+import { ResponseHandler } from '../../../utils/response/responseHandler';
+import prisma from '../../../lib/prisma';
+
+export class VoucherController {
+  async getAllVouchers(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string } }).user;
+
+    try {
+      const vouchers = await prisma.voucher.findMany({
+        where: { outletId: user.outletId },
+        orderBy: {
+          createdAt: 'asc',
+        },
+      });
+      return ResponseHandler.success(res, {
+        message: 'Vouchers retrieved successfully',
+        data: vouchers,
+      });
+    } catch (error) {
+      logger.error('Error getting vouchers:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async getVoucherById(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string } }).user;
+    const { id } = req.params;
+
+    try {
+      const voucher = await prisma.voucher.findUnique({
+        where: { id, outletId: user.outletId },
+      });
+      if (!voucher) {
+        return ResponseHandler.error(res, {
+          message: 'Voucher not found',
+          statusCode: 404,
+        });
+      }
+
+      return ResponseHandler.success(res, {
+        message: 'Voucher retrieved successfully',
+        data: voucher,
+      });
+    } catch (error) {
+      logger.error('Error getting voucher:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async createVoucher(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string } }).user;
+    const voucherData: CreateVoucherDTO = req.body;
+
+    try {
+      if (!user.outletId) {
+        return ResponseHandler.error(res, {
+          message: 'Outlet not found',
+          statusCode: 404,
+        });
+      }
+
+      const findVoucher = await prisma.voucher.findFirst({
+        where: { name: voucherData.name, outletId: user.outletId },
+      });
+      if (findVoucher) {
+        return ResponseHandler.error(res, {
+          message: 'Voucher already exists',
+          statusCode: 400,
+        });
+      }
+
+      const voucher = await prisma.voucher.create({
+        data: {
+          outletId: user.outletId,
+          name: voucherData.name,
+          type: voucherData.type,
+          discount: Number(voucherData.discount),
+          amount: 0,
+          maxAmount: Number(voucherData.maxAmount),
+          expiredAt: new Date(voucherData.expiredAt),
+        },
+      });
+
+      return ResponseHandler.success(res, {
+        message: 'Voucher created successfully',
+        data: voucher,
+      });
+    } catch (error) {
+      logger.error('Error creating voucher:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async updateVoucher(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string } }).user;
+    const { id } = req.params;
+    const voucherData: CreateVoucherDTO = req.body;
+
+    try {
+      if (!user.outletId) {
+        return ResponseHandler.error(res, {
+          message: 'Outlet not found',
+          statusCode: 404,
+        });
+      }
+
+      const findVoucher = await prisma.voucher.findUnique({
+        where: { id, outletId: user.outletId },
+      });
+      if (!findVoucher) {
+        return ResponseHandler.error(res, {
+          message: 'Voucher not found',
+          statusCode: 404,
+        });
+      }
+
+      const voucher = await prisma.voucher.update({
+        where: { id, outletId: user.outletId },
+        data: {
+          name: voucherData.name,
+          type: voucherData.type,
+          discount: Number(voucherData.discount),
+          maxAmount: Number(voucherData.maxAmount),
+          expiredAt: new Date(voucherData.expiredAt),
+        },
+      });
+
+      return ResponseHandler.success(res, {
+        message: 'Voucher updated successfully',
+        data: voucher,
+      });
+    } catch (error) {
+      logger.error('Error updating voucher:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async deleteVoucher(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string } }).user;
+    const { id } = req.params;
+
+    try {
+      if (!user.outletId) {
+        return ResponseHandler.error(res, {
+          message: 'Outlet not found',
+          statusCode: 404,
+        });
+      }
+
+      const findVoucher = await prisma.voucher.findUnique({
+        where: { id, outletId: user.outletId },
+      });
+      if (!findVoucher) {
+        return ResponseHandler.error(res, {
+          message: 'Voucher not found',
+          statusCode: 404,
+        });
+      }
+
+      const voucher = await prisma.voucher.delete({
+        where: { id, outletId: user.outletId },
+      });
+
+      return ResponseHandler.success(res, {
+        message: 'Voucher deleted successfully',
+        data: voucher,
+      });
+    } catch (error) {
+      logger.error('Error deleting voucher:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+}

@@ -54,7 +54,6 @@ export class OutletController {
 
   async createOutlet(req: Request, res: Response) {
     const outletData: CreateOutletDTO = req.body;
-    logger.info('Outlet data:', outletData);
 
     try {
       const existingOutlet = await prisma.outlet.findFirst({

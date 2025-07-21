@@ -145,7 +145,6 @@ export class TransactionController {
 
   async createTransaction(req: Request, res: Response) {
     const transactionData: CreateTransactionDTO = req.body;
-    logger.info('Transaction data:', transactionData);
 
     try {
       const reqWithUser = req as Request & { user?: JwtPayload };

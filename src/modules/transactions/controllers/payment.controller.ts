@@ -8,7 +8,6 @@ import { axiosPost } from '../../../utils/common/axios.custom';
 export class PaymentController {
   async paymentTransaction(req: Request, res: Response) {
     const transactionData: PaymentDTO = req.body;
-    logger.info('Transaction data:', transactionData);
 
     try {
       const findTransaction = await prisma.transaction.findFirst({

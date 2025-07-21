@@ -83,7 +83,6 @@ export class MenuController {
 
   async createMenu(req: Request, res: Response) {
     const menuData: CreateMenuDTO = req.body;
-    logger.info('Menu data:', menuData);
 
     const user = (req as Request & { user?: { outletId: string } }).user;
     const outletId = user?.outletId;

@@ -15,6 +15,7 @@ import messageRouter from './modules/messages/routes';
 import transactionRouter from './modules/transactions/routes';
 import outletRouter from './modules/outlets/routes';
 import menuRouter from './modules/menus/routes';
+import voucherRouter from './modules/vouchers/routes';
 
 const app = express();
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
@@ -46,6 +47,7 @@ router.use(`${config.apiPrefix}/v1/messages`, messageRouter);
 router.use(`${config.apiPrefix}/v1/transactions`, transactionRouter);
 router.use(`${config.apiPrefix}/v1/outlets`, outletRouter);
 router.use(`${config.apiPrefix}/v1/menus`, menuRouter);
+router.use(`${config.apiPrefix}/v1/vouchers`, voucherRouter);
 
 app.use(router);
 

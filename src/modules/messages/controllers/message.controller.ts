@@ -58,7 +58,6 @@ export class MessageController {
 
   async createMessage(req: Request, res: Response) {
     const userData: CreateMessageDTO = req.body;
-    logger.info('User data:', userData);
 
     try {
       const message = await prisma.message.create({
