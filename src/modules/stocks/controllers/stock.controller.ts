@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { logger } from '../../../utils/common/logger';
 import { CreateStockDTO, UpdateStockDTO } from '../models/stock';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
+import { sendLowStockAlertEmail } from '../../../utils/mail/stock_alert';
 import prisma from '../../../lib/prisma';
 
 export class StockController {
@@ -40,6 +41,51 @@ export class StockController {
           },
         },
       });
+
+      const todayStart = new Date();
+      const todayEnd = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      todayEnd.setHours(23, 59, 59, 999);
+
+      const stocksNeedingAlerts = [];
+      for (const stock of stocks) {
+        const alertStocks = await prisma.alertStock.findFirst({
+          where: {
+            stockId: stock.id,
+            outletId: user.outletId,
+            createdAt: {
+              gte: todayStart,
+              lte: todayEnd,
+            },
+          },
+        });
+
+        if (!alertStocks) {
+          await prisma.alertStock.create({
+            data: {
+              stockId: stock.id,
+              outletId: user.outletId,
+            },
+          });
+          stocksNeedingAlerts.push(stock);
+        }
+      }
+
+      if (stocksNeedingAlerts.length > 0) {
+        try {
+          const emailSent = await sendLowStockAlertEmail(
+            'lovantoqwerty@gmail.com',
+            stocksNeedingAlerts,
+          );
+          if (emailSent) {
+            logger.info('Stock alert email sent successfully.');
+          } else {
+            logger.warn('Failed to send stock alert email');
+          }
+        } catch (error) {
+          logger.error('Error in stock alert email process:', error);
+        }
+      }
 
       return ResponseHandler.success(res, {
         message: 'Stocks retrieved successfully',
