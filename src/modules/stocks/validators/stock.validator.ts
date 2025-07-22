@@ -4,9 +4,9 @@ import { ResponseHandler } from '../../../utils/response/responseHandler';
 
 export const validateCreateStock = [
   body('name').trim().notEmpty().withMessage('Name is required'),
-  body('qty').trim().isInt().withMessage('Qty must be a number'),
+  body('qty').trim().isNumeric().withMessage('Qty must be a number'),
   body('uom').trim().notEmpty().withMessage('UOM is required'),
-  body('minQty').trim().isInt().withMessage('Min qty must be a number'),
+  body('minQty').trim().isNumeric().withMessage('Min qty must be a number'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -25,9 +25,9 @@ export const validateCreateStock = [
 
 export const validateUpdateStock = [
   body('name').trim().notEmpty().withMessage('Name is required'),
-  body('qty').trim().isInt().withMessage('Qty must be a number'),
+  body('qty').trim().isNumeric().withMessage('Qty must be a number'),
   body('uom').trim().notEmpty().withMessage('UOM is required'),
-  body('minQty').trim().isInt().withMessage('Min qty must be a number'),
+  body('minQty').trim().isNumeric().withMessage('Min qty must be a number'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

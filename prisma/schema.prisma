@@ -236,9 +236,9 @@ model Stock {
   id        String   @id @default(uuid()) @db.VarChar(36)
   outletId  String   @db.VarChar(36)
   name      String   @db.VarChar(100)
-  qty       Int      @default(0) @db.Integer
+  qty       Decimal  @default(0) @db.Decimal(10, 2)
   uom       String   @default("pcs") @db.VarChar(20)
-  minQty    Int      @default(0) @db.Integer
+  minQty    Decimal  @default(0) @db.Decimal(10, 2)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -253,8 +253,9 @@ model LogStock {
   id        String   @id @default(uuid()) @db.VarChar(36)
   outletId  String   @db.VarChar(36)
   stockId   String   @db.VarChar(36)
-  qty       Int      @default(0) @db.Integer
+  qty       Decimal  @default(0) @db.Decimal(10, 2)
   type      String   @default("add") @db.VarChar(20)
+  uom       String   @default("pcs") @db.VarChar(20)
   menuId    String?  @db.VarChar(36)
   userId    String   @db.VarChar(36)
   createdAt DateTime @default(now())

@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { logger } from '../common/logger';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export const transporter = nodemailer.createTransport({
   service: 'Gmail',
@@ -11,7 +12,7 @@ export const transporter = nodemailer.createTransport({
 
 export async function sendLowStockAlertEmail(
   to: string,
-  stocks: { name: string; qty: number; minQty: number; uom: string }[],
+  stocks: { name: string; qty: number | Decimal; minQty: number | Decimal; uom: string }[],
 ) {
   const html = generateHtmlTemplate(stocks);
   const plainText = stocks
@@ -37,7 +38,7 @@ export async function sendLowStockAlertEmail(
 }
 
 function generateHtmlTemplate(
-  stocks: { name: string; qty: number; minQty: number; uom: string }[],
+  stocks: { name: string; qty: number | Decimal; minQty: number | Decimal; uom: string }[],
 ) {
   const rows = stocks
     .map(
