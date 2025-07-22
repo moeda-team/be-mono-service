@@ -256,8 +256,9 @@ model LogStock {
   qty       Decimal  @default(0) @db.Decimal(10, 2)
   type      String   @default("add") @db.VarChar(20)
   uom       String   @default("pcs") @db.VarChar(20)
+  note      String?  @db.VarChar(255)
   menuId    String?  @db.VarChar(36)
-  userId    String   @db.VarChar(36)
+  userId    String?  @db.VarChar(36)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
