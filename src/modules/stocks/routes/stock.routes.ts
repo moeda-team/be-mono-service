@@ -12,6 +12,12 @@ const healthController = new HealthController();
 router.get('/health', healthController.check);
 router.get('/:id', jwtAuth, roleAuth(UserRole.STORE_MANAGER), stockController.getStockById);
 router.get('/', jwtAuth, roleAuth(UserRole.STORE_MANAGER), stockController.getAllStocks);
+router.get(
+  '/status/alert',
+  jwtAuth,
+  roleAuth(UserRole.STORE_MANAGER),
+  stockController.getAllStockStatus,
+);
 router.post(
   '/',
   jwtAuth,

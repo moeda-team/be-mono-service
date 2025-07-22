@@ -28,6 +28,32 @@ export class StockController {
     }
   }
 
+  async getAllStockStatus(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string } }).user;
+
+    try {
+      const stocks = await prisma.stock.findMany({
+        where: {
+          outletId: user.outletId,
+          minQty: {
+            gte: prisma.stock.fields.qty,
+          },
+        },
+      });
+
+      return ResponseHandler.success(res, {
+        message: 'Stocks retrieved successfully',
+        data: stocks,
+      });
+    } catch (error) {
+      logger.error('Error getting stocks:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
   async getStockById(req: Request, res: Response) {
     const user = (req as Request & { user: { outletId: string } }).user;
     const { id } = req.params;
