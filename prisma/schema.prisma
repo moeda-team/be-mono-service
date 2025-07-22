@@ -34,6 +34,7 @@ model User {
   outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
 
   transactions Transaction[]
+  LogStock     LogStock[]
 
   @@schema("mono")
 }
@@ -80,21 +81,6 @@ model LogVoucher {
 
   outlet      Outlet?      @relation(fields: [outletId], references: [id], onDelete: Cascade)
   voucher     Voucher?     @relation(fields: [voucherId], references: [id], onDelete: Cascade)
-  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-
-  @@schema("mono")
-}
-
-model LogTableMove {
-  id              String   @id @default(uuid()) @db.VarChar(36)
-  outletId        String?
-  transactionId   String   @db.VarChar(36)
-  prevTableNumber Int      @db.Integer
-  newTableNumber  Int      @db.Integer
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  outlet      Outlet?      @relation(fields: [outletId], references: [id], onDelete: Cascade)
   transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 
   @@schema("mono")
@@ -175,6 +161,9 @@ model Outlet {
   Voucher      Voucher[]
   LogVoucher   LogVoucher[]
   LogTableMove LogTableMove[]
+  Stock        Stock[]
+  LogStock     LogStock[]
+  AlertStock   AlertStock[]
 
   @@schema("mono")
 }
@@ -212,6 +201,7 @@ model Menu {
   outlet         Outlet?          @relation(fields: [outletId], references: [id], onDelete: Cascade)
   category       Category         @relation(fields: [categoryId], references: [id])
   SubTransaction SubTransaction[]
+  LogStock       LogStock[]
 
   @@schema("mono")
 }
@@ -223,6 +213,72 @@ model Option {
   addPrices Decimal[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+
+  @@schema("mono")
+}
+
+model LogTableMove {
+  id              String   @id @default(uuid()) @db.VarChar(36)
+  outletId        String?
+  transactionId   String   @db.VarChar(36)
+  prevTableNumber Int      @db.Integer
+  newTableNumber  Int      @db.Integer
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  outlet      Outlet?      @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@schema("mono")
+}
+
+model Stock {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  outletId  String   @db.VarChar(36)
+  name      String   @db.VarChar(100)
+  qty       Decimal  @default(0) @db.Decimal(10, 2)
+  uom       String   @default("pcs") @db.VarChar(20)
+  minQty    Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  outlet     Outlet?      @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  LogStock   LogStock[]
+  AlertStock AlertStock[]
+
+  @@schema("mono")
+}
+
+model LogStock {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  outletId  String   @db.VarChar(36)
+  stockId   String   @db.VarChar(36)
+  qty       Decimal  @default(0) @db.Decimal(10, 2)
+  type      String   @default("add") @db.VarChar(20)
+  uom       String   @default("pcs") @db.VarChar(20)
+  note      String?  @db.VarChar(255)
+  menuId    String?  @db.VarChar(36)
+  userId    String?  @db.VarChar(36)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  stock  Stock?  @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  menu   Menu?   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@schema("mono")
+}
+
+model AlertStock {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  outletId  String   @db.VarChar(36)
+  stockId   String   @db.VarChar(36)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  stock  Stock?  @relation(fields: [stockId], references: [id], onDelete: Cascade)
 
   @@schema("mono")
 }

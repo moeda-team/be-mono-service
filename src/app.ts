@@ -16,6 +16,7 @@ import transactionRouter from './modules/transactions/routes';
 import outletRouter from './modules/outlets/routes';
 import menuRouter from './modules/menus/routes';
 import voucherRouter from './modules/vouchers/routes';
+import stockRouter from './modules/stocks/routes';
 
 const app = express();
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
@@ -48,6 +49,7 @@ router.use(`${config.apiPrefix}/v1/transactions`, transactionRouter);
 router.use(`${config.apiPrefix}/v1/outlets`, outletRouter);
 router.use(`${config.apiPrefix}/v1/menus`, menuRouter);
 router.use(`${config.apiPrefix}/v1/vouchers`, voucherRouter);
+router.use(`${config.apiPrefix}/v1/stocks`, stockRouter);
 
 app.use(router);
 
