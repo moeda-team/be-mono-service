@@ -10,18 +10,18 @@ const stockController = new StockController();
 const healthController = new HealthController();
 
 router.get('/health', healthController.check);
-router.get('/:id', jwtAuth, roleAuth(UserRole.STORE_MANAGER), stockController.getStockById);
-router.get('/', jwtAuth, roleAuth(UserRole.STORE_MANAGER), stockController.getAllStocks);
+router.get('/:id', jwtAuth, roleAuth(UserRole.EMPLOYEE), stockController.getStockById);
+router.get('/', jwtAuth, roleAuth(UserRole.EMPLOYEE), stockController.getAllStocks);
 router.get(
   '/status/alert',
   jwtAuth,
-  roleAuth(UserRole.STORE_MANAGER),
+  roleAuth(UserRole.EMPLOYEE),
   stockController.getAllStockStatus,
 );
 router.post(
   '/',
   jwtAuth,
-  roleAuth(UserRole.STORE_MANAGER),
+  roleAuth(UserRole.EMPLOYEE),
   validateCreateStock,
   stockController.createStock,
 );
