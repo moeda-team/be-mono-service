@@ -25,27 +25,11 @@ interface Ingredient {
   } | null;
 }
 
-interface SubTransactionItem {
-  id: string;
-  menuId: string;
-  menuName: string;
-  status: string;
-  price: Prisma.Decimal;
-  quantity: number;
-  subTotal: Prisma.Decimal;
-  transactionId: string;
-  addOn: string;
-  note: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 interface Transaction {
   id: string;
   outletId: string | null;
   userId: string | null;
   paymentNumber: string;
-  subTransactions: SubTransactionItem[];
 }
 
 interface SubTransaction {

@@ -141,7 +141,6 @@ export class PaymentController {
           subTransactions: true,
         },
       });
-
       if (!transaction) {
         logger.error(`Transaction with payment number ${orderId} not found`);
         return ResponseHandler.error(res, {

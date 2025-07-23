@@ -9,6 +9,7 @@ import {
 } from '../../../utils/generator/generate.number';
 import { JwtPayload } from 'jsonwebtoken';
 import { Prisma } from '@prisma/client';
+import { updateStockAndLogStock } from '../services';
 
 export class TransactionController {
   async getAllTransactions(req: Request, res: Response) {
@@ -309,6 +310,21 @@ export class TransactionController {
             status: 'preparation',
           },
         });
+      }
+
+      if (transactionStatus === 'completed') {
+        for (const subTransaction of transactionData.cart) {
+          const ingredients = await prisma.ingredient.findMany({
+            where: {
+              menuId: subTransaction.menuId,
+            },
+            include: {
+              stock: true,
+            },
+          });
+
+          await updateStockAndLogStock(ingredients, transaction, subTransaction);
+        }
       }
 
       if (voucherData) {
