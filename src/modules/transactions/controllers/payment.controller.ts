@@ -4,6 +4,7 @@ import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../lib/prisma';
 import { MidtransPayload, PaymentDTO, PaymentNotification } from '../models/payment';
 import { axiosPost } from '../../../utils/common/axios.custom';
+import { updateStockAndLogStock } from '../services';
 
 export class PaymentController {
   async paymentTransaction(req: Request, res: Response) {
@@ -136,6 +137,9 @@ export class PaymentController {
         where: {
           paymentNumber: orderId,
         },
+        include: {
+          subTransactions: true,
+        },
       });
 
       if (!transaction) {
@@ -171,6 +175,21 @@ export class PaymentController {
           fraudStatus,
         },
       });
+
+      if (newStatus === 'completed') {
+        for (const subTransaction of transaction.subTransactions) {
+          const ingredients = await prisma.ingredient.findMany({
+            where: {
+              menuId: subTransaction.menuId,
+            },
+            include: {
+              stock: true,
+            },
+          });
+
+          await updateStockAndLogStock(ingredients, transaction, subTransaction);
+        }
+      }
 
       logger.info(`Transaction ${transaction.id} status updated to ${newStatus}`);
 
