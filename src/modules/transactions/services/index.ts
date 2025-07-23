@@ -2,11 +2,61 @@ import { convertValue } from '../../../utils/common/convert_uom';
 import { Unit } from 'convert-units';
 import { logger } from '../../../utils/common/logger';
 import prisma from '../../../lib/prisma';
+import { Prisma } from '@prisma/client';
+
+type Decimal = Prisma.Decimal;
+
+interface Ingredient {
+  id: string;
+  outletId: string;
+  menuId: string;
+  stockId: string;
+  value: number | string | Decimal;
+  uom: string;
+  stock: {
+    id: string;
+    outletId: string;
+    name: string;
+    qty: Decimal;
+    uom: string;
+    minQty: Decimal;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null;
+}
+
+interface SubTransactionItem {
+  id: string;
+  menuId: string;
+  menuName: string;
+  status: string;
+  price: Prisma.Decimal;
+  quantity: number;
+  subTotal: Prisma.Decimal;
+  transactionId: string;
+  addOn: string;
+  note: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface Transaction {
+  id: string;
+  outletId: string | null;
+  userId: string | null;
+  paymentNumber: string;
+  subTransactions: SubTransactionItem[];
+}
+
+interface SubTransaction {
+  menuId: string;
+  menuName: string;
+}
 
 export async function updateStockAndLogStock(
-  ingredients: any,
-  transaction: any,
-  subTransaction: any,
+  ingredients: Ingredient[],
+  transaction: Transaction,
+  subTransaction: SubTransaction,
 ) {
   for (const ingredient of ingredients) {
     let qtyConverted;
