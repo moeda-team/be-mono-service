@@ -25,4 +25,9 @@ export interface CreateLogStockDTO {
   userId: string;
 }
 
-export interface UpdateLogStockDTO extends Partial<CreateLogStockDTO> {}
+export interface UpdateLogStockDTO {
+  qty: Decimal;
+  type: string;
+  uom: string;
+  note: string;
+}

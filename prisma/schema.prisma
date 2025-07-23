@@ -164,6 +164,7 @@ model Outlet {
   Stock        Stock[]
   LogStock     LogStock[]
   AlertStock   AlertStock[]
+  Ingredient   Ingredient[]
 
   @@schema("mono")
 }
@@ -202,6 +203,7 @@ model Menu {
   category       Category         @relation(fields: [categoryId], references: [id])
   SubTransaction SubTransaction[]
   LogStock       LogStock[]
+  Ingredient     Ingredient[]
 
   @@schema("mono")
 }
@@ -245,6 +247,7 @@ model Stock {
   outlet     Outlet?      @relation(fields: [outletId], references: [id], onDelete: Cascade)
   LogStock   LogStock[]
   AlertStock AlertStock[]
+  Ingredient Ingredient[]
 
   @@schema("mono")
 }
@@ -278,6 +281,23 @@ model AlertStock {
   updatedAt DateTime @updatedAt
 
   outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  stock  Stock?  @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  @@schema("mono")
+}
+
+model Ingredient {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  outletId  String   @db.VarChar(36)
+  menuId    String   @db.VarChar(36)
+  stockId   String   @db.VarChar(36)
+  value     Decimal  @default(0) @db.Decimal(10, 2)
+  uom       String   @default("g") @db.VarChar(20)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  menu   Menu?   @relation(fields: [menuId], references: [id], onDelete: Cascade)
   stock  Stock?  @relation(fields: [stockId], references: [id], onDelete: Cascade)
 
   @@schema("mono")

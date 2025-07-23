@@ -3,6 +3,8 @@ import { logger } from '../../../utils/common/logger';
 import { CreateLogStockDTO, UpdateLogStockDTO } from '../models/log_stock';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../lib/prisma';
+import { convertValue } from '../../../utils/common/convert_uom';
+import { Unit } from 'convert-units';
 
 export class LogStockController {
   async getAllLogStocks(req: Request, res: Response) {
@@ -93,18 +95,33 @@ export class LogStockController {
         }
       }
 
+      let logStockQtyConverted;
+      try {
+        logStockQtyConverted = convertValue(
+          Number(logStockData.qty),
+          logStockData.uom as Unit,
+          findStock.uom as Unit,
+        );
+      } catch (error) {
+        logger.error('Error converting uom:', error);
+        return ResponseHandler.error(res, {
+          message: 'Invalid unit conversion from ' + logStockData.uom + ' to ' + findStock.uom,
+          statusCode: 400,
+        });
+      }
+
       if (logStockData.type === 'inbound') {
         await prisma.stock.update({
           where: { id: logStockData.stockId },
           data: {
-            qty: findStock.qty.plus(logStockData.qty),
+            qty: findStock.qty.plus(logStockQtyConverted),
           },
         });
       } else if (logStockData.type === 'outbound') {
         await prisma.stock.update({
           where: { id: logStockData.stockId },
           data: {
-            qty: findStock.qty.minus(logStockData.qty),
+            qty: findStock.qty.minus(logStockQtyConverted),
           },
         });
       }
@@ -168,10 +185,27 @@ export class LogStockController {
         });
       }
 
+      let logStockQtyConverted;
+      try {
+        logStockQtyConverted = convertValue(
+          Number(logStockData.qty),
+          logStockData.uom as Unit,
+          findStock.uom as Unit,
+        );
+      } catch (error) {
+        logger.error('Error converting uom:', error);
+        return ResponseHandler.error(res, {
+          message: 'Invalid unit conversion from ' + logStockData.uom + ' to ' + findStock.uom,
+          statusCode: 400,
+        });
+      }
+
       if (logStockData.type !== findLogStock.type) {
         const revertQty = findLogStock.type === 'inbound' ? -findLogStock.qty : findLogStock.qty;
         const applyQty =
-          logStockData.type === 'inbound' ? logStockData.qty || 0 : -(logStockData.qty || 0);
+          logStockData.type === 'inbound'
+            ? logStockQtyConverted || 0
+            : -(logStockQtyConverted || 0);
         const finalQty = findStock.qty.plus(revertQty).plus(applyQty);
 
         await prisma.stock.update({
@@ -183,7 +217,9 @@ export class LogStockController {
       } else {
         const revertQty = findLogStock.type === 'inbound' ? -findLogStock.qty : findLogStock.qty;
         const applyQty =
-          logStockData.type === 'inbound' ? logStockData.qty || 0 : -(logStockData.qty || 0);
+          logStockData.type === 'inbound'
+            ? logStockQtyConverted || 0
+            : -(logStockQtyConverted || 0);
         const finalQty = findStock.qty.plus(revertQty).plus(applyQty);
         await prisma.stock.update({
           where: { id: findLogStock.stockId },
