@@ -19,6 +19,7 @@ import voucherRouter from './modules/vouchers/routes';
 import stockRouter from './modules/stocks/routes';
 import ingredientRouter from './modules/ingredients/routes';
 import fileRouter from './modules/files/routes';
+import attendanceRouter from './modules/attendance/routes';
 
 const app = express();
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
@@ -54,6 +55,7 @@ router.use(`${config.apiPrefix}/v1/vouchers`, voucherRouter);
 router.use(`${config.apiPrefix}/v1/stocks`, stockRouter);
 router.use(`${config.apiPrefix}/v1/ingredients`, ingredientRouter);
 router.use(`${config.apiPrefix}/v1/files`, fileRouter);
+router.use(`${config.apiPrefix}/v1/attendance`, attendanceRouter);
 
 app.use(router);
 
