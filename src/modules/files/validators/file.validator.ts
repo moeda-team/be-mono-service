@@ -6,8 +6,8 @@ export const validateCreateFile = [
   body('category')
     .trim()
     .notEmpty()
-    .isIn(['icon', 'menu'])
-    .withMessage('Category must be "icon" or "menu"'),
+    .isIn(['icon', 'menu', 'attendance'])
+    .withMessage('Category not allowed'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     const errorMessages = [];
