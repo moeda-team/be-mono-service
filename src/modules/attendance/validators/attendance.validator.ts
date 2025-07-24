@@ -26,3 +26,23 @@ export const validateCreateAttendance = [
     next();
   },
 ];
+
+export const validateApprovedAttendance = [
+  body('id').trim().notEmpty().withMessage('Attendance ID is required'),
+  body('status').trim().isIn(['approved', 'rejected']).notEmpty().withMessage('Status is required'),
+  body('approvedNote').trim().optional(),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return ResponseHandler.error(res, {
+        message: 'Validation failed',
+        statusCode: 400,
+        error: {
+          code: 'VALIDATION_FAILED',
+          details: errors.array(),
+        },
+      });
+    }
+    next();
+  },
+];

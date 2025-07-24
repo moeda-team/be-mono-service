@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { logger } from '../../../utils/common/logger';
-import { CreateAttendanceDTO } from '../models/attendance';
+import { CreateAttendanceDTO, ApproveAttendanceDTO } from '../models/attendance';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../lib/prisma';
 
@@ -124,6 +124,61 @@ export class AttendanceController {
       });
     } catch (error) {
       logger.error('Error creating attendance:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async approveAttendance(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string; userId: string } }).user;
+    const attendanceData: ApproveAttendanceDTO = req.body;
+
+    try {
+      if (!user.outletId) {
+        return ResponseHandler.error(res, {
+          message: 'Outlet not found',
+          statusCode: 404,
+        });
+      }
+
+      const findUser = await prisma.user.findUnique({
+        where: { id: user.userId },
+      });
+      if (!findUser) {
+        return ResponseHandler.error(res, {
+          message: 'User Approver not found',
+          statusCode: 404,
+        });
+      }
+
+      const findAttendance = await prisma.attendance.findUnique({
+        where: { id: attendanceData.id },
+      });
+      if (!findAttendance) {
+        return ResponseHandler.error(res, {
+          message: 'Attendance not found',
+          statusCode: 404,
+        });
+      }
+
+      const attendance = await prisma.attendance.update({
+        where: { id: attendanceData.id },
+        data: {
+          approvedBy: user.userId,
+          approvedAt: new Date(),
+          approvedNote: attendanceData.approvedNote,
+          approvalStatus: attendanceData.status,
+        },
+      });
+
+      return ResponseHandler.success(res, {
+        message: 'Attendance approved successfully',
+        data: attendance,
+      });
+    } catch (error) {
+      logger.error('Error approving attendance:', error);
       return ResponseHandler.error(res, {
         message: 'Internal server error',
         statusCode: 500,

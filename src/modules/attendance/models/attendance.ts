@@ -18,3 +18,9 @@ export interface CreateAttendanceDTO {
   photoUrl: string;
   type: string;
 }
+
+export interface ApproveAttendanceDTO {
+  id: string;
+  status: string;
+  approvedNote: string;
+}
