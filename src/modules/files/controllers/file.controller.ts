@@ -30,6 +30,7 @@ export class FileController {
         file.buffer,
         file.originalname,
         file.mimetype,
+        user.outletId,
         process.env.AWS_BUCKET!,
       );
 
