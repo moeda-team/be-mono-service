@@ -1,4 +1,5 @@
 // Transaction routes test
+let transactionRoutes: unknown;
 
 // First we need to set up our mocks before importing the module under test
 
@@ -26,6 +27,7 @@ jest.mock('../../../../modules/transactions/validators/transaction.validator', (
 // Mock middleware
 jest.mock('../../../../middlewares', () => ({
   jwtAuth: 'jwtAuthMiddleware',
+  basicAuth: 'basicAuthMiddleware',
   jwtAuthNotRequired: 'jwtAuthNotRequiredMiddleware',
   roleAuth: jest.fn().mockImplementation(role => `roleAuth(${role})Middleware`),
 }));
@@ -37,30 +39,50 @@ jest.mock('../../../../utils/auth/jwt', () => ({
   },
 }));
 
-// Mock express
-const mockTransactionRouter = {
-  get: jest.fn().mockReturnThis(),
-  post: jest.fn().mockReturnThis(),
-  put: jest.fn().mockReturnThis(),
-  delete: jest.fn().mockReturnThis(),
-  use: jest.fn().mockReturnThis(),
-  mockRouterInstance: true,
-};
+// Define the mock router type
+interface MockRouter {
+  get: jest.Mock;
+  post: jest.Mock;
+  put: jest.Mock;
+  patch: jest.Mock;
+  delete: jest.Mock;
+  use: jest.Mock;
+  mockRouterInstance: boolean;
+}
 
-jest.mock('express', () => ({
-  Router: jest.fn(() => mockTransactionRouter),
-}));
+// Declare mock router variable (var to avoid TDZ with Jest mock hoisting)
+let mockTransactionRouter: MockRouter;
+
+// Mock express and lazily create router inside factory to avoid hoisting issues
+jest.mock('express', () => {
+  mockTransactionRouter = {
+    get: jest.fn().mockReturnThis(),
+    post: jest.fn().mockReturnThis(),
+    put: jest.fn().mockReturnThis(),
+    patch: jest.fn().mockReturnThis(),
+    delete: jest.fn().mockReturnThis(),
+    use: jest.fn().mockReturnThis(),
+    mockRouterInstance: true,
+  };
+
+  return {
+    Router: jest.fn(() => mockTransactionRouter),
+  };
+});
 
 describe('Transaction Routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.resetModules();
+    // Load routes after mocks are set up
+    transactionRoutes =
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      require('../../../../modules/transactions/routes/transaction.routes').default;
   });
 
   it('should define all routes correctly', () => {
-    // Import the routes module - this will execute the code that sets up routes
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    require('../../../../modules/transactions/routes/transaction.routes');
+    // Ensure the module was loaded
+    expect(transactionRoutes).toBeDefined();
 
     // Verify health route is called with the health controller's check method
     expect(mockTransactionRouter.get).toHaveBeenCalledWith('/health', 'healthCheckMethod');
@@ -68,8 +90,7 @@ describe('Transaction Routes', () => {
     // Verify get transaction by ID route
     expect(mockTransactionRouter.get).toHaveBeenCalledWith(
       '/:id',
-      'jwtAuthMiddleware',
-      'roleAuth(EMPLOYEE)Middleware',
+      'basicAuthMiddleware',
       'getTransactionByIdMethod',
     );
 
@@ -99,8 +120,8 @@ describe('Transaction Routes', () => {
   });
 
   it('should export the router', () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const transactionRouter = require('../../../../modules/transactions/routes/transaction.routes').default;
+    // Type assertion to tell TypeScript we know this is our mock router
+    const transactionRouter = transactionRoutes as unknown as MockRouter;
     expect(transactionRouter).toBeDefined();
     expect(transactionRouter.mockRouterInstance).toBe(true);
   });

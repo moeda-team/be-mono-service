@@ -1,5 +1,3 @@
-import { config, isProduction } from '../../config';
-
 describe('Config', () => {
   const originalEnv = process.env;
 
@@ -13,18 +11,18 @@ describe('Config', () => {
   });
 
   describe('config object', () => {
-    it('should use environment variables when available', () => {
+    it('should use environment variables when available', async () => {
       // Arrange
       process.env.NODE_ENV = 'test';
       process.env.PORT = '4000';
       process.env.API_PREFIX = '/test-api';
       process.env.CORS_ORIGIN = 'https://test.example.com';
 
-      // Act
-      jest.isolateModules(() => {
-        const { config } = require('../../config');
+      // Act & Assert
+      await jest.isolateModules(async () => {
+        // Use dynamic import inside isolateModules to get a fresh instance
+        const { config } = await import('../../config');
 
-        // Assert
         expect(config.nodeEnv).toBe('test');
         expect(config.port).toBe(4000);
         expect(config.apiPrefix).toBe('/test-api');
@@ -32,7 +30,7 @@ describe('Config', () => {
       });
     });
 
-    it('should use default values when environment variables are not available', () => {
+    it('should use default values when environment variables are not available', async () => {
       // Arrange
       delete process.env.NODE_ENV;
       delete process.env.PORT;
@@ -40,54 +38,46 @@ describe('Config', () => {
       delete process.env.CORS_ORIGIN;
 
       // Act
-      jest.isolateModules(() => {
-        const { config } = require('../../config');
-
-        // Assert
+      await jest.isolateModules(async () => {
+        const { config } = await import('../../config');
         expect(config.nodeEnv).toBe('development');
         expect(config.port).toBe(3000);
         expect(config.apiPrefix).toBe('/api');
-        expect(config.corsOrigin).toBe('http://localhost:3000,https://moeda-coffe.vercel.app');
+        expect(config.corsOrigin).toBe('http://localhost:3000,https://moeda-coffee.vercel.app');
       });
     });
   });
 
   describe('isProduction', () => {
-    it('should be true when NODE_ENV is production', () => {
+    it('should be true when NODE_ENV is production', async () => {
       // Arrange
       process.env.NODE_ENV = 'production';
 
       // Act
-      jest.isolateModules(() => {
-        const { isProduction } = require('../../config');
-
-        // Assert
+      await jest.isolateModules(async () => {
+        const { isProduction } = await import('../../config');
         expect(isProduction).toBe(true);
       });
     });
 
-    it('should be false when NODE_ENV is not production', () => {
+    it('should be false when NODE_ENV is not production', async () => {
       // Arrange
       process.env.NODE_ENV = 'development';
 
       // Act
-      jest.isolateModules(() => {
-        const { isProduction } = require('../../config');
-
-        // Assert
+      await jest.isolateModules(async () => {
+        const { isProduction } = await import('../../config');
         expect(isProduction).toBe(false);
       });
     });
 
-    it('should be false when NODE_ENV is not set', () => {
+    it('should be false when NODE_ENV is not set', async () => {
       // Arrange
       delete process.env.NODE_ENV;
 
       // Act
-      jest.isolateModules(() => {
-        const { isProduction } = require('../../config');
-
-        // Assert
+      await jest.isolateModules(async () => {
+        const { isProduction } = await import('../../config');
         expect(isProduction).toBe(false);
       });
     });

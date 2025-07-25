@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { validateCreateMenu, validateUpdateMenu } from '../../../../modules/menus/validators/menu.validator';
+import {
+  validateCreateMenu,
+  validateUpdateMenu,
+} from '../../../../modules/menus/validators/menu.validator';
 import { ResponseHandler } from '../../../../utils/response/responseHandler';
 
 // Mock ResponseHandler
@@ -64,7 +67,7 @@ describe('Menu Validators', () => {
           error: expect.objectContaining({
             code: 'VALIDATION_FAILED',
           }),
-        })
+        }),
       );
     });
 
@@ -85,7 +88,7 @@ describe('Menu Validators', () => {
         expect.objectContaining({
           message: 'Validation failed',
           statusCode: 400,
-        })
+        }),
       );
     });
 
@@ -106,7 +109,7 @@ describe('Menu Validators', () => {
         expect.objectContaining({
           message: 'Validation failed',
           statusCode: 400,
-        })
+        }),
       );
     });
 
@@ -128,7 +131,7 @@ describe('Menu Validators', () => {
         expect.objectContaining({
           message: 'Validation failed',
           statusCode: 400,
-        })
+        }),
       );
     });
 
@@ -149,7 +152,7 @@ describe('Menu Validators', () => {
         expect.objectContaining({
           message: 'Validation failed',
           statusCode: 400,
-        })
+        }),
       );
     });
 
@@ -171,7 +174,7 @@ describe('Menu Validators', () => {
         expect.objectContaining({
           message: 'Validation failed',
           statusCode: 400,
-        })
+        }),
       );
     });
 
@@ -193,7 +196,7 @@ describe('Menu Validators', () => {
         expect.objectContaining({
           message: 'Validation failed',
           statusCode: 400,
-        })
+        }),
       );
     });
 
@@ -216,7 +219,7 @@ describe('Menu Validators', () => {
         expect.objectContaining({
           message: 'Validation failed',
           statusCode: 400,
-        })
+        }),
       );
     });
 
@@ -275,7 +278,7 @@ describe('Menu Validators', () => {
         expect.objectContaining({
           message: 'Validation failed',
           statusCode: 400,
-        })
+        }),
       );
     });
   });

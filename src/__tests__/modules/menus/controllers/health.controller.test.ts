@@ -28,15 +28,15 @@ describe('HealthController', () => {
   beforeEach(() => {
     controller = new HealthController();
     mockRequest = {};
-    
+
     statusSpy = jest.fn().mockReturnThis();
     jsonSpy = jest.fn();
-    
+
     mockResponse = {
       status: statusSpy,
       json: jsonSpy,
     } as Partial<Response>;
-    
+
     jest.clearAllMocks();
   });
 
@@ -46,10 +46,10 @@ describe('HealthController', () => {
 
     // Verify that process.memoryUsage was called
     expect(process.memoryUsage).toHaveBeenCalled();
-    
+
     // Verify that process.uptime was called
     expect(process.uptime).toHaveBeenCalled();
-    
+
     // Verify response was sent with correct data
     expect(jsonSpy).toHaveBeenCalledWith({
       status: 'success',
@@ -66,7 +66,7 @@ describe('HealthController', () => {
         },
       },
     });
-    
+
     // Verify status code was 200
     expect(statusSpy).toHaveBeenCalledWith(200);
   });

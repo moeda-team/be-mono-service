@@ -1,4 +1,7 @@
-import { validateCreateOutlet, validateUpdateOutlet } from '../../../../modules/outlets/validators/outlet.validator';
+import {
+  validateCreateOutlet,
+  validateUpdateOutlet,
+} from '../../../../modules/outlets/validators/outlet.validator';
 import { ResponseHandler } from '../../../../utils/response/responseHandler';
 
 describe('Outlet Validators', () => {
@@ -38,7 +41,7 @@ describe('Outlet Validators', () => {
         expect.objectContaining({
           message: 'Validation failed',
           statusCode: 400,
-        })
+        }),
       );
       expect(next).not.toHaveBeenCalled();
     });
@@ -94,5 +97,5 @@ describe('Outlet Validators', () => {
 
 // Mock ResponseHandler.error globally
 beforeAll(() => {
-  jest.spyOn(ResponseHandler, 'error').mockImplementation((res) => res);
+  jest.spyOn(ResponseHandler, 'error').mockImplementation(res => res);
 });

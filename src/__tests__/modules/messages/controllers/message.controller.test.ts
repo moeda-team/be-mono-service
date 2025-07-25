@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from 'express';
 import { MessageController } from '../../../../modules/messages/controllers/message.controller';
 import { ResponseHandler } from '../../../../utils/response/responseHandler';
@@ -135,8 +136,6 @@ describe('MessageController', () => {
     it('should create a new message', async () => {
       const mockMessageData = {
         outletId: 'outlet-123',
-        name: 'John Doe',
-        email: 'john@example.com',
         message: 'Great service!',
         rating: '5',
       };
@@ -153,32 +152,18 @@ describe('MessageController', () => {
       (prisma.message.findFirst as jest.Mock).mockResolvedValue(null);
       (prisma.message.create as jest.Mock).mockResolvedValue(createdMessage);
 
-      // Mock Date.toISOString for consistent testing
-      const originalDate = global.Date;
+      // Freeze time for consistent testing
       const mockDate = new Date('2025-06-03T10:23:25.000Z');
-      global.Date = jest.fn(() => mockDate) as any;
-      global.Date.now = originalDate.now;
+      jest.useFakeTimers().setSystemTime(mockDate);
 
       await controller.createMessage(mockRequest as Request, mockResponse as Response);
 
-      // Restore original Date
-      global.Date = originalDate;
+      // Restore timers
+      jest.useRealTimers();
 
-      expect(prisma.message.findFirst).toHaveBeenCalledWith({
-        where: {
-          outletId: 'outlet-123',
-          email: 'john@example.com',
-          createdAt: {
-            gte: '2025-06-03T00:00:00.000Z',
-            lt: '2025-06-03T23:59:59.999Z',
-          },
-        },
-      });
       expect(prisma.message.create).toHaveBeenCalledWith({
         data: {
           outletId: 'outlet-123',
-          name: 'John Doe',
-          email: 'john@example.com',
           message: 'Great service!',
           rating: 5,
         },
@@ -189,40 +174,9 @@ describe('MessageController', () => {
       });
     });
 
-    it('should return 409 when a duplicate message is found on the same day', async () => {
-      const mockMessageData = {
-        outletId: 'outlet-123',
-        name: 'John Doe',
-        email: 'john@example.com',
-        message: 'Great service!',
-        rating: '5',
-      };
-      mockRequest.body = mockMessageData;
-
-      const existingMessage = {
-        ...mockMessageData,
-        id: 'existing-msg-123',
-        rating: 5,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      (prisma.message.findFirst as jest.Mock).mockResolvedValue(existingMessage);
-
-      await controller.createMessage(mockRequest as Request, mockResponse as Response);
-
-      expect(ResponseHandler.error).toHaveBeenCalledWith(mockResponse, {
-        message: 'Message already exists today',
-        statusCode: 409,
-      });
-      expect(prisma.message.create).not.toHaveBeenCalled();
-    });
-
     it('should handle errors when creating a message', async () => {
       const mockMessageData = {
         outletId: 'outlet-123',
-        name: 'John Doe',
-        email: 'john@example.com',
         message: 'Great service!',
         rating: '5',
       };

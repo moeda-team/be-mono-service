@@ -5,7 +5,7 @@ import mockPrisma from '../mocks/prisma.mock';
 jest.mock('../../lib/prisma', () => mockPrisma);
 
 // Now import other dependencies
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { roleAuth } from '../../middlewares/roleAuth.middlewares';
 import { UserRole } from '../../utils/auth/jwt';
 import * as jwtUtils from '../../utils/auth/jwt';
@@ -22,9 +22,9 @@ describe('Role Authentication Middleware', () => {
     (req as any).user = { userId: '999' };
     const res = mockResponse();
     const next = mockNext;
-    
+
     mockPrisma.user.findUnique.mockResolvedValueOnce(null);
-    
+
     const middleware = roleAuth(UserRole.OWNER);
 
     // Act
@@ -39,7 +39,7 @@ describe('Role Authentication Middleware', () => {
       expect.objectContaining({
         status: 'error',
         message: 'User not found',
-      })
+      }),
     );
     expect(next).not.toHaveBeenCalled();
   });
@@ -50,14 +50,14 @@ describe('Role Authentication Middleware', () => {
     (req as any).user = { userId: '123' };
     const res = mockResponse();
     const next = mockNext;
-    
+
     mockPrisma.user.findUnique.mockResolvedValueOnce({
       id: '123',
       role: UserRole.EMPLOYEE,
     });
-    
+
     jest.spyOn(jwtUtils, 'hasPermission').mockReturnValueOnce(false);
-    
+
     const middleware = roleAuth(UserRole.OWNER);
 
     // Act
@@ -73,7 +73,7 @@ describe('Role Authentication Middleware', () => {
       expect.objectContaining({
         status: 'error',
         message: 'Insufficient permissions',
-      })
+      }),
     );
     expect(next).not.toHaveBeenCalled();
   });
@@ -84,14 +84,14 @@ describe('Role Authentication Middleware', () => {
     (req as any).user = { userId: '123' };
     const res = mockResponse();
     const next = mockNext;
-    
+
     mockPrisma.user.findUnique.mockResolvedValueOnce({
       id: '123',
       role: UserRole.OWNER,
     });
-    
+
     jest.spyOn(jwtUtils, 'hasPermission').mockReturnValueOnce(true);
-    
+
     const middleware = roleAuth(UserRole.OWNER);
 
     // Act
@@ -113,12 +113,12 @@ describe('Role Authentication Middleware', () => {
     (req as any).user = { userId: '123' };
     const res = mockResponse();
     const next = mockNext;
-    
+
     mockPrisma.user.findUnique.mockResolvedValueOnce({
       id: '123',
       role: null,
     });
-    
+
     const middleware = roleAuth(UserRole.EMPLOYEE);
 
     // Act
@@ -133,7 +133,7 @@ describe('Role Authentication Middleware', () => {
       expect.objectContaining({
         status: 'error',
         message: 'Insufficient permissions',
-      })
+      }),
     );
     expect(next).not.toHaveBeenCalled();
   });

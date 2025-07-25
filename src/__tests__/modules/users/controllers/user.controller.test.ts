@@ -158,10 +158,10 @@ describe('UserController', () => {
       };
       const req = mockRequest({ body: userData });
       const res = mockResponse();
-      
+
       mockPrisma.user.findFirst.mockResolvedValueOnce(null);
       hashPasswordMock.mockResolvedValueOnce('hashedPassword123');
-      
+
       const createdUser = { id: '1', ...userData, password: 'hashedPassword123' };
       mockPrisma.user.create.mockResolvedValueOnce(createdUser);
 
@@ -171,10 +171,7 @@ describe('UserController', () => {
       // Assert
       expect(mockPrisma.user.findFirst).toHaveBeenCalledWith({
         where: {
-          OR: [
-            { email: userData.email },
-            { phoneNumber: userData.phoneNumber },
-          ],
+          OR: [{ email: userData.email }, { phoneNumber: userData.phoneNumber }],
         },
       });
       expect(hashPasswordMock).toHaveBeenCalledWith(userData.password);
@@ -208,7 +205,7 @@ describe('UserController', () => {
       };
       const req = mockRequest({ body: userData });
       const res = mockResponse();
-      
+
       const existingUser = { id: '1', ...userData };
       mockPrisma.user.findFirst.mockResolvedValueOnce(existingUser);
 
@@ -242,7 +239,7 @@ describe('UserController', () => {
       };
       const req = mockRequest({ body: userData });
       const res = mockResponse();
-      
+
       mockPrisma.user.findFirst.mockResolvedValueOnce(null);
       hashPasswordMock.mockResolvedValueOnce('hashedPassword123');
       mockPrisma.user.create.mockRejectedValueOnce(new Error('Database error'));
@@ -278,11 +275,11 @@ describe('UserController', () => {
       };
       const req = mockRequest({ params: { id: userId }, body: userData });
       const res = mockResponse();
-      
+
       const existingUser = { id: userId, ...userData, email: 'olduser@example.com' };
       mockPrisma.user.findUnique.mockResolvedValueOnce(existingUser);
       mockPrisma.user.findFirst.mockResolvedValueOnce(null);
-      
+
       const updatedUser = { id: userId, ...userData };
       mockPrisma.user.update.mockResolvedValueOnce(updatedUser);
 
@@ -314,7 +311,7 @@ describe('UserController', () => {
       };
       const req = mockRequest({ params: { id: userId }, body: userData });
       const res = mockResponse();
-      
+
       mockPrisma.user.findUnique.mockResolvedValueOnce(null);
 
       // Act
@@ -342,10 +339,10 @@ describe('UserController', () => {
       };
       const req = mockRequest({ params: { id: userId }, body: userData });
       const res = mockResponse();
-      
+
       const existingUser = { id: userId, name: 'Original User', email: 'original@example.com' };
       mockPrisma.user.findUnique.mockResolvedValueOnce(existingUser);
-      
+
       const conflictUser = { id: '2', email: 'existing@example.com', phoneNumber: '1234567890' };
       mockPrisma.user.findFirst.mockResolvedValueOnce(conflictUser);
 
@@ -372,7 +369,7 @@ describe('UserController', () => {
       };
       const req = mockRequest({ params: { id: userId }, body: userData });
       const res = mockResponse();
-      
+
       mockPrisma.user.findUnique.mockResolvedValueOnce({ id: userId, name: 'Original User' });
       mockPrisma.user.findFirst.mockResolvedValueOnce(null);
       mockPrisma.user.update.mockRejectedValueOnce(new Error('Database error'));
@@ -397,7 +394,7 @@ describe('UserController', () => {
       const userId = '1';
       const req = mockRequest({ params: { id: userId } });
       const res = mockResponse();
-      
+
       mockPrisma.user.findUnique.mockResolvedValueOnce({ id: userId, name: 'User to Delete' });
       mockPrisma.user.delete.mockResolvedValueOnce({ id: userId });
 
@@ -424,7 +421,7 @@ describe('UserController', () => {
       const userId = '999';
       const req = mockRequest({ params: { id: userId } });
       const res = mockResponse();
-      
+
       mockPrisma.user.findUnique.mockResolvedValueOnce(null);
 
       // Act
@@ -446,9 +443,9 @@ describe('UserController', () => {
       const userId = '1';
       const req = mockRequest({ params: { id: userId } });
       const res = mockResponse();
-      
+
       mockPrisma.user.findUnique.mockResolvedValueOnce({ id: userId, name: 'User to Delete' });
-      
+
       const prismaError = new Error('Record not found');
       Object.defineProperty(prismaError, 'code', { value: 'P2025' });
       mockPrisma.user.delete.mockRejectedValueOnce(prismaError);
@@ -471,7 +468,7 @@ describe('UserController', () => {
       const userId = '1';
       const req = mockRequest({ params: { id: userId } });
       const res = mockResponse();
-      
+
       mockPrisma.user.findUnique.mockResolvedValueOnce({ id: userId, name: 'User to Delete' });
       mockPrisma.user.delete.mockRejectedValueOnce(new Error('Database error'));
 

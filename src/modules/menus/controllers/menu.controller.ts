@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from 'express';
 import { logger } from '../../../utils/common/logger';
 import { CreateMenuDTO, UpdateMenuDTO } from '../models/menu';
@@ -87,9 +88,6 @@ export class MenuController {
     const user = (req as Request & { user?: { outletId: string } }).user;
     const outletId = user?.outletId;
 
-    // Validate that each provided option exists when the `option` model is available in the generated Prisma client.
-    // In testing environments where `prisma.option` might be undefined (because the model is not mocked),
-    // we safely skip this validation to prevent runtime errors.
     if ((prisma as any).option?.findUnique) {
       for (const option of menuData.options) {
         const checkOption = await (prisma as any).option.findUnique({

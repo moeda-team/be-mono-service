@@ -141,7 +141,10 @@ describe('OutletController', () => {
       jest.spyOn(prisma.outlet, 'delete').mockResolvedValue({} as any);
       const spy = jest.spyOn(ResponseHandler, 'success');
       await controller.deleteOutlet(mockReq, mockRes);
-      expect(spy).toHaveBeenCalledWith(mockRes, expect.objectContaining({ message: 'Outlet deleted successfully' }));
+      expect(spy).toHaveBeenCalledWith(
+        mockRes,
+        expect.objectContaining({ message: 'Outlet deleted successfully' }),
+      );
     });
     it('should handle Prisma P2025 error as not found', async () => {
       mockReq.params.id = '1';

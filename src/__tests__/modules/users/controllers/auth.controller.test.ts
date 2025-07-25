@@ -48,7 +48,7 @@ describe('AuthController', () => {
         expect.objectContaining({
           status: 'error',
           message: 'Email and password are required',
-        })
+        }),
       );
     });
 
@@ -72,7 +72,7 @@ describe('AuthController', () => {
         expect.objectContaining({
           status: 'error',
           message: 'Invalid credentials',
-        })
+        }),
       );
     });
 
@@ -100,7 +100,7 @@ describe('AuthController', () => {
         expect.objectContaining({
           status: 'error',
           message: 'Invalid credentials',
-        })
+        }),
       );
     });
 
@@ -133,7 +133,7 @@ describe('AuthController', () => {
             token_type: 'Bearer',
             access_token: 'mocked-jwt-token',
           }),
-        })
+        }),
       );
     });
 
@@ -154,7 +154,7 @@ describe('AuthController', () => {
         expect.objectContaining({
           status: 'error',
           message: 'Internal server error',
-        })
+        }),
       );
     });
   });

@@ -1,5 +1,6 @@
 export interface Message {
   id: string;
+  outletId: string;
   message: string;
   rating: number;
   createdAt: Date;
@@ -9,5 +10,5 @@ export interface Message {
 export interface CreateMessageDTO {
   outletId: string;
   message: string;
-  rating: number;
+  rating: string | number;
 }

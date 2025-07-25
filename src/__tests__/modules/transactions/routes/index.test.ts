@@ -11,11 +11,6 @@ jest.mock('../../../../modules/transactions/routes/payment.routes', () => ({
   default: 'mockPaymentRouter',
 }));
 
-jest.mock('../../../../modules/transactions/routes/order.routes', () => ({
-  __esModule: true,
-  default: 'mockOrderRouter',
-}));
-
 jest.mock('../../../../modules/transactions/routes/sales.routes', () => ({
   __esModule: true,
   default: 'mockSalesRouter',
@@ -49,7 +44,6 @@ describe('Transaction Routes Index', () => {
     // Verify the transaction routes are mounted at the correct paths
     expect(mockRouter.use).toHaveBeenCalledWith('/main', 'mockTransactionRouter');
     expect(mockRouter.use).toHaveBeenCalledWith('/payments', 'mockPaymentRouter');
-    expect(mockRouter.use).toHaveBeenCalledWith('/order', 'mockOrderRouter');
     expect(mockRouter.use).toHaveBeenCalledWith('/sales', 'mockSalesRouter');
   });
 

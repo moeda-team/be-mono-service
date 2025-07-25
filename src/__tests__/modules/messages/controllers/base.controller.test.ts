@@ -13,7 +13,10 @@ jest.mock('../../../../utils/response/responseHandler', () => ({
 // Create a concrete implementation of the abstract BaseController for testing
 class TestController extends BaseController {
   // Expose protected methods for testing
-  public testSendSuccess<T>(res: Response, options: { message: string; data: T; statusCode?: number }) {
+  public testSendSuccess<T>(
+    res: Response,
+    options: { message: string; data: T; statusCode?: number },
+  ) {
     return this.sendSuccess(res, options);
   }
 

@@ -39,7 +39,7 @@ describe('AppError', () => {
   it('should maintain prototype chain for instanceof checks', () => {
     // Arrange & Act
     const error = new AppError(500, 'Server Error');
-    
+
     // Assert
     expect(Object.getPrototypeOf(error)).toBe(AppError.prototype);
     expect(error instanceof Error).toBe(true);

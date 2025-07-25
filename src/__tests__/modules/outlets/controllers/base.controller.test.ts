@@ -7,7 +7,12 @@ describe('BaseController', () => {
     public callSendSuccess(res: Response, message: string, data: unknown, statusCode?: number) {
       return this.sendSuccess(res, { message, data, statusCode });
     }
-    public callSendError(res: Response, message: string, statusCode?: number, error?: { code?: string; details?: unknown }) {
+    public callSendError(
+      res: Response,
+      message: string,
+      statusCode?: number,
+      error?: { code?: string; details?: unknown },
+    ) {
       return this.sendError(res, { message, statusCode, error });
     }
   }

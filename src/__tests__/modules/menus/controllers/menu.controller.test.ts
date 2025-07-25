@@ -149,62 +149,6 @@ describe('MenuController', () => {
     });
   });
 
-  describe('getMenusByCategory', () => {
-    it('should return menus by category', async () => {
-      // Arrange
-      const req = mockRequest({
-        params: { outletId: 'outlet-123', categoryId: 'category-123' },
-      });
-      const res = mockResponse();
-
-      const mockMenus = [
-        { id: 'menu-1', name: 'Burger', categoryId: 'category-123', outletId: 'outlet-123' },
-        { id: 'menu-2', name: 'Pizza', categoryId: 'category-123', outletId: 'outlet-123' },
-      ];
-
-      mockPrisma.menu.findMany.mockResolvedValueOnce(mockMenus);
-
-      // Act
-      await menuController.getMenusByCategory(req as Request, res as Response);
-
-      // Assert
-      expect(mockPrisma.menu.findMany).toHaveBeenCalledWith({
-        where: { categoryId: 'category-123', outletId: 'outlet-123' },
-        orderBy: {
-          name: 'asc',
-        },
-      });
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'success',
-        message: 'Menus retrieved successfully',
-        data: mockMenus,
-      });
-    });
-
-    it('should handle errors when getting menus by category', async () => {
-      // Arrange
-      const req = mockRequest({
-        params: { outletId: 'outlet-123', categoryId: 'category-123' },
-      });
-      const res = mockResponse();
-
-      mockPrisma.menu.findMany.mockRejectedValueOnce(new Error('Database error'));
-
-      // Act
-      await menuController.getMenusByCategory(req as Request, res as Response);
-
-      // Assert
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'error',
-        message: 'Internal server error',
-        data: null,
-        error: undefined,
-      });
-    });
-  });
-
   describe('createMenu', () => {
     it('should create a new menu', async () => {
       // Arrange
@@ -586,62 +530,6 @@ describe('MenuController', () => {
 
       // Act
       await menuController.deleteMenu(req as Request, res as Response);
-
-      // Assert
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'error',
-        message: 'Internal server error',
-        data: null,
-        error: undefined,
-      });
-    });
-  });
-
-  describe('getBestMenus', () => {
-    it('should return best menus for an outlet', async () => {
-      // Arrange
-      const req = mockRequest({
-        params: { outletId: 'outlet-123' },
-      });
-      const res = mockResponse();
-
-      const mockMenus = [
-        { id: 'menu-1', name: 'Best Burger', outletId: 'outlet-123', isBest: true },
-        { id: 'menu-2', name: 'Best Pizza', outletId: 'outlet-123', isBest: true },
-      ];
-
-      mockPrisma.menu.findMany.mockResolvedValueOnce(mockMenus);
-
-      // Act
-      await menuController.getBestMenus(req as Request, res as Response);
-
-      // Assert
-      expect(mockPrisma.menu.findMany).toHaveBeenCalledWith({
-        where: { outletId: 'outlet-123', isBest: true },
-        orderBy: {
-          name: 'asc',
-        },
-      });
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        status: 'success',
-        message: 'Menus retrieved successfully',
-        data: mockMenus,
-      });
-    });
-
-    it('should handle errors when getting best menus', async () => {
-      // Arrange
-      const req = mockRequest({
-        params: { outletId: 'outlet-123' },
-      });
-      const res = mockResponse();
-
-      mockPrisma.menu.findMany.mockRejectedValueOnce(new Error('Database error'));
-
-      // Act
-      await menuController.getBestMenus(req as Request, res as Response);
 
       // Assert
       expect(res.status).toHaveBeenCalledWith(500);

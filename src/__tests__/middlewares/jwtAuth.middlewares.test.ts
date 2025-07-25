@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { jwtAuth, jwtAuthNotRequired } from '../../middlewares/jwtAuth.middlewares';
 import * as jwtUtils from '../../utils/auth/jwt';
 import { mockRequest, mockResponse, mockNext } from '../mocks/express.mock';
@@ -27,7 +27,7 @@ describe('JWT Authentication Middleware', () => {
         expect.objectContaining({
           status: 'error',
           message: 'Authorization header missing or invalid',
-        })
+        }),
       );
       expect(next).not.toHaveBeenCalled();
     });
@@ -49,7 +49,7 @@ describe('JWT Authentication Middleware', () => {
         expect.objectContaining({
           status: 'error',
           message: 'Authorization header missing or invalid',
-        })
+        }),
       );
       expect(next).not.toHaveBeenCalled();
     });
@@ -77,7 +77,7 @@ describe('JWT Authentication Middleware', () => {
         expect.objectContaining({
           status: 'error',
           message: 'Invalid or expired token',
-        })
+        }),
       );
       expect(next).not.toHaveBeenCalled();
     });

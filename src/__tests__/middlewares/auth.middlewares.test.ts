@@ -30,7 +30,7 @@ describe('Basic Auth Middleware', () => {
       expect.objectContaining({
         status: 'error',
         message: 'Authorization header is required',
-      })
+      }),
     );
     expect(mockNext).not.toHaveBeenCalled();
   });
@@ -51,7 +51,7 @@ describe('Basic Auth Middleware', () => {
       expect.objectContaining({
         status: 'error',
         message: 'Basic authentication is required',
-      })
+      }),
     );
     expect(mockNext).not.toHaveBeenCalled();
   });
@@ -59,7 +59,7 @@ describe('Basic Auth Middleware', () => {
   it('should return 500 if AUTH_USERNAME or AUTH_PASSWORD is not set', () => {
     // Arrange
     delete process.env.AUTH_USERNAME;
-    
+
     const base64Credentials = Buffer.from('testuser:testpassword').toString('base64');
     const req = mockRequest({
       headers: { authorization: `Basic ${base64Credentials}` },
@@ -75,7 +75,7 @@ describe('Basic Auth Middleware', () => {
       expect.objectContaining({
         status: 'error',
         message: 'Authentication configuration is missing',
-      })
+      }),
     );
     expect(mockNext).not.toHaveBeenCalled();
   });
@@ -97,7 +97,7 @@ describe('Basic Auth Middleware', () => {
       expect.objectContaining({
         status: 'error',
         message: 'Invalid credentials',
-      })
+      }),
     );
     expect(mockNext).not.toHaveBeenCalled();
   });

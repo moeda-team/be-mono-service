@@ -33,10 +33,10 @@ jest.mock('winston', () => {
   const mockTransport = jest.fn().mockImplementation(() => ({
     format: mockFormat,
   }));
-  
+
   return {
     format: mockFormat,
-    createLogger: jest.fn().mockImplementation((options) => ({
+    createLogger: jest.fn().mockImplementation(options => ({
       level: options?.level || 'info',
       format: mockFormat,
       transports: [new mockTransport()],
@@ -63,12 +63,12 @@ describe('Logger', () => {
       get: jest.fn().mockReturnValue(true),
       configurable: true,
     });
-    
+
     // Re-import the logger to trigger the configuration with our mocked environment
     jest.isolateModules(() => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { logger } = require('../../../utils/common/logger');
-      
+
       expect(winston.createLogger).toHaveBeenCalled();
       expect(logger.level).toBe('info');
       expect(winston.format.combine).toHaveBeenCalled();
@@ -84,12 +84,12 @@ describe('Logger', () => {
       get: jest.fn().mockReturnValue(false),
       configurable: true,
     });
-    
+
     // Re-import the logger to trigger the configuration with our mocked environment
     jest.isolateModules(() => {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { logger } = require('../../../utils/common/logger');
-      
+
       expect(winston.createLogger).toHaveBeenCalled();
       expect(logger.level).toBe('debug');
       expect(winston.format.combine).toHaveBeenCalled();

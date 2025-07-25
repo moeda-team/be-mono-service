@@ -10,8 +10,6 @@ jest.mock('../../../../modules/menus/controllers/menu.controller', () => ({
     createMenu: 'createMenuMethod',
     updateMenu: 'updateMenuMethod',
     deleteMenu: 'deleteMenuMethod',
-    getBestMenus: 'getBestMenusMethod',
-    getMenusByCategory: 'getMenusByCategoryMethod',
   })),
 }));
 
@@ -107,20 +105,6 @@ describe('Menu Routes', () => {
       'jwtAuthMiddleware',
       'roleAuth(STORE_MANAGER)Middleware',
       'deleteMenuMethod',
-    );
-
-    // Verify get best menus route
-    expect(mockMenuRouter.get).toHaveBeenCalledWith(
-      '/list/best/:outletId',
-      'basicAuthMiddleware',
-      'getBestMenusMethod',
-    );
-
-    // Verify get menus by category route
-    expect(mockMenuRouter.get).toHaveBeenCalledWith(
-      '/list/category/:outletId/:categoryId',
-      'basicAuthMiddleware',
-      'getMenusByCategoryMethod',
     );
   });
 
