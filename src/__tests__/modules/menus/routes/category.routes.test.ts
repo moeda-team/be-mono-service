@@ -1,4 +1,5 @@
 // Category routes test
+export {};
 
 // First we need to set up our mocks before importing the module under test
 
