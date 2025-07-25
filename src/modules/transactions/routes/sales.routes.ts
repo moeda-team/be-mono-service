@@ -6,23 +6,6 @@ import { SalesController } from '../controllers/sales.controller';
 const router = Router();
 const salesController = new SalesController();
 
-router.get(
-  '/category/:type',
-  jwtAuth,
-  roleAuth(UserRole.EMPLOYEE),
-  salesController.getTransactionCountByCategory,
-);
-router.get(
-  '/method/:type',
-  jwtAuth,
-  roleAuth(UserRole.EMPLOYEE),
-  salesController.getTransactionCountByPaymentMethod,
-);
-router.get(
-  '/cashflow/:type',
-  jwtAuth,
-  roleAuth(UserRole.EMPLOYEE),
-  salesController.getTransactionCashflow,
-);
+router.get('/:type', jwtAuth, roleAuth(UserRole.EMPLOYEE), salesController.getTransactionCount);
 
 export default router;

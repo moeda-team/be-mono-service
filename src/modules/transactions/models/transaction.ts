@@ -15,9 +15,10 @@ export interface Transaction {
   subTotal: number;
   discount: number;
   serviceCharge: number;
-  tax: number;
+  rounding: number;
   total: number;
   additionalNote: string;
+  voucher: string;
   status: string;
   createdAt: Date;
   updatedAt: Date;
@@ -31,6 +32,7 @@ export interface CreateTransactionDTO {
   customerName: string;
   discount: number;
   additionalNote: string;
+  voucher: string;
   status: string;
   cart: SubTransaction[];
 }

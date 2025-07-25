@@ -69,9 +69,13 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            rm -rf ~/apps/moeda/*
-            pm2 stop all
-            pm2 delete all
+            if [ -d ~/apps/moeda ]; then
+              pm2 stop all || true
+              pm2 delete all || true
+              rm -rf ~/apps/moeda/*
+            else
+              echo "Skipping clean up, target directory does not exist."
+            fi
 
       - name: Copy files to VPS
         uses: appleboy/scp-action@v0.1.6

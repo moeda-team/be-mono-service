@@ -15,12 +15,17 @@ import messageRouter from './modules/messages/routes';
 import transactionRouter from './modules/transactions/routes';
 import outletRouter from './modules/outlets/routes';
 import menuRouter from './modules/menus/routes';
+import voucherRouter from './modules/vouchers/routes';
+import stockRouter from './modules/stocks/routes';
+import ingredientRouter from './modules/ingredients/routes';
+import fileRouter from './modules/files/routes';
+import attendanceRouter from './modules/attendance/routes';
 
 const app = express();
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
 
 app.use(rateLimiter);
-app.use(timeout('5s'));
+app.use(timeout('10s'));
 app.use(helmet());
 app.use(
   cors({
@@ -46,6 +51,11 @@ router.use(`${config.apiPrefix}/v1/messages`, messageRouter);
 router.use(`${config.apiPrefix}/v1/transactions`, transactionRouter);
 router.use(`${config.apiPrefix}/v1/outlets`, outletRouter);
 router.use(`${config.apiPrefix}/v1/menus`, menuRouter);
+router.use(`${config.apiPrefix}/v1/vouchers`, voucherRouter);
+router.use(`${config.apiPrefix}/v1/stocks`, stockRouter);
+router.use(`${config.apiPrefix}/v1/ingredients`, ingredientRouter);
+router.use(`${config.apiPrefix}/v1/files`, fileRouter);
+router.use(`${config.apiPrefix}/v1/attendance`, attendanceRouter);
 
 app.use(router);
 

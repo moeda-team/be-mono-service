@@ -55,7 +55,6 @@ export class UserController {
 
   async createUser(req: Request, res: Response) {
     const userData: CreateUserDTO = req.body;
-    logger.info('User data:', userData);
 
     try {
       const existingUser = await prisma.user.findFirst({

@@ -6,9 +6,6 @@ export const validatePayment = [
   body('paymentType').trim().notEmpty().withMessage('Payment type is required'),
   body('transactionDetails').isObject().withMessage('Transaction details is required'),
   body('transactionDetails.orderId').trim().notEmpty().withMessage('Order ID is required'),
-  body('transactionDetails.grossAmount')
-    .isFloat({ gt: 0 })
-    .withMessage('Gross amount must be a positive number'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
