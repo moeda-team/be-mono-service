@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Import the mock first
 import mockPrisma from '../mocks/prisma.mock';
 

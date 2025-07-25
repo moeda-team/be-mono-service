@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BaseController } from '../../../../modules/users/controllers/base.controller';
 import { mockResponse } from '../../../mocks/express.mock';
 import { ResponseHandler } from '../../../../utils/response/responseHandler';

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BaseController } from '../../../../modules/transactions/controllers/base.controller';
 import { ResponseHandler } from '../../../../utils/response/responseHandler';
 

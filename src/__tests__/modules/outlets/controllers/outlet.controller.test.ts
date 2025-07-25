@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { OutletController } from '../../../../modules/outlets/controllers/outlet.controller';
 import { ResponseHandler } from '../../../../utils/response/responseHandler';
 import prisma from '../../../../lib/prisma';

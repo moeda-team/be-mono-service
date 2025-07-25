@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from 'express';
 import { jwtAuth, jwtAuthNotRequired } from '../../middlewares/jwtAuth.middlewares';
 import * as jwtUtils from '../../utils/auth/jwt';

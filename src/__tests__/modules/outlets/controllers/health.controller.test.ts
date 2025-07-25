@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Response } from 'express';
 import { HealthController } from '../../../../modules/outlets/controllers/health.controller';
 import { config } from '../../../../config';
