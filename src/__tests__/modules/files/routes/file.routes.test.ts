@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // File routes unit test
 
@@ -107,7 +108,6 @@ describe('Multer configuration', () => {
     expect(cb).toHaveBeenCalledWith(new Error('Only image files are allowed'));
   });
 });
-
 
 describe('File Routes', () => {
   beforeEach(() => {

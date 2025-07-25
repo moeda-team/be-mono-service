@@ -18,8 +18,12 @@ const createMockRes = () => {
 // ---------------------------------------------------------------------------
 jest.mock('../../../../utils/response/responseHandler', () => {
   const responseHandler = {
-    success: jest.fn((res: Response, payload: unknown) => res.status((payload as any).statusCode ?? 200).json(payload)),
-    error: jest.fn((res: Response, payload: unknown) => res.status((payload as any).statusCode ?? 500).json(payload)),
+    success: jest.fn((res: Response, payload: unknown) =>
+      res.status((payload as any).statusCode ?? 200).json(payload),
+    ),
+    error: jest.fn((res: Response, payload: unknown) =>
+      res.status((payload as any).statusCode ?? 500).json(payload),
+    ),
   };
   return { ResponseHandler: responseHandler };
 });
@@ -34,7 +38,10 @@ class TestController extends BaseController {
   public successProxy<T>(res: Response, opts: { message: string; data: T; statusCode?: number }) {
     return this.sendSuccess(res, opts);
   }
-  public errorProxy(res: Response, opts: { message: string; statusCode?: number; error?: { code?: string; details?: unknown } }) {
+  public errorProxy(
+    res: Response,
+    opts: { message: string; statusCode?: number; error?: { code?: string; details?: unknown } },
+  ) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return this.sendError(res, opts as any);
   }
@@ -59,10 +66,13 @@ describe('BaseController', () => {
 
       controller.successProxy(res as any, payload);
 
-      expect(ResponseHandler.success).toHaveBeenCalledWith(res, expect.objectContaining({
-        ...payload,
-        statusCode: 200,
-      }));
+      expect(ResponseHandler.success).toHaveBeenCalledWith(
+        res,
+        expect.objectContaining({
+          ...payload,
+          statusCode: 200,
+        }),
+      );
     });
 
     it('should pass custom statusCode properly', () => {
@@ -82,10 +92,13 @@ describe('BaseController', () => {
 
       controller.errorProxy(res as any, payload);
 
-      expect(ResponseHandler.error).toHaveBeenCalledWith(res, expect.objectContaining({
-        ...payload,
-        statusCode: 500,
-      }));
+      expect(ResponseHandler.error).toHaveBeenCalledWith(
+        res,
+        expect.objectContaining({
+          ...payload,
+          statusCode: 500,
+        }),
+      );
     });
 
     it('should pass custom statusCode and error details properly', () => {
