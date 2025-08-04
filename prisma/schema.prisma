@@ -222,17 +222,25 @@ model Option {
 }
 
 model LogTableMove {
-  id              String   @id @default(uuid()) @db.VarChar(36)
-  outletId        String?
-  transactionId   String   @db.VarChar(36)
-  prevTableNumber Int      @db.Integer
-  newTableNumber  Int      @db.Integer
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String   @id @default(uuid()) @db.VarChar(36)
+  outletId      String?
+  transactionId String   @db.VarChar(36)
+  tableNumber   Int      @db.Integer
+  prevTableId   String?  @db.VarChar(36)
+  nextTableId   String?  @db.VarChar(36)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   outlet      Outlet?      @relation(fields: [outletId], references: [id], onDelete: Cascade)
   transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 
+  prevTable LogTableMove? @relation("PrevRelation", fields: [prevTableId], references: [id], onDelete: Cascade)
+  nextTable LogTableMove? @relation("NextRelation", fields: [nextTableId], references: [id], onDelete: Cascade)
+
+  prevOf LogTableMove[] @relation("NextRelation")
+  nextOf LogTableMove[] @relation("PrevRelation")
+
+  @@unique([transactionId, tableNumber])
   @@schema("mono")
 }
 

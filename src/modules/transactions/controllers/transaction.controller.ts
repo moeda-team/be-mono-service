@@ -116,7 +116,11 @@ export class TransactionController {
       const transaction = await prisma.transaction.findUnique({
         where: { id },
         include: {
-          logTableMove: true,
+          logTableMove: {
+            orderBy: {
+              createdAt: 'asc',
+            },
+          },
           subTransactions: {
             include: {
               menu: true,
@@ -460,25 +464,31 @@ export class TransactionController {
       const findLogTableMove = await prisma.logTableMove.findFirst({
         where: {
           transactionId: id,
+          outletId: transaction.outletId,
+          tableNumber: transaction.tableNumber,
           createdAt: {
             gte: new Date(new Date().setHours(0, 0, 0, 0)),
             lte: new Date(new Date().setHours(23, 59, 59, 999)),
           },
         },
       });
-      if (findLogTableMove) {
-        return ResponseHandler.error(res, {
-          message: 'Table already moved, you can only move table once per transaction',
-          statusCode: 400,
-        });
-      }
 
-      await prisma.logTableMove.create({
+      const updateLogTableMove = await prisma.logTableMove.create({
         data: {
-          outletId: transaction.outletId,
-          transactionId: transaction.id,
-          prevTableNumber: transaction?.tableNumber || 1,
-          newTableNumber: parseInt(tableNumber),
+          outletId: transaction?.outletId,
+          transactionId: transaction?.id,
+          tableNumber: parseInt(tableNumber),
+          prevTableId: findLogTableMove?.id,
+          nextTableId: null,
+        },
+      });
+
+      await prisma.logTableMove.update({
+        where: {
+          transactionId_tableNumber: { transactionId: id, tableNumber: transaction.tableNumber },
+        },
+        data: {
+          nextTableId: updateLogTableMove.id,
         },
       });
 
@@ -491,7 +501,7 @@ export class TransactionController {
 
       return ResponseHandler.success(res, {
         message: 'Transaction table updated successfully',
-        data: null,
+        data: updateLogTableMove,
       });
     } catch (error) {
       if (error instanceof Error && 'code' in error && error.code === 'P2025') {

@@ -31,8 +31,7 @@ router.patch(
 );
 router.patch(
   '/table/:id',
-  jwtAuth,
-  roleAuth(UserRole.EMPLOYEE),
+  jwtAuthNotRequired,
   validateUpdateTransactionTable,
   transactionController.updateTransactionTable,
 );

@@ -176,6 +176,16 @@ export class PaymentController {
       });
 
       if (newStatus === 'completed') {
+        await prisma.logTableMove.create({
+          data: {
+            outletId: transaction?.outletId,
+            transactionId: transaction?.id,
+            tableNumber: transaction?.tableNumber,
+            prevTableId: null,
+            nextTableId: null,
+          },
+        });
+
         for (const subTransaction of transaction.subTransactions) {
           const ingredients = await prisma.ingredient.findMany({
             where: {
