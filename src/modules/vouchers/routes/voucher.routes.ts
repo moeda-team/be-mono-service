@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { VoucherController } from '../controllers/voucher.controller';
 import { validateCreateVoucher, validateUpdateVoucher } from '../validators/voucher.validator';
 import { HealthController } from '../controllers/health.controller';
-import { jwtAuth, roleAuth } from '../../../middlewares';
+import { jwtAuthNotRequired, jwtAuth, roleAuth } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
 
 const router = Router();
@@ -10,7 +10,7 @@ const voucherController = new VoucherController();
 const healthController = new HealthController();
 
 router.get('/health', healthController.check);
-router.get('/:code', jwtAuth, roleAuth(UserRole.EMPLOYEE), voucherController.getVoucherByName);
+router.get('/:code', jwtAuthNotRequired, voucherController.getVoucherByName);
 router.get('/', jwtAuth, roleAuth(UserRole.EMPLOYEE), voucherController.getAllVouchers);
 router.post(
   '/',
