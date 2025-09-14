@@ -5,6 +5,7 @@ import prisma from '../../../lib/prisma';
 import { MidtransPayload, PaymentDTO, PaymentNotification } from '../models/payment';
 import { axiosPost } from '../../../utils/common/axios.custom';
 import { updateStockAndLogStock } from '../services';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export class PaymentController {
   async paymentTransaction(req: Request, res: Response) {
@@ -49,7 +50,7 @@ export class PaymentController {
       });
       itemDetails.push({
         id: 'discount',
-        price: findTransaction.discount,
+        price: Decimal(Number(findTransaction.discount) * -1),
         quantity: 1,
         name: 'Discount',
       });
