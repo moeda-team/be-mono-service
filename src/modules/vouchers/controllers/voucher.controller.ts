@@ -28,13 +28,13 @@ export class VoucherController {
     }
   }
 
-  async getVoucherById(req: Request, res: Response) {
+  async getVoucherByName(req: Request, res: Response) {
     const user = (req as Request & { user: { outletId: string } }).user;
-    const { id } = req.params;
+    const { code } = req.params;
 
     try {
-      const voucher = await prisma.voucher.findUnique({
-        where: { id, outletId: user.outletId },
+      const voucher = await prisma.voucher.findFirst({
+        where: { name: code, outletId: user.outletId },
       });
       if (!voucher) {
         return ResponseHandler.error(res, {
