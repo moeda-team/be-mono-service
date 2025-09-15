@@ -50,10 +50,10 @@ jobs:
             ./prisma/
 
   deploy:
-    name: Deploy to VPS
+    name: Deploy to VPS (zero-downtime with rollback)
     runs-on: ubuntu-latest
     needs: lint-test-build
-    if: github.ref == 'refs/heads/dev' # Only deploy on dev
+    if: github.ref == 'refs/heads/dev'
 
     steps:
       - name: Download build artifacts
@@ -62,40 +62,65 @@ jobs:
           name: build
           path: build-output
 
-      - name: Clean target directory on VPS
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            if [ -d ~/apps/moeda ]; then
-              pm2 stop all || true
-              pm2 delete all || true
-              rm -rf ~/apps/moeda/*
-            else
-              echo "Skipping clean up, target directory does not exist."
-            fi
-
-      - name: Copy files to VPS
+      - name: Upload files to VPS release directory
         uses: appleboy/scp-action@v0.1.6
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: 'build-output/*'
-          target: '/home/${{ secrets.VPS_USER }}/apps/moeda'
+          target: '/home/${{ secrets.VPS_USER }}/apps/moeda/releases/${{ github.run_id }}'
 
-      - name: SSH and restart app using PM2
+      - name: Install dependencies, set symlink, and reload app
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            echo "${{ secrets.ENV_CONTENTS }}" > /home/${{ secrets.VPS_USER }}/apps/moeda/build-output/.env
-            cd ~/apps/moeda/build-output
-            npm install --omit=dev
+            set -e
+            APP_DIR=~/apps/moeda
+            RELEASE_DIR=$APP_DIR/releases/${{ github.run_id }}
+
+            echo "Deploying release: $RELEASE_DIR"
+
+            # Write .env
+            echo "${{ secrets.ENV_CONTENTS }}" > $RELEASE_DIR/.env
+
+            # Install deps & prisma client
+            cd $RELEASE_DIR
+            npm ci --omit=dev
             npx prisma generate
-            pm2 start pm2.config.js || pm2 reload moeda
+
+            # Backup current as previous
+            if [ -L $APP_DIR/current ]; then
+              PREV_RELEASE=$(readlink $APP_DIR/current)
+              ln -sfn $PREV_RELEASE $APP_DIR/previous
+            fi
+
+            # Point symlink to new release
+            ln -sfn $RELEASE_DIR $APP_DIR/current
+
+            # Reload PM2 with zero downtime
+            cd $APP_DIR/current
+            pm2 start pm2.config.js --update-env || pm2 reload moeda --update-env
             pm2 save
+
+      - name: Rollback if deployment fails
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            APP_DIR=~/apps/moeda
+            if [ -L $APP_DIR/previous ]; then
+              echo "Rolling back to previous release..."
+              ln -sfn $(readlink $APP_DIR/previous) $APP_DIR/current
+              cd $APP_DIR/current
+              pm2 reload moeda --update-env
+              pm2 save
+            else
+              echo "No previous release found. Rollback skipped."
+            fi
