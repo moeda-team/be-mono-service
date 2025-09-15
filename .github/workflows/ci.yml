@@ -42,7 +42,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ github.sha }}
+          name: build
           path: |
             dist/
             package.json
@@ -59,152 +59,43 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: build-${{ github.sha }}
+          name: build
           path: build-output
 
-      - name: Create release directory on VPS
+      - name: Clean target directory on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # Create releases directory if it doesn't exist
-            mkdir -p ~/apps/moeda/releases
+            if [ -d ~/apps/moeda ]; then
+              pm2 stop all || true
+              pm2 delete all || true
+              rm -rf ~/apps/moeda/*
+            else
+              echo "Skipping clean up, target directory does not exist."
+            fi
 
-            # Create new release directory with timestamp
-            RELEASE_DIR=~/apps/moeda/releases/$(date +%Y%m%d_%H%M%S)_${{ github.sha }}
-            mkdir -p $RELEASE_DIR
-            echo "RELEASE_DIR=$RELEASE_DIR" >> ~/apps/moeda/.release_info
-
-      - name: Copy files to new release directory
+      - name: Copy files to VPS
         uses: appleboy/scp-action@v0.1.6
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: 'build-output/*'
-          target: '/home/${{ secrets.VPS_USER }}/apps/moeda/releases/temp_${{ github.sha }}'
+          target: '/home/${{ secrets.VPS_USER }}/apps/moeda'
 
-      - name: Prepare new release and deploy with zero downtime
+      - name: SSH and restart app using PM2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            set -e
-
-            # Get the release directory
-            RELEASE_DIR=$(grep RELEASE_DIR ~/apps/moeda/.release_info | cut -d'=' -f2)
-            TEMP_DIR=~/apps/moeda/releases/temp_${{ github.sha }}
-
-            # Move files from temp directory to release directory
-            mv $TEMP_DIR/* $RELEASE_DIR/
-            rmdir $TEMP_DIR
-
-            # Setup environment and dependencies in new release
-            cd $RELEASE_DIR
-            echo "${{ secrets.ENV_CONTENTS }}" > .env
-            npm install --omit=dev --silent
+            echo "${{ secrets.ENV_CONTENTS }}" > /home/${{ secrets.VPS_USER }}/apps/moeda/build-output/.env
+            cd ~/apps/moeda/build-output
+            npm install --omit=dev
             npx prisma generate
-
-            # Health check function
-            health_check() {
-              local port=$1
-              local max_attempts=30
-              local attempt=1
-              
-              while [ $attempt -le $max_attempts ]; do
-                if curl -f -s http://localhost:$port/health > /dev/null 2>&1; then
-                  echo "Health check passed on port $port"
-                  return 0
-                fi
-                echo "Health check attempt $attempt/$max_attempts failed, waiting..."
-                sleep 2
-                attempt=$((attempt + 1))
-              done
-              
-              echo "Health check failed after $max_attempts attempts"
-              return 1
-            }
-
-            # Check if PM2 is running any processes
-            if pm2 list | grep -q "moeda"; then
-              echo "Performing zero-downtime deployment..."
-              
-              # Get current port (assuming your app runs on a configurable port)
-              CURRENT_PORT=$(pm2 show moeda | grep -o 'PORT.*[0-9]*' | grep -o '[0-9]*' || echo "3000")
-              NEW_PORT=$((CURRENT_PORT == 3000 ? 3001 : 3000))
-              
-              # Update PM2 config to use new port
-              sed -i "s/PORT=.*/PORT=$NEW_PORT/" .env
-              
-              # Start new instance on different port
-              PM2_SILENT=true pm2 start pm2.config.js --name moeda-new
-              
-              # Wait for new instance to be ready
-              echo "Waiting for new instance to be ready..."
-              sleep 5
-              
-              # Health check on new instance
-              if health_check $NEW_PORT; then
-                # Update load balancer/nginx to point to new port (if applicable)
-                # This step depends on your setup - you might need to update nginx config
-                
-                # Stop old instance
-                pm2 delete moeda || true
-                
-                # Rename new instance
-                pm2 delete moeda-new || true
-                sed -i "s/PORT=.*/PORT=$NEW_PORT/" .env
-                pm2 start pm2.config.js --name moeda
-                
-                echo "Zero-downtime deployment completed successfully"
-              else
-                echo "New instance failed health check, rolling back..."
-                pm2 delete moeda-new || true
-                exit 1
-              fi
-            else
-              echo "No existing PM2 processes found, starting fresh..."
-              pm2 start pm2.config.js
-            fi
-
-            # Update current symlink to point to new release
-            ln -sfn $RELEASE_DIR ~/apps/moeda/current
-
-            # Save PM2 processes
+            pm2 start pm2.config.js || pm2 reload moeda
             pm2 save
-
-            # Cleanup old releases (keep last 5)
-            cd ~/apps/moeda/releases
-            ls -t | tail -n +6 | xargs rm -rf --
-
-      - name: Rollback on failure
-        if: failure()
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            echo "Deployment failed, cleaning up..."
-
-            # Remove failed temp directory
-            rm -rf ~/apps/moeda/temp_${{ github.sha }}
-
-            # Remove any failed release directories from this deployment
-            cd ~/apps/moeda/releases 2>/dev/null || true
-            ls -t | head -1 | grep "${{ github.sha }}" | xargs -r rm -rf
-
-            # Cleanup any temporary PM2 processes
-            pm2 delete moeda-new || true
-
-            # Ensure main app is still running
-            if ! pm2 list | grep -q "moeda.*online"; then
-              cd ~/apps/moeda/current 2>/dev/null || cd ~/apps/moeda
-              pm2 start pm2.config.js --name moeda || true
-            fi
-
-            echo "Rollback completed"
