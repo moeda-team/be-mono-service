@@ -191,9 +191,12 @@ jobs:
           script: |
             echo "Deployment failed, cleaning up..."
 
-            # Remove failed release
-            RELEASE_DIR=$(grep RELEASE_DIR ~/apps/moeda/.release_info | cut -d'=' -f2)
-            rm -rf $RELEASE_DIR
+            # Remove failed temp directory
+            rm -rf ~/apps/moeda/temp_${{ github.sha }}
+
+            # Remove any failed release directories from this deployment
+            cd ~/apps/moeda/releases 2>/dev/null || true
+            ls -t | head -1 | grep "${{ github.sha }}" | xargs -r rm -rf
 
             # Cleanup any temporary PM2 processes
             pm2 delete moeda-new || true
@@ -201,7 +204,7 @@ jobs:
             # Ensure main app is still running
             if ! pm2 list | grep -q "moeda.*online"; then
               cd ~/apps/moeda/current 2>/dev/null || cd ~/apps/moeda
-              pm2 start pm2.config.js || true
+              pm2 start pm2.config.js --name moeda || true
             fi
 
             echo "Rollback completed"
