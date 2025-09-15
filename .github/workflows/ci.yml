@@ -46,6 +46,7 @@ jobs:
           path: |
             dist/
             package.json
+            package-lock.json
             pm2.config.js
             ./prisma/
 
