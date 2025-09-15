@@ -7,12 +7,12 @@ module.exports = {
       exec_mode: 'fork', // or 'cluster' for multiple instances
       env: {
         NODE_ENV: 'production',
-        PORT: process.env.PORT || 3000,
+        PORT: process.env.PORT || 3001,
       },
       // Health check endpoint for PM2
       health_check_http: {
         path: '/health',
-        port: process.env.PORT || 3000,
+        port: process.env.PORT || 3001,
       },
       // Restart settings
       max_restarts: 3,
