@@ -100,8 +100,8 @@ jobs:
             TEMP_DIR=~/apps/moeda/releases/temp_${{ github.sha }}
 
             # Move files from temp directory to release directory
-            mv $TEMP_DIR/build-output/* $RELEASE_DIR/
-            rmdir $TEMP_DIR/build-output $TEMP_DIR
+            mv $TEMP_DIR/* $RELEASE_DIR/
+            rmdir $TEMP_DIR
 
             # Setup environment and dependencies in new release
             cd $RELEASE_DIR
