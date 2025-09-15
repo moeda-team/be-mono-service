@@ -7,84 +7,95 @@ on:
     branches: [main, dev]
 
 jobs:
-  build:
+  lint-test-build:
+    name: Lint, Type Check, and Build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Use Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
-      - name: Build project
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Prettier (format check)
+        run: npm run format:check
+
+      - name: Type check (TypeScript)
+        run: npm run typecheck
+
+      - name: Build the project
         run: npm run build
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release
+          name: build
           path: |
+            dist/
             package.json
-            package-lock.json
             pm2.config.js
-            prisma
-            dist
+            ./prisma/
 
   deploy:
+    name: Deploy to VPS
     runs-on: ubuntu-latest
-    needs: build
+    needs: lint-test-build
+    if: github.ref == 'refs/heads/dev' # Only deploy on dev
 
     steps:
-      - name: Download build artifact
+      - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: release
-          path: release
+          name: build
+          path: build-output
 
-      - name: Deploy to server
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_KEY: ${{ secrets.SSH_KEY }}
-          APP_DIR: /home/***/apps/moeda
-        run: |
-          echo "$SSH_KEY" > private_key.pem
-          chmod 600 private_key.pem
-
-          RELEASE_DIR=$APP_DIR/releases/$(date +%s)
-
-          # Upload release folder
-          ssh -i private_key.pem -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "mkdir -p $RELEASE_DIR"
-          scp -i private_key.pem -o StrictHostKeyChecking=no -r release/* $SSH_USER@$SSH_HOST:$RELEASE_DIR/
-
-          # Run deploy script on server
-          ssh -i private_key.pem -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
-            set -e
-            RELEASE_DIR=$RELEASE_DIR
-            APP_DIR=/home/***/apps/moeda
-
-            # Install deps & prisma client
-            cd $RELEASE_DIR
-            npm ci --omit=dev
-            npx prisma generate
-
-            # Backup current as previous
-            if [ -L $APP_DIR/current ]; then
-              PREV_RELEASE=$(readlink $APP_DIR/current)
-              ln -sfn $PREV_RELEASE $APP_DIR/previous
+      - name: Clean target directory on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            if [ -d ~/apps/moeda ]; then
+              pm2 stop all || true
+              pm2 delete all || true
+              rm -rf ~/apps/moeda/*
+            else
+              echo "Skipping clean up, target directory does not exist."
             fi
 
-            # Point symlink to new release
-            ln -sfn $RELEASE_DIR $APP_DIR/current
+      - name: Copy files to VPS
+        uses: appleboy/scp-action@v0.1.6
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: 'build-output/*'
+          target: '/home/${{ secrets.VPS_USER }}/apps/moeda'
 
-            # Reload PM2 with zero downtime
-            cd $APP_DIR/current
-            pm2 start pm2.config.js --update-env || pm2 reload moeda --update-env
+      - name: SSH and restart app using PM2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            echo "${{ secrets.ENV_CONTENTS }}" > /home/${{ secrets.VPS_USER }}/apps/moeda/build-output/.env
+            cd ~/apps/moeda/build-output
+            npm install --omit=dev
+            npx prisma generate
+            pm2 start pm2.config.js || pm2 reload moeda
             pm2 save
-          EOF

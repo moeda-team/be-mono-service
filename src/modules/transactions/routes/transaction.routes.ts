@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  validateCheckTransactionStatus,
   validateCreateTransaction,
   validateUpdateTransactionStatus,
   validateUpdateTransactionTable,
@@ -16,6 +17,11 @@ const healthController = new HealthController();
 router.get('/health', healthController.check);
 router.get('/:id', basicAuth, transactionController.getTransactionById);
 router.get('/', jwtAuth, roleAuth(UserRole.EMPLOYEE), transactionController.getAllTransactions);
+router.post(
+  '/check/status',
+  validateCheckTransactionStatus,
+  transactionController.checkTransactionStatus,
+);
 router.post(
   '/',
   jwtAuthNotRequired,

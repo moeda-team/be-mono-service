@@ -150,6 +150,46 @@ export class TransactionController {
     }
   }
 
+  async checkTransactionStatus(req: Request, res: Response) {
+    const { orderIds } = req.body;
+
+    try {
+      const transactions = await prisma.transaction.findMany({
+        where: {
+          id: {
+            in: orderIds,
+          },
+          subTransactions: {
+            some: {
+              status: {
+                not: 'completed',
+              },
+            },
+          },
+        },
+        include: {
+          subTransactions: {
+            include: {
+              menu: true,
+            },
+          },
+          logTableMove: true,
+        },
+      });
+
+      return ResponseHandler.success(res, {
+        message: 'Transaction status checked successfully',
+        data: transactions,
+      });
+    } catch (error) {
+      logger.error('Error checking transaction status:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
   async createTransaction(req: Request, res: Response) {
     const transactionData: CreateTransactionDTO = req.body;
 
