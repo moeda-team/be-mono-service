@@ -60,7 +60,14 @@ export class TransactionController {
         where: whereClause,
         orderBy: { createdAt: 'desc' },
         include: {
-          logTableMove: true,
+          logTableMove: {
+            include: {
+              transaction: true,
+            },
+            orderBy: {
+              createdAt: 'asc',
+            },
+          },
           subTransactions: {
             include: {
               menu: true,
@@ -124,6 +131,9 @@ export class TransactionController {
           subTransactions: {
             include: {
               menu: true,
+            },
+            orderBy: {
+              status: 'desc',
             },
           },
         },
@@ -236,10 +246,9 @@ export class TransactionController {
             const logVoucher = await prisma.logVoucher.findFirst({
               where: {
                 voucherId: voucherData.id,
-                createdAt: {
-                  gte: new Date(new Date().setHours(0, 0, 0, 0)),
-                  lte: new Date(new Date().setHours(23, 59, 59, 999)),
-                },
+              },
+              orderBy: {
+                createdAt: 'desc',
               },
             });
             if (logVoucher) {
