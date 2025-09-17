@@ -61,9 +61,6 @@ export class TransactionController {
         orderBy: { createdAt: 'desc' },
         include: {
           logTableMove: {
-            include: {
-              transaction: true,
-            },
             orderBy: {
               createdAt: 'asc',
             },
@@ -462,31 +459,50 @@ export class TransactionController {
       const transaction = await prisma.subTransaction.findUnique({
         where: { id },
       });
+
       if (!transaction) {
         return ResponseHandler.error(res, {
-          message: 'Transaction not found',
+          message: 'SubTransaction not found',
           statusCode: 404,
         });
       }
 
       await prisma.subTransaction.update({
         where: { id },
-        data: {
-          status,
-        },
+        data: { status },
       });
+
+      const subTransactions = await prisma.subTransaction.findMany({
+        where: { transactionId: transaction.transactionId },
+        select: { status: true },
+      });
+
+      const allComplete = subTransactions.every(sub => sub.status === 'complete');
+
+      if (allComplete) {
+        await prisma.transaction.update({
+          where: { id: transaction.transactionId },
+          data: { status: 'complete' },
+        });
+      }
 
       return ResponseHandler.success(res, {
         message: 'Transaction status updated successfully',
         data: null,
       });
-    } catch (error) {
-      if (error instanceof Error && 'code' in error && error.code === 'P2025') {
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: string }).code === 'P2025'
+      ) {
         return ResponseHandler.error(res, {
           message: 'Transaction not found',
           statusCode: 404,
         });
       }
+
       logger.error('Error updating transaction status:', error);
       return ResponseHandler.error(res, {
         message: 'Internal server error',
