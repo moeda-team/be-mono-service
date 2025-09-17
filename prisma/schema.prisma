@@ -5,14 +5,12 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["multiSchema"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["mono"]
 }
 
 model User {
@@ -36,8 +34,6 @@ model User {
   transactions Transaction[]
   LogStock     LogStock[]
   Attendance   Attendance[]
-
-  @@schema("mono")
 }
 
 model Message {
@@ -49,8 +45,6 @@ model Message {
   updatedAt DateTime @updatedAt
 
   outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
-
-  @@schema("mono")
 }
 
 model Voucher {
@@ -68,8 +62,6 @@ model Voucher {
   outlet       Outlet?       @relation(fields: [outletId], references: [id], onDelete: Cascade)
   transactions Transaction[]
   logVouchers  LogVoucher[]
-
-  @@schema("mono")
 }
 
 model LogVoucher {
@@ -83,8 +75,6 @@ model LogVoucher {
   outlet      Outlet?      @relation(fields: [outletId], references: [id], onDelete: Cascade)
   voucher     Voucher?     @relation(fields: [voucherId], references: [id], onDelete: Cascade)
   transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-
-  @@schema("mono")
 }
 
 model Transaction {
@@ -117,8 +107,6 @@ model Transaction {
   logVoucher      LogVoucher[]
   subTransactions SubTransaction[]
   logTableMove    LogTableMove[]
-
-  @@schema("mono")
 }
 
 model SubTransaction {
@@ -137,8 +125,6 @@ model SubTransaction {
 
   menu        Menu        @relation(fields: [menuId], references: [id])
   transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-
-  @@schema("mono")
 }
 
 model Outlet {
@@ -167,8 +153,6 @@ model Outlet {
   AlertStock   AlertStock[]
   Ingredient   Ingredient[]
   Attendance   Attendance[]
-
-  @@schema("mono")
 }
 
 model Category {
@@ -181,8 +165,6 @@ model Category {
 
   menus  Menu[]
   outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
-
-  @@schema("mono")
 }
 
 model Menu {
@@ -206,8 +188,6 @@ model Menu {
   SubTransaction SubTransaction[]
   LogStock       LogStock[]
   Ingredient     Ingredient[]
-
-  @@schema("mono")
 }
 
 model Option {
@@ -217,8 +197,6 @@ model Option {
   addPrices Decimal[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-
-  @@schema("mono")
 }
 
 model LogTableMove {
@@ -228,6 +206,7 @@ model LogTableMove {
   tableNumber   Int      @db.Integer
   prevTableId   String?  @db.VarChar(36)
   nextTableId   String?  @db.VarChar(36)
+  note          String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -241,7 +220,6 @@ model LogTableMove {
   nextOf LogTableMove[] @relation("PrevRelation")
 
   @@unique([transactionId, tableNumber])
-  @@schema("mono")
 }
 
 model Stock {
@@ -258,8 +236,6 @@ model Stock {
   LogStock   LogStock[]
   AlertStock AlertStock[]
   Ingredient Ingredient[]
-
-  @@schema("mono")
 }
 
 model LogStock {
@@ -279,8 +255,6 @@ model LogStock {
   stock  Stock?  @relation(fields: [stockId], references: [id], onDelete: Cascade)
   menu   Menu?   @relation(fields: [menuId], references: [id], onDelete: Cascade)
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@schema("mono")
 }
 
 model AlertStock {
@@ -292,8 +266,6 @@ model AlertStock {
 
   outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
   stock  Stock?  @relation(fields: [stockId], references: [id], onDelete: Cascade)
-
-  @@schema("mono")
 }
 
 model Ingredient {
@@ -309,8 +281,6 @@ model Ingredient {
   outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
   menu   Menu?   @relation(fields: [menuId], references: [id], onDelete: Cascade)
   stock  Stock?  @relation(fields: [stockId], references: [id], onDelete: Cascade)
-
-  @@schema("mono")
 }
 
 model Attendance {
@@ -328,6 +298,4 @@ model Attendance {
 
   outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@schema("mono")
 }

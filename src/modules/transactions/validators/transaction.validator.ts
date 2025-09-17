@@ -96,6 +96,7 @@ export const validateUpdateTransactionTable = [
     .withMessage('Table number is required for dine-in')
     .isNumeric()
     .withMessage('Table number must be numeric'),
+  body('note').optional(),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

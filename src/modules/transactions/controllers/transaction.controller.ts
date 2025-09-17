@@ -488,7 +488,7 @@ export class TransactionController {
 
   async updateTransactionTable(req: Request, res: Response) {
     const { id } = req.params;
-    const { tableNumber } = req.body;
+    const { tableNumber, note } = req.body;
 
     try {
       const transaction = await prisma.transaction.findUnique({
@@ -520,6 +520,7 @@ export class TransactionController {
           tableNumber: parseInt(tableNumber),
           prevTableId: findLogTableMove?.id,
           nextTableId: null,
+          note: note,
         },
       });
 
@@ -529,6 +530,7 @@ export class TransactionController {
         },
         data: {
           nextTableId: updateLogTableMove.id,
+          note: note,
         },
       });
 
