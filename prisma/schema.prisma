@@ -218,8 +218,6 @@ model LogTableMove {
 
   prevOf LogTableMove[] @relation("NextRelation")
   nextOf LogTableMove[] @relation("PrevRelation")
-
-  @@unique([transactionId, tableNumber])
 }
 
 model Stock {

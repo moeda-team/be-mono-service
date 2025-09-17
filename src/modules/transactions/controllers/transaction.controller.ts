@@ -506,12 +506,28 @@ export class TransactionController {
           transactionId: id,
           outletId: transaction.outletId,
           tableNumber: transaction.tableNumber,
-          createdAt: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)),
-            lte: new Date(new Date().setHours(23, 59, 59, 999)),
-          },
+        },
+        orderBy: {
+          createdAt: 'desc',
         },
       });
+
+      const countLogTableMove = await prisma.logTableMove.count({
+        where: {
+          transactionId: id,
+          outletId: transaction.outletId,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      if (countLogTableMove > 2) {
+        return ResponseHandler.error(res, {
+          message: 'Transaction table move limit reached',
+          statusCode: 400,
+        });
+      }
 
       const updateLogTableMove = await prisma.logTableMove.create({
         data: {
@@ -525,9 +541,7 @@ export class TransactionController {
       });
 
       await prisma.logTableMove.update({
-        where: {
-          transactionId_tableNumber: { transactionId: id, tableNumber: transaction.tableNumber },
-        },
+        where: { id: findLogTableMove?.id },
         data: {
           nextTableId: updateLogTableMove.id,
           note: note,
