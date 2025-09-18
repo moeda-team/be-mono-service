@@ -118,16 +118,27 @@ export class TransactionController {
     const outletId = user?.outletId;
 
     try {
-      const transactions = await prisma.transaction.findMany({
-        where: {
-          outletId,
-          status: 'completed',
-          subTransactions: {
-            some: {
-              status: 'preparation',
-            },
+      const search = (req.query.search as string)?.trim() || null;
+
+      const whereClause: Prisma.TransactionWhereInput = {
+        outletId,
+        status: 'completed',
+        subTransactions: {
+          some: {
+            status: 'preparation',
           },
         },
+      };
+
+      if (search) {
+        whereClause.OR = [
+          { customerName: { contains: search, mode: 'insensitive' } },
+          { tableNumber: { equals: Number(search) } },
+        ];
+      }
+
+      const transactions = await prisma.transaction.findMany({
+        where: whereClause,
         orderBy: { createdAt: 'asc' },
         include: {
           logTableMove: {
