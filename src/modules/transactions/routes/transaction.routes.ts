@@ -17,6 +17,12 @@ const healthController = new HealthController();
 router.get('/health', healthController.check);
 router.get('/:id', basicAuth, transactionController.getTransactionById);
 router.get('/', jwtAuth, roleAuth(UserRole.EMPLOYEE), transactionController.getAllTransactions);
+router.get(
+  '/all/active',
+  jwtAuth,
+  roleAuth(UserRole.EMPLOYEE),
+  transactionController.getAllActiveTransactions,
+);
 router.post(
   '/check/status',
   validateCheckTransactionStatus,

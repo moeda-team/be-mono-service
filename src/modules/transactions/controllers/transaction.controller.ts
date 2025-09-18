@@ -113,6 +113,56 @@ export class TransactionController {
     }
   }
 
+  async getAllActiveTransactions(req: Request, res: Response) {
+    const { user } = req as Request & { user?: { outletId: string } };
+    const outletId = user?.outletId;
+
+    try {
+      const transactions = await prisma.transaction.findMany({
+        where: {
+          outletId,
+          status: 'completed',
+          subTransactions: {
+            some: {
+              status: 'preparation',
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+        include: {
+          logTableMove: {
+            orderBy: {
+              createdAt: 'asc',
+            },
+          },
+          subTransactions: {
+            include: {
+              menu: true,
+            },
+            orderBy: {
+              status: 'asc',
+            },
+          },
+        },
+      });
+
+      const responseData: Record<string, unknown> = {
+        transactions,
+      };
+
+      return ResponseHandler.success(res, {
+        message: 'Transactions retrieved successfully',
+        data: responseData,
+      });
+    } catch (error) {
+      logger.error('Error getting transactions:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
   async getTransactionById(req: Request, res: Response) {
     const { id } = req.params;
 
