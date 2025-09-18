@@ -133,7 +133,7 @@ export class TransactionController {
       if (search) {
         whereClause.OR = [
           { customerName: { contains: search, mode: 'insensitive' } },
-          { tableNumber: { equals: Number(search) } },
+          ...(isNaN(Number(search)) ? [] : [{ tableNumber: { equals: Number(search) } }]),
         ];
       }
 
