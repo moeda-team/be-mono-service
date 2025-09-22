@@ -3,14 +3,30 @@ import { logger } from '../../../utils/common/logger';
 import { CreateVoucherDTO } from '../models/voucher';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export class VoucherController {
   async getAllVouchers(req: Request, res: Response) {
     const user = (req as Request & { user: { outletId: string } }).user;
 
+    const { search } = req.query as { search: string };
+
+    const searchStr: string | undefined = typeof search === 'string' ? search : undefined;
+
     try {
+      const whereClause: Prisma.VoucherWhereInput = {
+        outletId: user.outletId,
+      };
+
+      if (searchStr) {
+        whereClause.name = {
+          contains: searchStr,
+          mode: 'insensitive',
+        };
+      }
+
       const vouchers = await prisma.voucher.findMany({
-        where: { outletId: user.outletId },
+        where: whereClause,
         orderBy: {
           createdAt: 'asc',
         },
@@ -18,6 +34,35 @@ export class VoucherController {
       return ResponseHandler.success(res, {
         message: 'Vouchers retrieved successfully',
         data: vouchers,
+      });
+    } catch (error) {
+      logger.error('Error getting vouchers:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async getTodayUsedVouchers(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string } }).user;
+
+    try {
+      const total = await prisma.voucher.count({
+        where: { outletId: user.outletId },
+      });
+      const used = await prisma.logVoucher.count({
+        where: {
+          outletId: user.outletId,
+          createdAt: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+            lte: new Date(new Date().setHours(23, 59, 59, 999)),
+          },
+        },
+      });
+      return ResponseHandler.success(res, {
+        message: 'Vouchers retrieved successfully',
+        data: { total, used },
       });
     } catch (error) {
       logger.error('Error getting vouchers:', error);

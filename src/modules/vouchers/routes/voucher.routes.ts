@@ -10,8 +10,14 @@ const voucherController = new VoucherController();
 const healthController = new HealthController();
 
 router.get('/health', healthController.check);
-router.get('/:code', jwtAuthNotRequired, voucherController.getVoucherByName);
+router.get('/:code/detail', jwtAuthNotRequired, voucherController.getVoucherByName);
 router.get('/', jwtAuth, roleAuth(UserRole.EMPLOYEE), voucherController.getAllVouchers);
+router.get(
+  '/today/used',
+  jwtAuth,
+  roleAuth(UserRole.EMPLOYEE),
+  voucherController.getTodayUsedVouchers,
+);
 router.post(
   '/',
   jwtAuth,
