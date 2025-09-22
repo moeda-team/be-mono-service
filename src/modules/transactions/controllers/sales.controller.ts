@@ -13,7 +13,9 @@ import {
   endOfMonth,
   endOfYear,
   format,
+  subDays,
 } from 'date-fns';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export class SalesController {
   getTransactionCount = async (req: Request, res: Response) => {
@@ -63,6 +65,96 @@ export class SalesController {
       }
     } catch (error) {
       logger.error('Error getting transaction count by category:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  };
+
+  getTodaySummary = async (req: Request, res: Response) => {
+    const user = req as Request & { user?: { outletId: string } };
+    const outletId = user.user?.outletId;
+    try {
+      const today = new Date();
+      const todayStart = startOfDay(today);
+      const todayEnd = endOfDay(today);
+
+      // yesterday range
+      const yesterday = subDays(today, 1);
+      const yesterdayStart = startOfDay(yesterday);
+      const yesterdayEnd = endOfDay(yesterday);
+
+      const revenue = await prisma.transaction.aggregate({
+        _sum: {
+          total: true,
+        },
+        where: {
+          createdAt: {
+            gte: todayStart,
+            lte: todayEnd,
+          },
+          outletId,
+        },
+      });
+      const revenueVal = new Decimal(revenue._sum.total || 0);
+
+      const [todayAvg, yesterdayAvg] = await Promise.all([
+        prisma.transaction.aggregate({
+          _avg: { total: true },
+          where: {
+            createdAt: { gte: todayStart, lte: todayEnd },
+            outletId,
+          },
+        }),
+        prisma.transaction.aggregate({
+          _avg: { total: true },
+          where: {
+            createdAt: { gte: yesterdayStart, lte: yesterdayEnd },
+            outletId,
+          },
+        }),
+      ]);
+      const todayVal = new Decimal(todayAvg._avg.total || 0);
+      const yesterdayVal = new Decimal(yesterdayAvg._avg.total || 0);
+      const growth = todayVal.div(yesterdayVal).sub(1);
+
+      const topItems = await prisma.subTransaction.groupBy({
+        by: ['menuId', 'menuName'],
+        _sum: {
+          quantity: true,
+        },
+        orderBy: {
+          _sum: {
+            quantity: 'desc',
+          },
+        },
+        take: 1,
+        where: {
+          createdAt: {
+            gte: todayStart,
+            lte: todayEnd,
+          },
+          transaction: {
+            outletId,
+          },
+        },
+      });
+
+      const response = {
+        revenue: revenueVal.toNumber(),
+        todayAvg: todayVal.toNumber(),
+        yesterdayAvg: yesterdayVal.toNumber(),
+        growth: growth.toFixed(2),
+        topItems,
+      };
+
+      return ResponseHandler.success(res, {
+        message: 'Today summary retrieved successfully',
+        data: response,
+      });
+    } catch (error) {
+      logger.error('Error getting today summary:', error);
       return ResponseHandler.error(res, {
         message: 'Internal server error',
         statusCode: 500,
