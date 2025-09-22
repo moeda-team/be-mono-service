@@ -38,6 +38,7 @@ export class AuthController {
         data: {
           name: user.name,
           email: user.email,
+          role: user.role,
           token_type: 'Bearer',
           expires_in: expiresIn,
           ext_expires_in: expiresIn,
