@@ -4,6 +4,7 @@ import { CreateStockDTO, UpdateStockDTO } from '../models/stock';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { sendLowStockAlertEmail } from '../../../utils/mail/stock_alert';
 import prisma from '../../../lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export class StockController {
   async getAllStocks(req: Request, res: Response) {
@@ -31,15 +32,24 @@ export class StockController {
 
   async getAllStockStatus(req: Request, res: Response) {
     const user = (req as Request & { user: { outletId: string } }).user;
+    const { search } = req.query;
 
     try {
+      const searchStr: string | undefined = typeof search === 'string' ? search : undefined;
+
+      const whereClause: Prisma.StockWhereInput = {
+        outletId: user.outletId,
+      };
+
+      if (searchStr) {
+        whereClause.name = {
+          contains: searchStr,
+          mode: 'insensitive',
+        };
+      }
+
       const stocks = await prisma.stock.findMany({
-        where: {
-          outletId: user.outletId,
-          minQty: {
-            gte: prisma.stock.fields.qty,
-          },
-        },
+        where: whereClause,
       });
 
       const todayStart = new Date();
