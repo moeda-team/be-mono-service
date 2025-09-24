@@ -5,14 +5,34 @@ import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../lib/prisma';
 import { convertValue } from '../../../utils/common/convert_uom';
 import { Unit } from 'convert-units';
+import { Prisma } from '@prisma/client';
 
 export class LogStockController {
   async getAllLogStocks(req: Request, res: Response) {
     const user = (req as Request & { user: { outletId: string } }).user;
+    const { search } = req.query;
 
     try {
+      const searchStr: string | undefined = typeof search === 'string' ? search : undefined;
+
+      const whereClause: Prisma.LogStockWhereInput = {
+        outletId: user.outletId,
+      };
+
+      if (searchStr) {
+        whereClause.stock = {
+          name: {
+            contains: searchStr,
+            mode: 'insensitive',
+          },
+        };
+      }
+
       const logStocks = await prisma.logStock.findMany({
-        where: { outletId: user.outletId },
+        where: whereClause,
+        include: {
+          stock: true,
+        },
         orderBy: {
           createdAt: 'asc',
         },
