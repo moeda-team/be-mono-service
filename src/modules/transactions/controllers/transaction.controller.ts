@@ -21,6 +21,8 @@ export class TransactionController {
     const search = (req.query.search as string)?.trim() || null;
     const active = req.query.active === 'true';
     const table = parseInt(req.query.table as string) || null;
+    const month = parseInt(req.query.month as string) || null;
+    const year = parseInt(req.query.year as string) || null;
 
     const skip = page && limit ? (page - 1) * limit : undefined;
     const take = limit || undefined;
@@ -54,6 +56,13 @@ export class TransactionController {
 
       if (table) {
         whereClause.tableNumber = { equals: table };
+      }
+
+      if (month && year) {
+        whereClause.createdAt = {
+          gte: new Date(year, month - 1, 1),
+          lt: new Date(year, month, 1),
+        };
       }
 
       const transactions = await prisma.transaction.findMany({
