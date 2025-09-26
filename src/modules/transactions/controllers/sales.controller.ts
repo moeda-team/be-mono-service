@@ -117,7 +117,15 @@ export class SalesController {
       ]);
       const todayVal = new Decimal(todayAvg._avg.total || 0);
       const yesterdayVal = new Decimal(yesterdayAvg._avg.total || 0);
-      const growth = todayVal.div(yesterdayVal).sub(1);
+
+      let growth = 0;
+      if (yesterdayVal?.isZero?.() && todayVal?.isZero?.()) {
+        growth = 0;
+      } else if (yesterdayVal?.isZero?.()) {
+        growth = Infinity;
+      } else {
+        growth = todayVal.div(yesterdayVal).sub(1).toNumber();
+      }
 
       const topItems = await prisma.subTransaction.groupBy({
         by: ['menuId', 'menuName'],
