@@ -16,6 +16,7 @@ import {
   subDays,
 } from 'date-fns';
 import { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
 
 export class SalesController {
   getTransactionCount = async (req: Request, res: Response) => {
@@ -163,6 +164,88 @@ export class SalesController {
       });
     } catch (error) {
       logger.error('Error getting today summary:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  };
+
+  getSalesSummary = async (req: Request, res: Response) => {
+    const { user } = req as Request & { user?: { outletId: string } };
+    const outletId = user?.outletId;
+
+    try {
+      const month = parseInt(req.query.month as string) || null;
+      const year = parseInt(req.query.year as string) || null;
+
+      const whereClause: Prisma.TransactionWhereInput = {
+        outletId,
+      };
+
+      if (month && year) {
+        whereClause.createdAt = {
+          gte: new Date(year, month - 1, 1),
+          lt: new Date(year, month, 1),
+        };
+      }
+
+      const { _sum } = await prisma.transaction.aggregate({
+        where: whereClause,
+        _sum: {
+          total: true,
+          serviceCharge: true,
+          rounding: true,
+        },
+      });
+
+      const lastMonthWhere: Prisma.TransactionWhereInput = {
+        outletId,
+      };
+      if (month && year) {
+        lastMonthWhere.createdAt = {
+          gte: new Date(year, month - 2, 1),
+          lt: new Date(year, month - 1, 1),
+        };
+      }
+
+      const { _sum: lastMonthSum } = await prisma.transaction.aggregate({
+        where: lastMonthWhere,
+        _sum: {
+          subTotal: true,
+        },
+      });
+
+      const revenueMoeda =
+        (_sum.total?.toNumber() || 0) -
+        (_sum.serviceCharge?.toNumber() || 0) -
+        (_sum.rounding?.toNumber() || 0);
+
+      const revenueHompimpa =
+        (_sum.rounding?.toNumber() || 0) +
+        (_sum.serviceCharge?.toNumber() || 0) -
+        (_sum.total?.toNumber() || 0) * 0.007;
+
+      const lastRevenue = lastMonthSum.subTotal?.toNumber() || 0;
+      let growthPercentage = 0;
+
+      if (lastRevenue > 0) {
+        growthPercentage = ((revenueMoeda - lastRevenue) / lastRevenue) * 100;
+      }
+
+      const response = {
+        grossRevenue: _sum.total?.toNumber() || 0,
+        growthPercentage: growthPercentage.toFixed(2) || 0,
+        revenueMoeda: revenueMoeda || 0,
+        revenueHompimpa: revenueHompimpa || 0,
+      };
+
+      return ResponseHandler.success(res, {
+        message: 'Sales summary retrieved successfully',
+        data: response,
+      });
+    } catch (error) {
+      logger.error('Error getting sales summary:', error);
       return ResponseHandler.error(res, {
         message: 'Internal server error',
         statusCode: 500,
