@@ -185,9 +185,9 @@ model Menu {
 
   outlet         Outlet?          @relation(fields: [outletId], references: [id], onDelete: Cascade)
   category       Category         @relation(fields: [categoryId], references: [id])
-  SubTransaction SubTransaction[]
-  LogStock       LogStock[]
-  Ingredient     Ingredient[]
+  subTransaction SubTransaction[]
+  logStock       LogStock[]
+  ingredient     Ingredient[]
 }
 
 model Option {
