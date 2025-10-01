@@ -197,6 +197,7 @@ export class MenuController {
           price: menuData.price,
           pdf: menuData.pdf,
           options: menuData.options,
+          isActive: menuData.isActive,
         },
       });
 
