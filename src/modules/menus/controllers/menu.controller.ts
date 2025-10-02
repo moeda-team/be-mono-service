@@ -81,9 +81,34 @@ export class MenuController {
         });
       }
 
+      const options = menu.options;
+      const listOption = await prisma.option.findMany({
+        where: {
+          id: {
+            in: options,
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          value: true,
+          addPrices: true,
+        },
+      });
+      if (listOption.length !== options.length) {
+        return ResponseHandler.error(res, {
+          message: 'One or more options not found',
+          statusCode: 404,
+        });
+      }
+      const response = {
+        ...menu,
+        options: listOption,
+      };
+
       return ResponseHandler.success(res, {
         message: 'Menu retrieved successfully',
-        data: menu,
+        data: response,
       });
     } catch (error) {
       logger.error('Error getting menu:', error);
