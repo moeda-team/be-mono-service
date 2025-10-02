@@ -88,6 +88,9 @@ export class MenuController {
             in: options,
           },
         },
+        orderBy: {
+          updatedAt: 'desc',
+        },
         select: {
           id: true,
           name: true,
