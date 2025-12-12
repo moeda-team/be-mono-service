@@ -1,6 +1,6 @@
 import request from 'supertest';
 import express from 'express';
-import { app } from '../../app';
+import app from '../../app';
 import { config } from '../../config';
 // No unused imports
 

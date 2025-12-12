@@ -68,7 +68,7 @@ const mockRouter = express.Router();
 });
 
 // ---------- import app (after mocks) ----------
-import { app } from '@/app';
+import app from '@/app';
 
 describe('app.ts', () => {
   it('allows request from whitelisted origin', async () => {
