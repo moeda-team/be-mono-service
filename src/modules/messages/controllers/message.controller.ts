@@ -58,32 +58,11 @@ export class MessageController {
 
   async createMessage(req: Request, res: Response) {
     const userData: CreateMessageDTO = req.body;
-    logger.info('User data:', userData);
 
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const findDuplicate = await prisma.message.findFirst({
-        where: {
-          outletId: userData.outletId,
-          email: userData.email,
-          createdAt: {
-            gte: `${today}T00:00:00.000Z`,
-            lt: `${today}T23:59:59.999Z`,
-          },
-        },
-      });
-      if (findDuplicate) {
-        return ResponseHandler.error(res, {
-          message: 'Message already exists today',
-          statusCode: 409,
-        });
-      }
-
       const message = await prisma.message.create({
         data: {
           outletId: userData.outletId,
-          name: userData.name,
-          email: userData.email,
           message: userData.message,
           rating: Number(userData.rating),
         },

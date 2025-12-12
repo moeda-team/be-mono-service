@@ -11,7 +11,10 @@ const poolConfig: PoolConfig = {
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'cafe_db',
   password: process.env.DB_PASSWORD || 'postgres',
-  port: parseInt(process.env.DB_PORT || '5432'),
+  port: parseInt(process.env.DB_PORT || '5432', 10),
+  max: parseInt(process.env.DB_POOL_MAX || '10', 10),
+  idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT_MS || '30000', 10),
+  connectionTimeoutMillis: parseInt(process.env.DB_CONN_TIMEOUT_MS || '2000', 10),
 };
 
 const pool = new Pool(poolConfig);
@@ -28,6 +31,21 @@ pool
 
 pool.on('connect', client => {
   client.query(`SET search_path TO ${defaultSchema}, public`);
+});
+
+const shutdownSignals: NodeJS.Signals[] = ['SIGTERM', 'SIGINT', 'SIGQUIT'];
+shutdownSignals.forEach(signal => {
+  process.on(signal, async () => {
+    try {
+      logger.info(`Received ${signal}. Closing database pool...`);
+      await pool.end();
+      logger.info('Database pool closed. Exiting process.');
+      process.exit(0);
+    } catch (err) {
+      logger.error('Error while closing database pool', err);
+      process.exit(1);
+    }
+  });
 });
 
 export default pool;

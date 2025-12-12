@@ -1,37 +1,46 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from 'express';
 import { logger } from '../../../utils/common/logger';
 import { CreateMenuDTO, UpdateMenuDTO } from '../models/menu';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
+import { Prisma } from '@prisma/client';
 import prisma from '../../../lib/prisma';
 
 export class MenuController {
   async getAllMenus(req: Request, res: Response) {
     const { outletId } = req.params;
-    let { search } = req.query;
-    if (Array.isArray(search)) {
-      search = search[0];
-    }
-    if (typeof search !== 'string') {
-      search = undefined;
-    }
+    const { search, best, category } = req.query;
+
+    const searchStr: string | undefined = typeof search === 'string' ? search : undefined;
+    const categoryStr: string | undefined = typeof category === 'string' ? category : undefined;
+    const bestFlag: boolean | undefined = typeof best === 'string' ? best === 'true' : undefined;
 
     try {
-      let menus;
-      if (search) {
-        menus = await prisma.menu.findMany({
-          where: { outletId, name: { contains: search } },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        });
-      } else {
-        menus = await prisma.menu.findMany({
-          where: { outletId },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        });
+      const whereClause: Prisma.MenuWhereInput = {
+        outletId,
+      };
+
+      if (searchStr) {
+        whereClause.name = {
+          contains: searchStr,
+          mode: 'insensitive',
+        };
       }
+
+      if (bestFlag !== undefined) {
+        whereClause.isBest = bestFlag;
+      }
+
+      if (categoryStr) {
+        whereClause.categoryId = categoryStr;
+      }
+
+      const menus = await prisma.menu.findMany({
+        where: whereClause,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
 
       return ResponseHandler.success(res, {
         message: 'Menus retrieved successfully',
@@ -52,6 +61,18 @@ export class MenuController {
     try {
       const menu = await prisma.menu.findUnique({
         where: { id },
+        include: {
+          ingredient: {
+            include: {
+              stock: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
       });
       if (!menu) {
         return ResponseHandler.error(res, {
@@ -60,9 +81,37 @@ export class MenuController {
         });
       }
 
+      const options = menu.options;
+      const listOption = await prisma.option.findMany({
+        where: {
+          id: {
+            in: options,
+          },
+        },
+        orderBy: {
+          updatedAt: 'desc',
+        },
+        select: {
+          id: true,
+          name: true,
+          value: true,
+          addPrices: true,
+        },
+      });
+      if (listOption.length !== options.length) {
+        return ResponseHandler.error(res, {
+          message: 'One or more options not found',
+          statusCode: 404,
+        });
+      }
+      const response = {
+        ...menu,
+        options: listOption,
+      };
+
       return ResponseHandler.success(res, {
         message: 'Menu retrieved successfully',
-        data: menu,
+        data: response,
       });
     } catch (error) {
       logger.error('Error getting menu:', error);
@@ -73,62 +122,23 @@ export class MenuController {
     }
   }
 
-  async getMenusByCategory(req: Request, res: Response) {
-    const { outletId, categoryId } = req.params;
-    let { search } = req.query;
-    if (Array.isArray(search)) {
-      search = search[0];
-    }
-    if (typeof search !== 'string') {
-      search = undefined;
-    }
-
-    try {
-      let menus;
-      if (search) {
-        menus = await prisma.menu.findMany({
-          where: { categoryId, outletId, name: { contains: search } },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        });
-      } else {
-        menus = await prisma.menu.findMany({
-          where: { categoryId, outletId },
-          orderBy: {
-            name: 'asc',
-          },
-        });
-      }
-      return ResponseHandler.success(res, {
-        message: 'Menus retrieved successfully',
-        data: menus,
-      });
-    } catch (error) {
-      logger.error('Error getting menus:', error);
-      return ResponseHandler.error(res, {
-        message: 'Internal server error',
-        statusCode: 500,
-      });
-    }
-  }
-
   async createMenu(req: Request, res: Response) {
     const menuData: CreateMenuDTO = req.body;
-    logger.info('Menu data:', menuData);
 
     const user = (req as Request & { user?: { outletId: string } }).user;
     const outletId = user?.outletId;
 
-    for (const option of menuData.options) {
-      const checkOption = await prisma.option.findUnique({
-        where: { id: option },
-      });
-      if (!checkOption) {
-        return ResponseHandler.error(res, {
-          message: `Option ${option} not found, failed to create menu`,
-          statusCode: 404,
+    if ((prisma as any).option?.findUnique) {
+      for (const option of menuData.options) {
+        const checkOption = await (prisma as any).option.findUnique({
+          where: { id: option },
         });
+        if (!checkOption) {
+          return ResponseHandler.error(res, {
+            message: `Option ${option} not found, failed to create menu`,
+            statusCode: 404,
+          });
+        }
       }
     }
 
@@ -215,6 +225,7 @@ export class MenuController {
           price: menuData.price,
           pdf: menuData.pdf,
           options: menuData.options,
+          isActive: menuData.isActive,
         },
       });
 
@@ -264,29 +275,6 @@ export class MenuController {
         });
       }
       logger.error('Error deleting menu:', error);
-      return ResponseHandler.error(res, {
-        message: 'Internal server error',
-        statusCode: 500,
-      });
-    }
-  }
-
-  async getBestMenus(req: Request, res: Response) {
-    const { outletId } = req.params;
-
-    try {
-      const menus = await prisma.menu.findMany({
-        where: { outletId, isBest: true },
-        orderBy: {
-          name: 'asc',
-        },
-      });
-      return ResponseHandler.success(res, {
-        message: 'Menus retrieved successfully',
-        data: menus,
-      });
-    } catch (error) {
-      logger.error('Error getting menus:', error);
       return ResponseHandler.error(res, {
         message: 'Internal server error',
         statusCode: 500,

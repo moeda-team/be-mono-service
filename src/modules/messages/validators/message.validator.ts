@@ -4,10 +4,8 @@ import { ResponseHandler } from '../../../utils/response/responseHandler';
 
 export const validateCreateMessage = [
   body('outletId').trim().notEmpty().withMessage('Outlet ID is required'),
-  body('name').trim().notEmpty().withMessage('Name is required'),
-  body('email').trim().optional().isEmail().withMessage('Please provide a valid email address'),
   body('message').trim().notEmpty().withMessage('Message is required'),
-  body('rating').trim().isInt().withMessage('Rating must between 1 and 5'),
+  body('rating').trim().isInt({ min: 1, max: 5 }).withMessage('Rating must between 1 and 5'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

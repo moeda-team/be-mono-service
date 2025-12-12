@@ -5,14 +5,12 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["multiSchema"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["mono"]
 }
 
 model User {
@@ -34,23 +32,49 @@ model User {
   outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
 
   transactions Transaction[]
-
-  @@schema("mono")
+  LogStock     LogStock[]
+  Attendance   Attendance[]
 }
 
 model Message {
   id        String   @id @default(uuid()) @db.VarChar(36)
   outletId  String?
-  name      String   @db.VarChar(100)
-  email     String   @db.VarChar(100)
   message   String
   rating    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
+}
 
-  @@schema("mono")
+model Voucher {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  outletId  String?  @db.VarChar(36)
+  name      String   @db.VarChar(100)
+  type      String   @default("percent") @db.VarChar(20)
+  discount  Decimal  @default(0.0) @db.Decimal
+  amount    Decimal  @default(0.0) @db.Decimal
+  maxAmount Decimal  @default(0.0) @db.Decimal
+  expiredAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  outlet       Outlet?       @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  logVouchers  LogVoucher[]
+}
+
+model LogVoucher {
+  id            String   @id @default(uuid()) @db.VarChar(36)
+  outletId      String?
+  transactionId String   @db.VarChar(36)
+  voucherId     String   @db.VarChar(36)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  outlet      Outlet?      @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  voucher     Voucher?     @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }
 
 model Transaction {
@@ -59,7 +83,7 @@ model Transaction {
   outletId            String?  @db.VarChar(36)
   number              String   @db.VarChar(20)
   transactionType     String   @db.VarChar(50)
-  tableNumber         Int?     @db.Integer
+  tableNumber         Int      @db.Integer
   paymentNumber       String   @db.VarChar(20)
   paymentMethod       String   @db.VarChar(50)
   customerName        String?  @db.VarChar(100)
@@ -67,20 +91,22 @@ model Transaction {
   subTotal            Decimal  @default(0.0) @db.Decimal
   discount            Decimal  @default(0.0) @db.Decimal
   serviceCharge       Decimal  @default(0.0) @db.Decimal
-  tax                 Decimal  @default(0.0) @db.Decimal
+  rounding            Decimal  @default(0.0) @db.Decimal
   total               Decimal  @default(0.0) @db.Decimal
   additionalNote      String?  @db.VarChar(255)
+  voucherId           String?  @db.VarChar(36)
   status              String   @default("pending") @db.VarChar(20)
   fraudStatus         String   @default("pending") @db.VarChar(20)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  user    User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outlet  Outlet?  @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  voucher Voucher? @relation(fields: [voucherId], references: [id], onDelete: Cascade)
 
+  logVoucher      LogVoucher[]
   subTransactions SubTransaction[]
-
-  @@schema("mono")
+  logTableMove    LogTableMove[]
 }
 
 model SubTransaction {
@@ -97,9 +123,8 @@ model SubTransaction {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  menu        Menu        @relation(fields: [menuId], references: [id])
   transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-
-  @@schema("mono")
 }
 
 model Outlet {
@@ -120,21 +145,26 @@ model Outlet {
   users        User[]
   categories   Category[]
   menus        Menu[]
-
-  @@schema("mono")
+  Voucher      Voucher[]
+  LogVoucher   LogVoucher[]
+  LogTableMove LogTableMove[]
+  Stock        Stock[]
+  LogStock     LogStock[]
+  AlertStock   AlertStock[]
+  Ingredient   Ingredient[]
+  Attendance   Attendance[]
 }
 
 model Category {
   id        String   @id @default(uuid()) @db.VarChar(36)
   outletId  String?  @db.VarChar(36)
   name      String   @db.VarChar(100)
+  icon      String   @default("https://moeda-space.s3.ap-southeast-1.amazonaws.com/icon/default.png")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   menus  Menu[]
   outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
-
-  @@schema("mono")
 }
 
 model Menu {
@@ -142,20 +172,23 @@ model Menu {
   outletId   String?  @db.VarChar(36)
   name       String   @db.VarChar(100)
   desc       String
-  img        String
+  img        String   @default("https://moeda-space.s3.ap-southeast-1.amazonaws.com/default.png")
   price      Decimal
   options    String[]
   pdf        String?  @db.VarChar(255)
   categoryId String   @db.VarChar(36)
   isNew      Boolean  @default(true)
   isBest     Boolean  @default(false)
+  quantity   Int      @default(0) @db.Integer
+  isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  outlet   Outlet?  @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id])
-
-  @@schema("mono")
+  outlet         Outlet?          @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  category       Category         @relation(fields: [categoryId], references: [id])
+  subTransaction SubTransaction[]
+  logStock       LogStock[]
+  ingredient     Ingredient[]
 }
 
 model Option {
@@ -165,6 +198,103 @@ model Option {
   addPrices Decimal[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+}
 
-  @@schema("mono")
+model LogTableMove {
+  id            String   @id @default(uuid()) @db.VarChar(36)
+  outletId      String?
+  transactionId String   @db.VarChar(36)
+  tableNumber   Int      @db.Integer
+  prevTableId   String?  @db.VarChar(36)
+  nextTableId   String?  @db.VarChar(36)
+  note          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  outlet      Outlet?      @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  prevTable LogTableMove? @relation("PrevRelation", fields: [prevTableId], references: [id], onDelete: Cascade)
+  nextTable LogTableMove? @relation("NextRelation", fields: [nextTableId], references: [id], onDelete: Cascade)
+
+  prevOf LogTableMove[] @relation("NextRelation")
+  nextOf LogTableMove[] @relation("PrevRelation")
+}
+
+model Stock {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  outletId  String   @db.VarChar(36)
+  name      String   @db.VarChar(100)
+  qty       Decimal  @default(0) @db.Decimal(10, 2)
+  uom       String   @default("pcs") @db.VarChar(20)
+  minQty    Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  outlet     Outlet?      @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  LogStock   LogStock[]
+  AlertStock AlertStock[]
+  Ingredient Ingredient[]
+}
+
+model LogStock {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  outletId  String   @db.VarChar(36)
+  stockId   String   @db.VarChar(36)
+  qty       Decimal  @default(0) @db.Decimal(10, 2)
+  type      String   @default("add") @db.VarChar(20)
+  uom       String   @default("pcs") @db.VarChar(20)
+  note      String?  @db.VarChar(255)
+  menuId    String?  @db.VarChar(36)
+  userId    String?  @db.VarChar(36)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  stock  Stock?  @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  menu   Menu?   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AlertStock {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  outletId  String   @db.VarChar(36)
+  stockId   String   @db.VarChar(36)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  stock  Stock?  @relation(fields: [stockId], references: [id], onDelete: Cascade)
+}
+
+model Ingredient {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  outletId  String   @db.VarChar(36)
+  menuId    String   @db.VarChar(36)
+  stockId   String   @db.VarChar(36)
+  value     Decimal  @default(0) @db.Decimal(10, 2)
+  uom       String   @default("g") @db.VarChar(20)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  menu   Menu?   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  stock  Stock?  @relation(fields: [stockId], references: [id], onDelete: Cascade)
+}
+
+model Attendance {
+  id             String    @id @default(uuid())
+  outletId       String    @db.VarChar(36)
+  userId         String    @db.VarChar(36)
+  photoUrl       String
+  type           String    @default("check-in") @db.VarChar(20)
+  approvalStatus String    @default("pending") @db.VarChar(20)
+  approvedBy     String?   @db.VarChar(36)
+  approvedAt     DateTime?
+  approvedNote   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

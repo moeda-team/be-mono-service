@@ -28,7 +28,4 @@ router.put(
 );
 router.delete('/:id', jwtAuth, roleAuth(UserRole.STORE_MANAGER), menuController.deleteMenu);
 
-router.get('/list/best/:outletId', basicAuth, menuController.getBestMenus);
-router.get('/list/category/:outletId/:categoryId', basicAuth, menuController.getMenusByCategory);
-
 export default router;

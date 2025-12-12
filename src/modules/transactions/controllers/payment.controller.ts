@@ -4,11 +4,12 @@ import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../lib/prisma';
 import { MidtransPayload, PaymentDTO, PaymentNotification } from '../models/payment';
 import { axiosPost } from '../../../utils/common/axios.custom';
+import { updateStockAndLogStock } from '../services';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export class PaymentController {
   async paymentTransaction(req: Request, res: Response) {
     const transactionData: PaymentDTO = req.body;
-    logger.info('Transaction data:', transactionData);
 
     try {
       const findTransaction = await prisma.transaction.findFirst({
@@ -48,23 +49,23 @@ export class PaymentController {
         name: 'Service Charge',
       });
       itemDetails.push({
-        id: 'tax',
-        price: findTransaction.tax,
-        quantity: 1,
-        name: 'Tax',
-      });
-      itemDetails.push({
         id: 'discount',
-        price: findTransaction.discount,
+        price: Decimal(Number(findTransaction.discount) * -1),
         quantity: 1,
         name: 'Discount',
+      });
+      itemDetails.push({
+        id: 'rounding',
+        price: findTransaction.rounding,
+        quantity: 1,
+        name: 'Rounding',
       });
 
       const payload: MidtransPayload = {
         payment_type: transactionData.paymentType,
         transaction_details: {
           order_id: transactionData.transactionDetails.orderId,
-          gross_amount: transactionData.transactionDetails.grossAmount,
+          gross_amount: findTransaction.total.toNumber(),
         },
         customer_details: {
           first_name: findTransaction.customerName,
@@ -102,6 +103,7 @@ export class PaymentController {
           Authorization: `Basic ${BASE64_AUTH}`,
         },
       });
+
       if (result.status_code !== '201') {
         return ResponseHandler.error(res, {
           message: result.status_message,
@@ -136,8 +138,10 @@ export class PaymentController {
         where: {
           paymentNumber: orderId,
         },
+        include: {
+          subTransactions: true,
+        },
       });
-
       if (!transaction) {
         logger.error(`Transaction with payment number ${orderId} not found`);
         return ResponseHandler.error(res, {
@@ -171,6 +175,31 @@ export class PaymentController {
           fraudStatus,
         },
       });
+
+      if (newStatus === 'completed') {
+        await prisma.logTableMove.create({
+          data: {
+            outletId: transaction?.outletId,
+            transactionId: transaction?.id,
+            tableNumber: transaction?.tableNumber,
+            prevTableId: null,
+            nextTableId: null,
+          },
+        });
+
+        for (const subTransaction of transaction.subTransactions) {
+          const ingredients = await prisma.ingredient.findMany({
+            where: {
+              menuId: subTransaction.menuId,
+            },
+            include: {
+              stock: true,
+            },
+          });
+
+          await updateStockAndLogStock(ingredients, transaction, subTransaction);
+        }
+      }
 
       logger.info(`Transaction ${transaction.id} status updated to ${newStatus}`);
 

@@ -94,6 +94,7 @@ export class OptionController {
         data: {
           name: req.body.name,
           value: req.body.value,
+          addPrices: req.body.addPrices,
         },
       });
       return ResponseHandler.success(res, {

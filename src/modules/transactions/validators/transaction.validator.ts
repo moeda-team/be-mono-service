@@ -50,6 +50,7 @@ export const validateCreateTransaction = [
     .withMessage('subTotal must be a positive number'),
   body('cart.*.addOn').optional(),
   body('cart.*.note').optional(),
+  body('voucher').optional(),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -72,6 +73,48 @@ export const validateUpdateTransactionStatus = [
     .notEmpty()
     .withMessage('Status is required')
     .isIn(['preparation', 'ready', 'served', 'completed']),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return ResponseHandler.error(res, {
+        message: 'Validation failed',
+        statusCode: 400,
+        error: {
+          code: 'VALIDATION_FAILED',
+          details: errors.array(),
+        },
+      });
+    }
+    next();
+  },
+];
+
+export const validateUpdateTransactionTable = [
+  body('tableNumber')
+    .trim()
+    .notEmpty()
+    .withMessage('Table number is required for dine-in')
+    .isNumeric()
+    .withMessage('Table number must be numeric'),
+  body('note').optional(),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return ResponseHandler.error(res, {
+        message: 'Validation failed',
+        statusCode: 400,
+        error: {
+          code: 'VALIDATION_FAILED',
+          details: errors.array(),
+        },
+      });
+    }
+    next();
+  },
+];
+
+export const validateCheckTransactionStatus = [
+  body('orderIds.*').trim().notEmpty().withMessage('Order id is required'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
