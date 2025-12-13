@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import timeout from 'connect-timeout';
+import bodyParser from 'body-parser';
 import { Router } from 'express';
 import { NextFunction, Request, Response } from 'express';
 
@@ -22,8 +23,8 @@ import fileRouter from './modules/files/routes';
 import attendanceRouter from './modules/attendance/routes';
 
 const app = express();
-
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
+
 app.use(rateLimiter);
 app.use(timeout('10s'));
 app.use(helmet());
@@ -41,8 +42,8 @@ app.use(
 );
 
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 const router = Router();
 
