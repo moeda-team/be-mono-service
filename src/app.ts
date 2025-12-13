@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import timeout from 'connect-timeout';
+import bodyParser from 'body-parser';
 import { Router } from 'express';
 import { NextFunction, Request, Response } from 'express';
 
@@ -41,21 +42,21 @@ app.use(
 );
 
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 const router = Router();
 
-router.use(`${config.apiPrefix}/v1/users`, userRouter);
-router.use(`${config.apiPrefix}/v1/messages`, messageRouter);
-router.use(`${config.apiPrefix}/v1/transactions`, transactionRouter);
-router.use(`${config.apiPrefix}/v1/outlets`, outletRouter);
-router.use(`${config.apiPrefix}/v1/menus`, menuRouter);
-router.use(`${config.apiPrefix}/v1/vouchers`, voucherRouter);
-router.use(`${config.apiPrefix}/v1/stocks`, stockRouter);
-router.use(`${config.apiPrefix}/v1/ingredients`, ingredientRouter);
-router.use(`${config.apiPrefix}/v1/files`, fileRouter);
-router.use(`${config.apiPrefix}/v1/attendance`, attendanceRouter);
+router.use(`/v1/users`, userRouter);
+router.use(`/v1/messages`, messageRouter);
+router.use(`/v1/transactions`, transactionRouter);
+router.use(`/v1/outlets`, outletRouter);
+router.use(`/v1/menus`, menuRouter);
+router.use(`/v1/vouchers`, voucherRouter);
+router.use(`/v1/stocks`, stockRouter);
+router.use(`/v1/ingredients`, ingredientRouter);
+router.use(`/v1/files`, fileRouter);
+router.use(`/v1/attendance`, attendanceRouter);
 
 app.use(router);
 
