@@ -22,6 +22,7 @@ export function jwtAuth(req: Request, res: Response, next: NextFunction) {
     });
   }
 }
+
 export function jwtAuthNotRequired(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
