@@ -1,18 +1,15 @@
 import rateLimit from 'express-rate-limit';
 import { Request } from 'express';
 
-const getHeaderValue = (value: string | string[] | undefined): string | undefined => {
-  if (!value) return undefined;
-  return Array.isArray(value) ? value[0] : value;
-};
+const getHeaderValue = (value?: string | string[]) => (Array.isArray(value) ? value[0] : value);
 
 const getClientIp = (req: Request): string => {
+  const cfIp = getHeaderValue(req.headers['cf-connecting-ip']);
   const realIp = getHeaderValue(req.headers['x-real-ip']);
   const forwardedFor = getHeaderValue(req.headers['x-forwarded-for']);
-  const cfIp = getHeaderValue(req.headers['cf-connecting-ip']);
 
   return (
-    realIp || forwardedFor?.split(',')[0].trim() || cfIp || req.socket.remoteAddress || 'unknown-ip'
+    cfIp || realIp || forwardedFor?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown-ip'
   );
 };
 
@@ -21,5 +18,5 @@ export const rateLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: getClientIp,
+  keyGenerator: req => getClientIp(req),
 });
