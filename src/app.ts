@@ -22,10 +22,17 @@ import fileRouter from './modules/files/routes';
 import attendanceRouter from './modules/attendance/routes';
 
 const app = express();
-const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
 
-app.set('trust proxy', 1);
+app.set('trust proxy', true);
 app.use(rateLimiter);
+
+app.use((req, res, next) => {
+  console.log('IP:', req.ip);
+  console.log('X-Forwarded-For:', req.headers['x-forwarded-for']);
+  next();
+});
+
+const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
 app.use(timeout('10s'));
 app.use(helmet());
 app.use(
@@ -62,12 +69,6 @@ app.use(router);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
-
-app.use((req, res, next) => {
-  console.log('IP:', req.ip);
-  console.log('X-Forwarded-For:', req.headers['x-forwarded-for']);
-  next();
-});
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
