@@ -23,16 +23,8 @@ import attendanceRouter from './modules/attendance/routes';
 
 const app = express();
 
-app.set('trust proxy', true);
-app.use(rateLimiter);
-
-app.use((req, res, next) => {
-  console.log('IP:', req.ip);
-  console.log('X-Forwarded-For:', req.headers['x-forwarded-for']);
-  next();
-});
-
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
+app.use(rateLimiter);
 app.use(timeout('10s'));
 app.use(helmet());
 app.use(
@@ -54,16 +46,16 @@ app.use(express.urlencoded({ extended: true }));
 
 const router = Router();
 
-router.use(`${config.apiPrefix}/v1/users`, userRouter);
-router.use(`${config.apiPrefix}/v1/messages`, messageRouter);
-router.use(`${config.apiPrefix}/v1/transactions`, transactionRouter);
-router.use(`${config.apiPrefix}/v1/outlets`, outletRouter);
-router.use(`${config.apiPrefix}/v1/menus`, menuRouter);
-router.use(`${config.apiPrefix}/v1/vouchers`, voucherRouter);
-router.use(`${config.apiPrefix}/v1/stocks`, stockRouter);
-router.use(`${config.apiPrefix}/v1/ingredients`, ingredientRouter);
-router.use(`${config.apiPrefix}/v1/files`, fileRouter);
-router.use(`${config.apiPrefix}/v1/attendance`, attendanceRouter);
+router.use(`/v1/users`, userRouter);
+router.use(`/v1/messages`, messageRouter);
+router.use(`/v1/transactions`, transactionRouter);
+router.use(`/v1/outlets`, outletRouter);
+router.use(`/v1/menus`, menuRouter);
+router.use(`/v1/vouchers`, voucherRouter);
+router.use(`/v1/stocks`, stockRouter);
+router.use(`/v1/ingredients`, ingredientRouter);
+router.use(`/v1/files`, fileRouter);
+router.use(`/v1/attendance`, attendanceRouter);
 
 app.use(router);
 
