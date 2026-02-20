@@ -23,7 +23,6 @@ model User {
   address     String   @db.VarChar(255)
   gender      String   @db.VarChar(10)
   phoneNumber String   @db.VarChar(20)
-  fee         Float
   role        String   @default("EMPLOYEE") @db.VarChar(20)
   status      String   @default("active") @db.VarChar(50)
   createdAt   DateTime @default(now())

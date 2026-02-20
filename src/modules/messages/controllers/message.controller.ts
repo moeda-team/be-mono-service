@@ -60,6 +60,16 @@ export class MessageController {
     const userData: CreateMessageDTO = req.body;
 
     try {
+      const outlet = await prisma.outlet.findUnique({
+        where: { id: userData.outletId },
+      });
+      if (!outlet) {
+        return ResponseHandler.error(res, {
+          message: 'Outlet not found',
+          statusCode: 404,
+        });
+      }
+
       const message = await prisma.message.create({
         data: {
           outletId: userData.outletId,
