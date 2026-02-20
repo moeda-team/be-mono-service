@@ -11,18 +11,7 @@ const fileController = new FileController();
 const healthController = new HealthController();
 
 const storage = multer.memoryStorage();
-const fileFilter = (
-  _: Express.Request,
-  file: Express.Multer.File,
-  cb: multer.FileFilterCallback,
-) => {
-  if (file.mimetype.startsWith('image/')) {
-    cb(null, true);
-  } else {
-    cb(new Error('Only image files are allowed'));
-  }
-};
-const upload = multer({ storage, fileFilter });
+const upload = multer({ storage });
 
 router.get('/health', healthController.check);
 router.post(

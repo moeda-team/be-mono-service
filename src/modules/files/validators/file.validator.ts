@@ -20,6 +20,17 @@ export const validateCreateFile = [
         path: 'file',
         location: 'body',
       });
+    } else {
+      const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        errorMessages.push({
+          type: 'field',
+          value: req.file.mimetype,
+          msg: 'Only image files are allowed (JPEG, PNG, GIF, WebP)',
+          path: 'file',
+          location: 'body',
+        });
+      }
     }
 
     if (!errors.isEmpty() || errorMessages.length > 0) {
