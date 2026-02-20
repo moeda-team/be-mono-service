@@ -4,7 +4,6 @@ import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../lib/prisma';
 import { MidtransPayload, PaymentDTO, PaymentNotification } from '../models/payment';
 import { axiosPost } from '../../../utils/common/axios.custom';
-import { updateStockAndLogStock } from '../services';
 import { Decimal } from '@prisma/client/runtime/library';
 
 export class PaymentController {

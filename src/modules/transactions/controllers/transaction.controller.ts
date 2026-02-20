@@ -9,7 +9,6 @@ import {
 } from '../../../utils/generator/generate.number';
 import { JwtPayload } from 'jsonwebtoken';
 import { Prisma } from '@prisma/client';
-import { updateStockAndLogStock } from '../services';
 
 export class TransactionController {
   async getAllTransactions(req: Request, res: Response) {
