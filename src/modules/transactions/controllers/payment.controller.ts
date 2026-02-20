@@ -186,19 +186,6 @@ export class PaymentController {
             nextTableId: null,
           },
         });
-
-        for (const subTransaction of transaction.subTransactions) {
-          const ingredients = await prisma.ingredient.findMany({
-            where: {
-              menuId: subTransaction.menuId,
-            },
-            include: {
-              stock: true,
-            },
-          });
-
-          await updateStockAndLogStock(ingredients, transaction, subTransaction);
-        }
       }
 
       logger.info(`Transaction ${transaction.id} status updated to ${newStatus}`);

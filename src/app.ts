@@ -17,10 +17,7 @@ import transactionRouter from './modules/transactions/routes';
 import outletRouter from './modules/outlets/routes';
 import menuRouter from './modules/menus/routes';
 import voucherRouter from './modules/vouchers/routes';
-import stockRouter from './modules/stocks/routes';
-import ingredientRouter from './modules/ingredients/routes';
 import fileRouter from './modules/files/routes';
-import attendanceRouter from './modules/attendance/routes';
 
 const app = express();
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
@@ -53,10 +50,7 @@ router.use(`/v1/transactions`, transactionRouter);
 router.use(`/v1/outlets`, outletRouter);
 router.use(`/v1/menus`, menuRouter);
 router.use(`/v1/vouchers`, voucherRouter);
-router.use(`/v1/stocks`, stockRouter);
-router.use(`/v1/ingredients`, ingredientRouter);
 router.use(`/v1/files`, fileRouter);
-router.use(`/v1/attendance`, attendanceRouter);
 
 app.use(router);
 

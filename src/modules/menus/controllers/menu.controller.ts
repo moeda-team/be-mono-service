@@ -61,18 +61,6 @@ export class MenuController {
     try {
       const menu = await prisma.menu.findUnique({
         where: { id },
-        include: {
-          ingredient: {
-            include: {
-              stock: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          },
-        },
       });
       if (!menu) {
         return ResponseHandler.error(res, {

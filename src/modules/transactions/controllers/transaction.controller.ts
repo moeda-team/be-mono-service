@@ -432,21 +432,6 @@ export class TransactionController {
         });
       }
 
-      if (transactionStatus === 'completed') {
-        for (const subTransaction of transactionData.cart) {
-          const ingredients = await prisma.ingredient.findMany({
-            where: {
-              menuId: subTransaction.menuId,
-            },
-            include: {
-              stock: true,
-            },
-          });
-
-          await updateStockAndLogStock(ingredients, transaction, subTransaction);
-        }
-      }
-
       if (voucherData) {
         await prisma.voucher.update({
           where: { id: voucherData.id },
