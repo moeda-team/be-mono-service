@@ -35,10 +35,52 @@ export class MenuController {
         whereClause.categoryId = categoryStr;
       }
 
+      const now = new Date();
+
       const menus = await prisma.menu.findMany({
-        where: whereClause,
+        where: {
+          outletId: '17832ff5-2965-4cda-ab08-16d1311a91d1',
+        },
         orderBy: {
           createdAt: 'desc',
+        },
+        include: {
+          vouchers: {
+            where: {
+              voucher: {
+                NOT: {
+                  OR: [
+                    {
+                      AND: [
+                        { maxUsage: { gt: 0 } },
+                        {
+                          usage: {
+                            gte: prisma.voucher.fields.maxUsage,
+                          },
+                        },
+                      ],
+                    },
+                    {
+                      expiredAt: {
+                        lte: now,
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+            select: {
+              voucherId: true,
+              voucher: {
+                select: {
+                  name: true,
+                  discount: true,
+                  type: true,
+                  maxUsage: true,
+                },
+              },
+            },
+          },
         },
       });
 

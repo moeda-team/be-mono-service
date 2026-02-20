@@ -44,37 +44,6 @@ model Message {
   outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
 }
 
-model Voucher {
-  id          String   @id @default(uuid()) @db.VarChar(36)
-  outletId    String?  @db.VarChar(36)
-  name        String   @db.VarChar(100)
-  description String?  @db.VarChar(255)
-  type        String   @default("percent") @db.VarChar(20)
-  discount    Decimal  @default(0.0) @db.Decimal
-  usage       Decimal  @default(0.0) @db.Decimal
-  maxUsage    Decimal  @default(0.0) @db.Decimal
-  expiredAt   DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  outlet       Outlet?       @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
-  logVouchers  LogVoucher[]
-}
-
-model LogVoucher {
-  id            String   @id @default(uuid()) @db.VarChar(36)
-  outletId      String?
-  transactionId String   @db.VarChar(36)
-  voucherId     String   @db.VarChar(36)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  outlet      Outlet?      @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  voucher     Voucher?     @relation(fields: [voucherId], references: [id], onDelete: Cascade)
-  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-}
-
 model Transaction {
   id                  String   @id @default(uuid()) @db.VarChar(36)
   userId              String?  @db.VarChar(36)
@@ -160,6 +129,39 @@ model Category {
   outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
 }
 
+model LogVoucher {
+  id            String   @id @default(uuid()) @db.VarChar(36)
+  outletId      String?
+  transactionId String   @db.VarChar(36)
+  voucherId     String   @db.VarChar(36)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  outlet      Outlet?      @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  voucher     Voucher?     @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
+model Voucher {
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  outletId    String?  @db.VarChar(36)
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(255)
+  type        String   @default("percent") @db.VarChar(20)
+  discount    Decimal  @default(0.0) @db.Decimal
+  usage       Decimal  @default(0.0) @db.Decimal
+  maxUsage    Decimal  @default(0.0) @db.Decimal
+  expiredAt   DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  outlet       Outlet?       @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  logVouchers  LogVoucher[]
+
+  menus VoucherMenu[]
+}
+
 model Menu {
   id         String   @id @default(uuid()) @db.VarChar(36)
   outletId   String?  @db.VarChar(36)
@@ -172,7 +174,7 @@ model Menu {
   categoryId String   @db.VarChar(36)
   isNew      Boolean  @default(true)
   isBest     Boolean  @default(false)
-  quantity   Int      @default(0) @db.Integer
+  quantity   Int      @default(0)
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -180,6 +182,19 @@ model Menu {
   outlet         Outlet?          @relation(fields: [outletId], references: [id], onDelete: Cascade)
   category       Category         @relation(fields: [categoryId], references: [id])
   subTransaction SubTransaction[]
+
+  vouchers VoucherMenu[]
+}
+
+model VoucherMenu {
+  voucherId String @db.VarChar(36)
+  menuId    String @db.VarChar(36)
+
+  voucher Voucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  menu    Menu    @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@id([voucherId, menuId])
+  @@index([menuId])
 }
 
 model Option {

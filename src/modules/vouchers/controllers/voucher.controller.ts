@@ -40,6 +40,13 @@ export class VoucherController {
         orderBy: {
           createdAt: 'asc',
         },
+        include: {
+          menus: {
+            include: {
+              menu: true,
+            },
+          },
+        },
       });
       return ResponseHandler.success(res, {
         message: 'Vouchers retrieved successfully',

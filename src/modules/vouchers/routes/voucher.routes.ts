@@ -4,10 +4,14 @@ import { validateCreateVoucher, validateUpdateVoucher } from '../validators/vouc
 import { HealthController } from '../controllers/health.controller';
 import { jwtAuthNotRequired, jwtAuth, roleAuth } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
+import voucherMenuRoutes from './voucher-menu.routes';
 
 const router = Router();
 const voucherController = new VoucherController();
 const healthController = new HealthController();
+
+// Voucher Menu routes
+router.use('/menus', voucherMenuRoutes);
 
 router.get('/health', healthController.check);
 router.get('/:code/detail', jwtAuthNotRequired, voucherController.getVoucherByName);
