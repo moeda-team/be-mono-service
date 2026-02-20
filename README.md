@@ -40,7 +40,8 @@ A robust, production-ready Node.js TypeScript REST API service for restaurant ma
 ### Development Experience
 
 - **Hot Reloading** with Nodemon
-- **Code Quality** with ESLint and Prettier
+- **Code Formatting** with Prettier
+- **Type Safety** with TypeScript strict mode
 - **Git Hooks** with Husky for pre-commit checks
 - **Environment Configuration** management
 - **Docker Support** for containerization
@@ -92,12 +93,6 @@ The server will start on `http://localhost:3000` with hot reloading enabled.
 ### Code Quality Checks
 
 ```bash
-# Lint code
-npm run lint
-
-# Fix linting issues
-npm run lint:fix
-
 # Format code
 npm run format
 
@@ -346,13 +341,6 @@ npm run test:coverage
 
 ## 📝 Code Quality
 
-### ESLint Configuration
-
-- TypeScript strict mode
-- Import/export rules
-- Code formatting rules
-- Security best practices
-
 ### Prettier Configuration
 
 - 2 space indentation
@@ -360,9 +348,16 @@ npm run test:coverage
 - Trailing commas
 - Semicolons
 
+### TypeScript Configuration
+
+- Strict type checking
+- No implicit any
+- Import/export rules
+- Modern ES features
+
 ### Git Hooks
 
-- Pre-commit: Lint and format check
+- Pre-commit: Format check and type check
 - Pre-push: Test run
 
 ## 🚀 Deployment

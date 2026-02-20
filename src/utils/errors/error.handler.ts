@@ -7,7 +7,7 @@ export const errorHandler = (
   error: Error | AppError,
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   let statusCode = 500;
   let errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
@@ -52,7 +52,7 @@ export const errorHandler = (
       const prismaError = error as any;
       statusCode = 400;
       errorCode = ErrorCode.DATABASE_ERROR;
-      
+
       switch (prismaError.code) {
         case 'P2002':
           message = 'Unique constraint violation';
@@ -70,7 +70,7 @@ export const errorHandler = (
         default:
           message = 'Database operation failed';
       }
-      
+
       details = {
         prismaCode: prismaError.code,
         target: prismaError.meta?.target,
@@ -129,7 +129,7 @@ export const notFoundHandler = (req: Request, res: Response, next: NextFunction)
     ip: req.ip,
     userAgent: req.get('User-Agent'),
   });
-  
+
   ResponseHandler.error(res, {
     message,
     statusCode: 404,

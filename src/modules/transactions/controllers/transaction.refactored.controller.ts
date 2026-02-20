@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { logger } from '../../../utils/common/logger';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { TransactionService } from '../../../services/transaction.service';
 import { CreateTransactionDTO, TransactionQueryParams } from '../../../types/transaction.types';
@@ -48,18 +47,39 @@ export class TransactionController {
   createTransaction = [
     validate([
       body('outletId').isUUID().withMessage('Outlet ID must be a valid UUID'),
-      body('transactionType').isString().isLength({ min: 1, max: 50 }).withMessage('Transaction type is required'),
+      body('transactionType')
+        .isString()
+        .isLength({ min: 1, max: 50 })
+        .withMessage('Transaction type is required'),
       body('tableNumber').isInt({ min: 1 }).withMessage('Table number must be a positive integer'),
-      body('paymentMethod').isString().isIn(['cash', 'qris', 'gopay', 'shopeepay']).withMessage('Invalid payment method'),
-      body('customerName').optional().isString().isLength({ max: 100 }).withMessage('Customer name too long'),
+      body('paymentMethod')
+        .isString()
+        .isIn(['cash', 'qris', 'gopay', 'shopeepay'])
+        .withMessage('Invalid payment method'),
+      body('customerName')
+        .optional()
+        .isString()
+        .isLength({ max: 100 })
+        .withMessage('Customer name too long'),
       body('cart').isArray({ min: 1 }).withMessage('Cart must contain at least one item'),
       body('cart.*.menuId').isUUID().withMessage('Menu ID must be a valid UUID'),
-      body('cart.*.menuName').isString().isLength({ min: 1, max: 100 }).withMessage('Menu name is required'),
+      body('cart.*.menuName')
+        .isString()
+        .isLength({ min: 1, max: 100 })
+        .withMessage('Menu name is required'),
       body('cart.*.quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
       body('cart.*.price').isFloat({ min: 0 }).withMessage('Price must be non-negative'),
       body('cart.*.subTotal').isFloat({ min: 0 }).withMessage('Subtotal must be non-negative'),
-      body('voucher').optional().isString().isLength({ min: 1, max: 100 }).withMessage('Invalid voucher format'),
-      body('additionalNote').optional().isString().isLength({ max: 255 }).withMessage('Note too long'),
+      body('voucher')
+        .optional()
+        .isString()
+        .isLength({ min: 1, max: 100 })
+        .withMessage('Invalid voucher format'),
+      body('additionalNote')
+        .optional()
+        .isString()
+        .isLength({ max: 255 })
+        .withMessage('Note too long'),
     ]),
     asyncHandler(async (req: Request, res: Response) => {
       const transactionData: CreateTransactionDTO = req.body;
