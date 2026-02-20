@@ -1,76 +1,256 @@
 # Backend Mono Services API
 
-A Node.js TypeScript REST API service for managing restaurant with industry-standard practices.
+A robust, production-ready Node.js TypeScript REST API service for restaurant management with industry-standard practices and comprehensive error handling.
 
-## Features
+## 🚀 Features
 
-- TypeScript support
-- Express.js framework
-- Environment configuration
-- Error handling and validation
-- Logging with Winston
-- CORS enabled
-- Security headers with Helmet
-- API request logging with Morgan
-- ESLint for code quality
-- Jest for testing
-- Hot reloading for development
-- Basic authentication
-- Request validation middleware
+### Core Architecture
 
-## Getting Started
+- **TypeScript** with strict type safety
+- **Express.js** framework with modular routing
+- **Service Layer Architecture** with separation of concerns
+- **Repository Pattern** for data access
+- **Dependency Injection** ready structure
 
-1. Install dependencies:
+### Security & Validation
+
+- **Enhanced Authentication** with JWT and role-based access control
+- **Input Validation** with express-validator
+- **Security Headers** with Helmet
+- **CORS** configuration with origin validation
+- **Rate Limiting** to prevent abuse
+- **Request Timeout** handling
+
+### Error Handling & Monitoring
+
+- **Custom Error System** with structured error codes
+- **Centralized Error Handler** with consistent responses
+- **Comprehensive Logging** with Winston
+- **Health Check** endpoints
+- **Request Tracing** with unique request IDs
+
+### Database & Performance
+
+- **Prisma ORM** with PostgreSQL
+- **Connection Pooling** and management
+- **Database Transactions** with rollback support
+- **Query Optimization** and N+1 prevention
+- **Graceful Shutdown** handling
+
+### Development Experience
+
+- **Hot Reloading** with Nodemon
+- **Code Quality** with ESLint and Prettier
+- **Git Hooks** with Husky for pre-commit checks
+- **Environment Configuration** management
+- **Docker Support** for containerization
+
+## 📦 Installation
+
+1. **Clone the repository:**
+
+```bash
+git clone <repository-url>
+cd be-mono-service
+```
+
+2. **Install dependencies:**
 
 ```bash
 npm install
 ```
 
-2. Set up environment variables:
+3. **Set up environment variables:**
 
 ```bash
 cp .env.example .env
+# Edit .env with your configuration
 ```
 
-3. Development mode:
+4. **Generate Prisma client:**
+
+```bash
+npm run prisma:generate
+```
+
+5. **Run database migrations:**
+
+```bash
+npm run prisma:migrate
+```
+
+## 🛠️ Development
+
+### Start Development Server
 
 ```bash
 npm run dev
 ```
 
-4. Production build:
+The server will start on `http://localhost:3000` with hot reloading enabled.
+
+### Code Quality Checks
 
 ```bash
+# Lint code
+npm run lint
+
+# Fix linting issues
+npm run lint:fix
+
+# Format code
+npm run format
+
+# Check formatting
+npm run format:check
+
+# Type checking
+npm run typecheck
+```
+
+### Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+## 🚀 Production
+
+### Build and Start
+
+```bash
+# Build for production
 npm run build
+
+# Start production server
 npm start
 ```
 
-## Scripts
+### Environment Variables
 
-- `npm start` - Start the production server
-- `npm run dev` - Start development server with hot reloading
-- `npm run build` - Build for production
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Run ESLint with auto fix
-- `npm run format` - Run Prettier
-- `npm run format:check` - Run Prettier with check
-- `npm run test` - Run tests
-- `npm run typecheck` - Check TypeScript types
-- `npm run prepare` - Prepare the project
-- `npm run prisma:generate` - Generate Prisma client
-- `npm run prisma:migrate` - Run Prisma migrations
-
-## Docker Support
-
-### Using Docker Compose (Recommended for Development)
-
-1. Start the application and database:
+Required environment variables:
 
 ```bash
-docker-compose up
+# Server Configuration
+NODE_ENV=development
+PORT=3000
+API_PREFIX=/api
+
+# Database
+DATABASE_URL=postgresql://username:password@localhost:5432/database
+DB_SCHEMA=mono
+
+# Authentication
+JWT_SECRET=your-super-secret-jwt-key
+AUTH_USERNAME=admin
+AUTH_PASSWORD=password
+
+# CORS
+CORS_ORIGIN=http://localhost:3000,https://yourdomain.com
+
+# External Services
+MIDTRANS_SERVER_KEY=your-midtrans-server-key
+MIDTRANS_IS_PRODUCTION=false
+
+# AWS (for file uploads)
+AWS_ACCESS_KEY_ID=your-aws-access-key
+AWS_SECRET_ACCESS_KEY=your-aws-secret-key
+AWS_REGION=ap-southeast-1
+AWS_S3_BUCKET=your-s3-bucket
 ```
 
-2. Stop the application:
+## 📚 API Documentation
+
+### Base URL
+
+```
+Development: http://localhost:3000/api/v1
+Production: https://your-domain.com/api/v1
+```
+
+### Available Endpoints
+
+#### Authentication
+
+- `POST /api/v1/auth/login` - User login
+- `POST /api/v1/auth/register` - User registration
+- `POST /api/v1/auth/refresh` - Refresh token
+
+#### Users
+
+- `GET /api/v1/users` - Get all users
+- `GET /api/v1/users/:id` - Get user by ID
+- `POST /api/v1/users` - Create user
+- `PUT /api/v1/users/:id` - Update user
+- `DELETE /api/v1/users/:id` - Delete user
+
+#### Transactions
+
+- `GET /api/v1/transactions` - Get all transactions
+- `GET /api/v1/transactions/:id` - Get transaction by ID
+- `POST /api/v1/transactions` - Create transaction
+- `PUT /api/v1/transactions/:id/status` - Update transaction status
+- `DELETE /api/v1/transactions/:id` - Delete transaction
+
+#### Menus
+
+- `GET /api/v1/menus` - Get all menus
+- `GET /api/v1/menus/:id` - Get menu by ID
+- `POST /api/v1/menus` - Create menu
+- `PUT /api/v1/menus/:id` - Update menu
+- `DELETE /api/v1/menus/:id` - Delete menu
+
+#### Outlets
+
+- `GET /api/v1/outlets` - Get all outlets
+- `GET /api/v1/outlets/:id` - Get outlet by ID
+- `POST /api/v1/outlets` - Create outlet
+- `PUT /api/v1/outlets/:id` - Update outlet
+- `DELETE /api/v1/outlets/:id` - Delete outlet
+
+#### Vouchers
+
+- `GET /api/v1/vouchers` - Get all vouchers
+- `GET /api/v1/vouchers/:id` - Get voucher by ID
+- `POST /api/v1/vouchers` - Create voucher
+- `PUT /api/v1/vouchers/:id` - Update voucher
+- `DELETE /api/v1/vouchers/:id` - Delete voucher
+
+#### Files
+
+- `POST /api/v1/files/upload` - Upload file
+- `GET /api/v1/files/:id` - Get file by ID
+- `DELETE /api/v1/files/:id` - Delete file
+
+### Health Check
+
+- `GET /health` - Application health status
+- `GET /api/v1` - API information and endpoints
+
+## 🐳 Docker Support
+
+### Using Docker Compose (Recommended)
+
+1. **Start all services:**
+
+```bash
+docker-compose up -d
+```
+
+2. **View logs:**
+
+```bash
+docker-compose logs -f
+```
+
+3. **Stop services:**
 
 ```bash
 docker-compose down
@@ -78,16 +258,156 @@ docker-compose down
 
 ### Using Docker
 
-1. Build the Docker image:
+1. **Build image:**
 
 ```bash
 docker build -t mono-service .
 ```
 
-2. Run the container:
+2. **Run container:**
 
 ```bash
-docker run -p 3000:3000 -e DATABASE_URL=your_database_url mono-service
+docker run -p 3000:3000 \
+  -e DATABASE_URL=postgresql://username:password@host:5432/database \
+  -e JWT_SECRET=your-jwt-secret \
+  mono-service
 ```
 
-Note: Make sure to provide the correct DATABASE_URL when running with Docker.
+## 📊 Monitoring & Logging
+
+### Application Logs
+
+The application uses Winston for structured logging with the following levels:
+
+- `error` - Error messages and exceptions
+- `warn` - Warning messages
+- `info` - General information
+- `debug` - Debug information (development only)
+
+### Health Monitoring
+
+The `/health` endpoint provides:
+
+- Application status
+- Database connectivity
+- Memory usage
+- Uptime
+- Environment information
+
+## 🔧 Configuration
+
+### Database Configuration
+
+The application uses a singleton database manager with:
+
+- Connection pooling
+- Automatic reconnection
+- Health checks
+- Graceful shutdown
+
+### Security Configuration
+
+- JWT token expiration: 24 hours
+- Rate limiting: 100 requests per 15 minutes
+- Request timeout: 30 seconds
+- CORS: Configurable origins
+- Security headers: CSP, HSTS, XSS protection
+
+## 🧪 Testing
+
+### Test Structure
+
+```
+src/
+├── __tests__/
+│   ├── unit/
+│   ├── integration/
+│   └── fixtures/
+├── services/
+├── controllers/
+└── utils/
+```
+
+### Running Tests
+
+```bash
+# All tests
+npm test
+
+# Unit tests only
+npm run test:unit
+
+# Integration tests only
+npm run test:integration
+
+# With coverage
+npm run test:coverage
+```
+
+## 📝 Code Quality
+
+### ESLint Configuration
+
+- TypeScript strict mode
+- Import/export rules
+- Code formatting rules
+- Security best practices
+
+### Prettier Configuration
+
+- 2 space indentation
+- Single quotes
+- Trailing commas
+- Semicolons
+
+### Git Hooks
+
+- Pre-commit: Lint and format check
+- Pre-push: Test run
+
+## 🚀 Deployment
+
+### Environment Setup
+
+1. **Production environment variables**
+2. **Database migrations**
+3. **Build application**
+4. **Start with process manager (PM2)**
+
+### PM2 Configuration
+
+```bash
+# Start with PM2
+pm2 start ecosystem.config.js
+
+# Monitor
+pm2 monit
+
+# Logs
+pm2 logs
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the ISC License.
+
+## 🆘 Support
+
+For issues and questions:
+
+- Create an issue on GitHub
+- Check the [REFACTORING_GUIDE.md](./REFACTORING_GUIDE.md) for architecture details
+- Review the API documentation above
+
+---
+
+**Built with ❤️ using Node.js, TypeScript, and modern best practices**
