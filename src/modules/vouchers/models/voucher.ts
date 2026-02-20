@@ -1,10 +1,11 @@
 export interface Voucher {
   id: string;
   name: string;
+  description: string;
   type: string;
   discount: number;
-  amount: number;
-  maxAmount: number;
+  usage: number;
+  maxUsage: number;
   expiredAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -13,8 +14,9 @@ export interface Voucher {
 export interface CreateVoucherDTO {
   outletId: string;
   name: string;
+  description: string;
   type: string;
   discount: number;
-  maxAmount: number;
+  maxUsage: number;
   expiredAt: Date;
 }

@@ -10,7 +10,7 @@ export const validateCreateVoucher = [
     .isIn(['percent', 'fixed'])
     .withMessage('Type must be percent or fixed'),
   body('discount').trim().isInt().withMessage('Discount must be a number'),
-  body('maxAmount').trim().isInt().withMessage('Max amount must be a number'),
+  body('maxUsage').trim().isInt().withMessage('Max usage must be a number'),
   body('expiredAt').trim().isDate().withMessage('Expired at is required'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
@@ -36,7 +36,7 @@ export const validateUpdateVoucher = [
     .isIn(['percent', 'fixed'])
     .withMessage('Type must be percent or fixed'),
   body('discount').trim().isInt().withMessage('Discount must be a number'),
-  body('maxAmount').trim().isInt().withMessage('Max amount must be a number'),
+  body('maxUsage').trim().isInt().withMessage('Max usage must be a number'),
   body('expiredAt').trim().isDate().withMessage('Expired at is required'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);

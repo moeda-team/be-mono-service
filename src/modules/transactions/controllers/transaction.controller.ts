@@ -324,7 +324,7 @@ export class TransactionController {
               });
             }
           }
-          if (Number(voucherData.amount) + 1 > Number(voucherData.maxAmount)) {
+          if (Number(voucherData.usage) + 1 > Number(voucherData.maxUsage)) {
             return ResponseHandler.error(res, {
               message: 'This voucher has reached its usage limit.',
               statusCode: 400,
@@ -435,7 +435,7 @@ export class TransactionController {
         await prisma.voucher.update({
           where: { id: voucherData.id },
           data: {
-            amount: Number(voucherData.amount) + 1,
+            usage: Number(voucherData.usage) + 1,
           },
         });
         await prisma.logVoucher.create({

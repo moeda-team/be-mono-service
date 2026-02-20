@@ -227,7 +227,7 @@ export class TransactionService extends BaseService {
         await tx.voucher.update({
           where: { id: voucherData.id },
           data: {
-            amount: Number(voucherData.amount) + 1,
+            usage: Number(voucherData.usage) + 1,
           },
         });
 
@@ -304,7 +304,7 @@ export class TransactionService extends BaseService {
     }
 
     // Check usage limit
-    if (Number(voucherData.amount) + 1 > Number(voucherData.maxAmount)) {
+    if (Number(voucherData.usage) + 1 > Number(voucherData.maxUsage)) {
       throw AppError.badRequest(
         'This voucher has reached its usage limit.',
         ErrorCode.VOUCHER_LIMIT_REACHED,

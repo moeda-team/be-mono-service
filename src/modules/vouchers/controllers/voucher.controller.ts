@@ -19,10 +19,20 @@ export class VoucherController {
       };
 
       if (searchStr) {
-        whereClause.name = {
-          contains: searchStr,
-          mode: 'insensitive',
-        };
+        whereClause.OR = [
+          {
+            name: {
+              contains: searchStr,
+              mode: 'insensitive',
+            },
+          },
+          {
+            description: {
+              contains: searchStr,
+              mode: 'insensitive',
+            },
+          },
+        ];
       }
 
       const vouchers = await prisma.voucher.findMany({
@@ -34,35 +44,6 @@ export class VoucherController {
       return ResponseHandler.success(res, {
         message: 'Vouchers retrieved successfully',
         data: vouchers,
-      });
-    } catch (error) {
-      logger.error('Error getting vouchers:', error);
-      return ResponseHandler.error(res, {
-        message: 'Internal server error',
-        statusCode: 500,
-      });
-    }
-  }
-
-  async getTodayUsedVouchers(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
-
-    try {
-      const total = await prisma.voucher.count({
-        where: { outletId: user.outletId },
-      });
-      const used = await prisma.logVoucher.count({
-        where: {
-          outletId: user.outletId,
-          createdAt: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)),
-            lte: new Date(new Date().setHours(23, 59, 59, 999)),
-          },
-        },
-      });
-      return ResponseHandler.success(res, {
-        message: 'Vouchers retrieved successfully',
-        data: { total, used },
       });
     } catch (error) {
       logger.error('Error getting vouchers:', error);
@@ -126,10 +107,11 @@ export class VoucherController {
         data: {
           outletId: user.outletId,
           name: voucherData.name,
+          description: voucherData.description,
           type: voucherData.type,
           discount: Number(voucherData.discount),
-          amount: 0,
-          maxAmount: Number(voucherData.maxAmount),
+          usage: 0,
+          maxUsage: Number(voucherData.maxUsage),
           expiredAt: new Date(voucherData.expiredAt),
         },
       });
@@ -176,7 +158,7 @@ export class VoucherController {
           name: voucherData.name,
           type: voucherData.type,
           discount: Number(voucherData.discount),
-          maxAmount: Number(voucherData.maxAmount),
+          maxUsage: Number(voucherData.maxUsage),
           expiredAt: new Date(voucherData.expiredAt),
         },
       });

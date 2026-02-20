@@ -81,7 +81,6 @@ export class UserController {
           address: userData.address,
           gender: userData.gender,
           phoneNumber: userData.phoneNumber,
-          fee: userData.fee,
           status: userData.status,
         },
       });
@@ -135,7 +134,6 @@ export class UserController {
           address: userData.address,
           gender: userData.gender,
           phoneNumber: userData.phoneNumber,
-          fee: userData.fee,
           status: userData.status,
         },
       });
