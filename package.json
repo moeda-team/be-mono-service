@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Backend API service with Node.js and TypeScript",
   "main": "dist/index.js",
-  "type": "module",
   "scripts": {
     "start": "node dist/index.js",
     "dev": "clear && prisma generate dev --name \"$npm_package_name\" && nodemon",
