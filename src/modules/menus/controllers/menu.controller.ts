@@ -5,35 +5,11 @@ import { CreateMenuDTO, UpdateMenuDTO } from '../models/menu';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { Prisma } from '@prisma/client';
 import prisma from '../../../lib/prisma';
+import { MenuService } from '../../../services/menu.service';
+
+const menuService = new MenuService();
 
 export class MenuController {
-  private buildOptionTree = (options: any[], parentId: string | null = null): any[] => {
-    return options
-      .filter(opt => opt.optionId === parentId)
-      .sort((a, b) => a.order - b.order)
-      .map(opt => {
-        const children = this.buildOptionTree(options, opt.id);
-
-        return {
-          id: opt.id,
-          label: opt.name,
-          type: 'single', // change if you store type in DB
-          required: true, // change if you store required flag
-          choices: (opt.values || []).map((value: string, index: number) => {
-            const childOption = children[index];
-
-            return {
-              label: value,
-              value: value,
-              extraPrice:
-                opt.extraPrices?.[index] !== undefined ? Number(opt.extraPrices[index]) : undefined,
-              subOptions: childOption ? [childOption] : [],
-            };
-          }),
-        };
-      });
-  };
-
   getMenuById = async (req: Request, res: Response) => {
     const { id } = req.params;
 
@@ -67,7 +43,7 @@ export class MenuController {
         });
       }
 
-      const structuredOptions = this.buildOptionTree(menu.options);
+      const structuredOptions = menuService.BuildOptionTree(menu.options);
 
       return ResponseHandler.success(res, {
         message: 'Menu retrieved successfully',
@@ -160,7 +136,7 @@ export class MenuController {
 
       const structuredMenus = menus.map(menu => ({
         ...menu,
-        options: this.buildOptionTree(menu.options),
+        options: menuService.BuildOptionTree(menu.options),
       }));
 
       return ResponseHandler.success(res, {
