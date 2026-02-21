@@ -7,8 +7,8 @@ import { validateCreateCategory, validateUpdateCategory } from '../validators/ca
 const router = Router();
 const categoryController = new CategoryController();
 
-router.get('/:outletId', basicAuth, categoryController.findAll);
-router.get('/:outletId/:id', basicAuth, categoryController.findOne);
+router.get('/', basicAuth, categoryController.findAll);
+router.get('/:id', basicAuth, categoryController.findOne);
 router.post(
   '/',
   jwtAuth,

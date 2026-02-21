@@ -10,8 +10,8 @@ const menuController = new MenuController();
 const healthController = new HealthController();
 
 router.get('/health', healthController.check);
-router.get('/:outletId', basicAuth, menuController.getAllMenus);
-router.get('/:outletId/:id', basicAuth, menuController.getMenuById);
+router.get('/', basicAuth, menuController.getAllMenus);
+router.get('/:id', basicAuth, menuController.getMenuById);
 router.post(
   '/',
   jwtAuth,
