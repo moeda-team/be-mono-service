@@ -7,13 +7,90 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../../lib/prisma';
 
 export class MenuController {
-  async getAllMenus(req: Request, res: Response) {
-    const outletId = req.headers.Outletid as string;
-    const { search, best, category } = req.query;
+  private buildOptionTree = (options: any[], parentId: string | null = null): any[] => {
+    return options
+      .filter(opt => opt.optionId === parentId)
+      .sort((a, b) => a.order - b.order)
+      .map(opt => {
+        const children = this.buildOptionTree(options, opt.id);
 
-    const searchStr: string | undefined = typeof search === 'string' ? search : undefined;
-    const categoryStr: string | undefined = typeof category === 'string' ? category : undefined;
-    const bestFlag: boolean | undefined = typeof best === 'string' ? best === 'true' : undefined;
+        return {
+          id: opt.id,
+          label: opt.name,
+          type: 'single', // change if you store type in DB
+          required: true, // change if you store required flag
+          choices: (opt.values || []).map((value: string, index: number) => {
+            const childOption = children[index];
+
+            return {
+              label: value,
+              value: value,
+              extraPrice:
+                opt.extraPrices?.[index] !== undefined ? Number(opt.extraPrices[index]) : undefined,
+              subOptions: childOption ? [childOption] : [],
+            };
+          }),
+        };
+      });
+  };
+
+  getMenuById = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+      const menu = await prisma.menu.findUnique({
+        where: { id },
+        include: {
+          options: {
+            orderBy: { order: 'asc' },
+          },
+          vouchers: {
+            select: {
+              voucherId: true,
+              voucher: {
+                select: {
+                  name: true,
+                  discount: true,
+                  type: true,
+                  maxUsage: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!menu) {
+        return ResponseHandler.error(res, {
+          message: 'Menu not found',
+          statusCode: 404,
+        });
+      }
+
+      const structuredOptions = this.buildOptionTree(menu.options);
+
+      return ResponseHandler.success(res, {
+        message: 'Menu retrieved successfully',
+        data: {
+          ...menu,
+          options: structuredOptions,
+        },
+      });
+    } catch (error) {
+      logger.error('Error getting menu:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  };
+
+  getAllMenus = async (req: Request, res: Response) => {
+    const outletId = req.headers.outletid as string;
+    const { search, category } = req.query;
+
+    const searchStr = typeof search === 'string' ? search : undefined;
+    const categoryStr = typeof category === 'string' ? category : undefined;
 
     try {
       const whereClause: Prisma.MenuWhereInput = {
@@ -39,6 +116,9 @@ export class MenuController {
           createdAt: 'desc',
         },
         include: {
+          options: {
+            orderBy: { order: 'asc' },
+          },
           vouchers: {
             where: {
               voucher: {
@@ -78,75 +158,17 @@ export class MenuController {
         },
       });
 
+      const structuredMenus = menus.map(menu => ({
+        ...menu,
+        options: this.buildOptionTree(menu.options),
+      }));
+
       return ResponseHandler.success(res, {
         message: 'Menus retrieved successfully',
-        data: menus,
+        data: structuredMenus,
       });
     } catch (error) {
       logger.error('Error getting menus:', error);
-      return ResponseHandler.error(res, {
-        message: 'Internal server error',
-        statusCode: 500,
-      });
-    }
-  }
-  private buildOptionTree = (options: any[], parentId: string | null = null): any[] => {
-    return options
-      .filter(opt => opt.optionId === parentId)
-      .sort((a, b) => a.order - b.order)
-      .map(opt => {
-        const children = this.buildOptionTree(options, opt.id);
-
-        return {
-          id: opt.id,
-          label: opt.name,
-          type: 'single',
-          required: true,
-          choices: opt.values.map((value: string, index: number) => {
-            const childOption = children[index];
-
-            return {
-              label: value,
-              value: value,
-              extraPrice: opt.extraPrices?.[index] ? Number(opt.extraPrices[index]) : undefined,
-              subOptions: childOption ? [childOption] : [],
-            };
-          }),
-        };
-      });
-  };
-
-  getMenuById = async (req: Request, res: Response) => {
-    const { id } = req.params;
-
-    try {
-      const menu = await prisma.menu.findUnique({
-        where: { id },
-        include: {
-          options: {
-            orderBy: { order: 'asc' },
-          },
-        },
-      });
-
-      if (!menu) {
-        return ResponseHandler.error(res, {
-          message: 'Menu not found',
-          statusCode: 404,
-        });
-      }
-
-      const structuredOptions = this.buildOptionTree(menu.options);
-
-      return ResponseHandler.success(res, {
-        message: 'Menu retrieved successfully',
-        data: {
-          ...menu,
-          options: structuredOptions,
-        },
-      });
-    } catch (error) {
-      logger.error('Error getting menu:', error);
       return ResponseHandler.error(res, {
         message: 'Internal server error',
         statusCode: 500,
