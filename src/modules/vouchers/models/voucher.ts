@@ -6,6 +6,7 @@ export interface Voucher {
   discount: number;
   usage: number;
   maxUsage: number;
+  allMenu: boolean;
   expiredAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -18,5 +19,6 @@ export interface CreateVoucherDTO {
   type: string;
   discount: number;
   maxUsage: number;
+  allMenu: boolean;
   expiredAt: Date;
 }

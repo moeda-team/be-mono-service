@@ -9,6 +9,7 @@ export interface VoucherMenu {
     discount: number;
     usage: number;
     maxUsage: number;
+    allMenu: boolean;
     expiredAt: Date;
   };
   menu?: {

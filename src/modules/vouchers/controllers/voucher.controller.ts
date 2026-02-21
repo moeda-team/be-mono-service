@@ -119,6 +119,7 @@ export class VoucherController {
           discount: Number(voucherData.discount),
           usage: 0,
           maxUsage: Number(voucherData.maxUsage),
+          allMenu: voucherData.allMenu,
           expiredAt: new Date(voucherData.expiredAt),
         },
       });
@@ -166,6 +167,7 @@ export class VoucherController {
           type: voucherData.type,
           discount: Number(voucherData.discount),
           maxUsage: Number(voucherData.maxUsage),
+          allMenu: voucherData.allMenu,
           expiredAt: new Date(voucherData.expiredAt),
         },
       });
