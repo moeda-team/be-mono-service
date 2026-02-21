@@ -5,15 +5,15 @@
   "main": "dist/index.js",
   "scripts": {
     "start": "node dist/index.js",
-    "dev": "clear && prisma generate dev --name \"$npm_package_name\" && nodemon",
+    "dev": "clear && prisma generate --config prisma/prisma.config.ts dev --name \"$npm_package_name\" && nodemon",
     "build": "tsc",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate --config prisma/prisma.config.ts",
     "format": "prettier --write \"src/**/*.{ts,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,json}\"",
     "typecheck": "tsc --noEmit",
     "prepare": "husky install",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev --name \"$npm_package_name\""
+    "prisma:generate": "prisma generate --config prisma/prisma.config.ts",
+    "prisma:migrate": "prisma migrate dev --config prisma/prisma.config.ts --name \"$npm_package_name\""
   },
   "keywords": [
     "nodejs",
@@ -71,7 +71,6 @@
     "typescript": "~5.3.3"
   },
   "optionalDependencies": {
-    "ajv": "^8.18.0",
-    "tar": "npm:null@^8.0.0"
+    "ajv": "^8.18.0"
   }
 }
