@@ -90,8 +90,33 @@ export class MenuController {
       });
     }
   }
+  private buildOptionTree = (options: any[], parentId: string | null = null): any[] => {
+    return options
+      .filter(opt => opt.optionId === parentId)
+      .sort((a, b) => a.order - b.order)
+      .map(opt => {
+        const children = this.buildOptionTree(options, opt.id);
 
-  async getMenuById(req: Request, res: Response) {
+        return {
+          id: opt.id,
+          label: opt.name,
+          type: 'single',
+          required: true,
+          choices: opt.values.map((value: string, index: number) => {
+            const childOption = children[index];
+
+            return {
+              label: value,
+              value: value,
+              extraPrice: opt.extraPrices?.[index] ? Number(opt.extraPrices[index]) : undefined,
+              subOptions: childOption ? [childOption] : [],
+            };
+          }),
+        };
+      });
+  };
+
+  getMenuById = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     try {
@@ -99,22 +124,11 @@ export class MenuController {
         where: { id },
         include: {
           options: {
-            where: {
-              optionId: null, // root options
-            },
-            orderBy: {
-              order: 'asc',
-            },
-            include: {
-              children: {
-                orderBy: {
-                  order: 'asc',
-                },
-              },
-            },
+            orderBy: { order: 'asc' },
           },
         },
       });
+
       if (!menu) {
         return ResponseHandler.error(res, {
           message: 'Menu not found',
@@ -122,9 +136,14 @@ export class MenuController {
         });
       }
 
+      const structuredOptions = this.buildOptionTree(menu.options);
+
       return ResponseHandler.success(res, {
         message: 'Menu retrieved successfully',
-        data: menu,
+        data: {
+          ...menu,
+          options: structuredOptions,
+        },
       });
     } catch (error) {
       logger.error('Error getting menu:', error);
@@ -133,7 +152,7 @@ export class MenuController {
         statusCode: 500,
       });
     }
-  }
+  };
 
   async createMenu(req: Request, res: Response) {
     const menuData: CreateMenuDTO = req.body;
