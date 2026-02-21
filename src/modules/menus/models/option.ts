@@ -1,16 +1,22 @@
 export interface Option {
   id: string;
+  menuId: string | null;
+  optionId: string | null;
   name: string;
-  value: string[];
-  addPrices: number[];
-  created_at: Date;
-  updated_at: Date;
+  values: string[];
+  extraPrices: number[];
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface CreateOptionDTO {
+  menuId?: string;
+  optionId?: string;
   name: string;
-  value: string[];
-  addPrices: number[];
+  values: string[];
+  extraPrices: number[];
+  order?: number;
 }
 
 export interface UpdateOptionDTO extends Partial<CreateOptionDTO> {}

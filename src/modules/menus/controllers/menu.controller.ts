@@ -27,10 +27,6 @@ export class MenuController {
         };
       }
 
-      if (bestFlag !== undefined) {
-        whereClause.isBest = bestFlag;
-      }
-
       if (categoryStr) {
         whereClause.categoryId = categoryStr;
       }
@@ -38,9 +34,7 @@ export class MenuController {
       const now = new Date();
 
       const menus = await prisma.menu.findMany({
-        where: {
-          outletId: '17832ff5-2965-4cda-ab08-16d1311a91d1',
-        },
+        where: whereClause,
         orderBy: {
           createdAt: 'desc',
         },
@@ -103,6 +97,23 @@ export class MenuController {
     try {
       const menu = await prisma.menu.findUnique({
         where: { id },
+        include: {
+          options: {
+            where: {
+              optionId: null, // root options
+            },
+            orderBy: {
+              order: 'asc',
+            },
+            include: {
+              children: {
+                orderBy: {
+                  order: 'asc',
+                },
+              },
+            },
+          },
+        },
       });
       if (!menu) {
         return ResponseHandler.error(res, {
@@ -111,37 +122,9 @@ export class MenuController {
         });
       }
 
-      const options = menu.options;
-      const listOption = await prisma.option.findMany({
-        where: {
-          id: {
-            in: options,
-          },
-        },
-        orderBy: {
-          updatedAt: 'desc',
-        },
-        select: {
-          id: true,
-          name: true,
-          value: true,
-          addPrices: true,
-        },
-      });
-      if (listOption.length !== options.length) {
-        return ResponseHandler.error(res, {
-          message: 'One or more options not found',
-          statusCode: 404,
-        });
-      }
-      const response = {
-        ...menu,
-        options: listOption,
-      };
-
       return ResponseHandler.success(res, {
         message: 'Menu retrieved successfully',
-        data: response,
+        data: menu,
       });
     } catch (error) {
       logger.error('Error getting menu:', error);
@@ -156,29 +139,7 @@ export class MenuController {
     const menuData: CreateMenuDTO = req.body;
 
     const user = (req as Request & { user?: { outletId: string } }).user;
-    const outletId = user?.outletId;
-
-    if ((prisma as any).option?.findUnique) {
-      for (const option of menuData.options) {
-        const checkOption = await (prisma as any).option.findUnique({
-          where: { id: option },
-        });
-        if (!checkOption) {
-          return ResponseHandler.error(res, {
-            message: `Option ${option} not found, failed to create menu`,
-            statusCode: 404,
-          });
-        }
-      }
-    }
-
-    const sortedOptions = menuData.options.sort((a, b) => {
-      const optionA = a.toLowerCase();
-      const optionB = b.toLowerCase();
-      if (optionA < optionB) return -1;
-      if (optionA > optionB) return 1;
-      return 0;
-    });
+    const outletId = user?.outletId || menuData.outletId;
 
     try {
       const category = await prisma.category.findUnique({
@@ -200,7 +161,7 @@ export class MenuController {
           img: menuData.img,
           price: menuData.price,
           pdf: menuData.pdf,
-          options: sortedOptions,
+          isActive: menuData.isActive ?? true,
         },
       });
       return ResponseHandler.success(res, {
@@ -234,28 +195,28 @@ export class MenuController {
         });
       }
 
-      const category = await prisma.category.findUnique({
-        where: { id: menuData.categoryId },
-      });
-      if (!category) {
-        return ResponseHandler.error(res, {
-          message: 'Category not found',
-          statusCode: 404,
+      if (menuData.categoryId) {
+        const category = await prisma.category.findUnique({
+          where: { id: menuData.categoryId },
         });
+        if (!category) {
+          return ResponseHandler.error(res, {
+            message: 'Category not found',
+            statusCode: 404,
+          });
+        }
       }
 
       const updatedMenu = await prisma.menu.update({
         where: { id, outletId },
         data: {
-          outletId,
-          categoryId: menuData.categoryId,
-          name: menuData.name,
-          desc: menuData.desc,
-          img: menuData.img,
-          price: menuData.price,
-          pdf: menuData.pdf,
-          options: menuData.options,
-          isActive: menuData.isActive,
+          ...(menuData.categoryId && { categoryId: menuData.categoryId }),
+          ...(menuData.name && { name: menuData.name }),
+          ...(menuData.desc !== undefined && { desc: menuData.desc }),
+          ...(menuData.img && { img: menuData.img }),
+          ...(menuData.price !== undefined && { price: menuData.price }),
+          ...(menuData.pdf !== undefined && { pdf: menuData.pdf }),
+          ...(menuData.isActive !== undefined && { isActive: menuData.isActive }),
         },
       });
 

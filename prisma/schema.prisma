@@ -170,12 +170,8 @@ model Menu {
   desc       String
   img        String   @default("https://moeda-space.s3.ap-southeast-1.amazonaws.com/default.png")
   price      Decimal
-  options    String[]
   pdf        String?  @db.VarChar(255)
   categoryId String   @db.VarChar(36)
-  isNew      Boolean  @default(true)
-  isBest     Boolean  @default(false)
-  quantity   Int      @default(0)
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -185,6 +181,7 @@ model Menu {
   subTransaction SubTransaction[]
 
   vouchers VoucherMenu[]
+  options  Option[]
 }
 
 model VoucherMenu {
@@ -199,12 +196,22 @@ model VoucherMenu {
 }
 
 model Option {
-  id        String    @id @default(uuid()) @db.VarChar(36)
-  name      String    @db.VarChar(100)
-  value     String[]
-  addPrices Decimal[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id       String  @id @default(uuid())
+  menuId   String?
+  optionId String? // parent option
+
+  name        String
+  values      String[]
+  extraPrices Decimal[]
+  order       Int       @default(0)
+
+  menu Menu? @relation(fields: [menuId], references: [id])
+
+  parent   Option?  @relation("OptionToOption", fields: [optionId], references: [id])
+  children Option[] @relation("OptionToOption")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model LogTableMove {

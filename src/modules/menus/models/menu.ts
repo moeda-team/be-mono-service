@@ -1,26 +1,26 @@
 export interface Menu {
   id: string;
+  outletId: string | null;
   name: string;
   desc: string;
   img: string;
   price: number;
-  options: string[];
   pdf: string | null;
   categoryId: string;
   isActive: boolean;
-  created_at: Date;
-  updated_at: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface CreateMenuDTO {
+  outletId?: string;
   categoryId: string;
   name: string;
   desc: string;
   img: string;
   price: number;
   pdf: string | null;
-  options: string[];
-  isActive: boolean;
+  isActive?: boolean;
 }
 
 export interface UpdateMenuDTO extends Partial<CreateMenuDTO> {}

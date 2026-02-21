@@ -7,7 +7,7 @@ import { validateCreateOption, validateUpdateOption } from '../validators/option
 const router = Router();
 const optionController = new OptionController();
 
-router.get('', basicAuth, optionController.findAll);
+router.get('', jwtAuth, roleAuth(UserRole.STORE_MANAGER), optionController.findAll);
 router.get('/:id', basicAuth, optionController.findOne);
 router.post(
   '/',

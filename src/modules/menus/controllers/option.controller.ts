@@ -56,8 +56,11 @@ export class OptionController {
       const option = await prisma.option.create({
         data: {
           name: req.body.name,
-          value: req.body.value,
-          addPrices: req.body.addPrices,
+          values: req.body.values,
+          extraPrices: req.body.extraPrices,
+          menuId: req.body.menuId,
+          optionId: req.body.optionId,
+          order: req.body.order || 0,
         },
       });
       return ResponseHandler.success(res, {
@@ -93,8 +96,11 @@ export class OptionController {
         where: { id: req.params.id },
         data: {
           name: req.body.name,
-          value: req.body.value,
-          addPrices: req.body.addPrices,
+          values: req.body.values,
+          extraPrices: req.body.extraPrices,
+          menuId: req.body.menuId,
+          optionId: req.body.optionId,
+          order: req.body.order,
         },
       });
       return ResponseHandler.success(res, {
