@@ -180,9 +180,8 @@ model Menu {
   category       Category         @relation(fields: [categoryId], references: [id])
   subTransaction SubTransaction[]
 
-  vouchers    VoucherMenu[]
-  options     Option[]
-  bestSellers BestSeller[]
+  vouchers VoucherMenu[]
+  options  Option[]
 }
 
 model VoucherMenu {
