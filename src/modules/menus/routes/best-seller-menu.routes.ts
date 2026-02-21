@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { BestSellerMenuController } from '../controllers/best-seller-menu.controller';
-import { validateCreateBestSellerMenu, validateUpdateBestSellerMenu } from '../validators/best-seller-menu.validator';
+import {
+  validateCreateBestSellerMenu,
+  validateUpdateBestSellerMenu,
+} from '../validators/best-seller-menu.validator';
 import { basicAuth, jwtAuth, roleAuth } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
 
@@ -23,6 +26,11 @@ router.put(
   validateUpdateBestSellerMenu,
   bestSellerMenuController.updateBestSellerMenu,
 );
-router.delete('/:id', jwtAuth, roleAuth(UserRole.STORE_MANAGER), bestSellerMenuController.deleteBestSellerMenu);
+router.delete(
+  '/:id',
+  jwtAuth,
+  roleAuth(UserRole.STORE_MANAGER),
+  bestSellerMenuController.deleteBestSellerMenu,
+);
 
 export default router;

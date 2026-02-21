@@ -9,10 +9,7 @@ export const validateCreateBestSellerMenu = [
     .withMessage('Menu ID is required')
     .isUUID()
     .withMessage('Invalid menu ID format'),
-  body('order')
-    .optional()
-    .isInt({ min: 0 })
-    .withMessage('Order must be a non-negative integer'),
+  body('order').optional().isInt({ min: 0 }).withMessage('Order must be a non-negative integer'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -37,10 +34,7 @@ export const validateUpdateBestSellerMenu = [
     .withMessage('Menu ID is required')
     .isUUID()
     .withMessage('Invalid menu ID format'),
-  body('order')
-    .optional()
-    .isInt({ min: 0 })
-    .withMessage('Order must be a non-negative integer'),
+  body('order').optional().isInt({ min: 0 }).withMessage('Order must be a non-negative integer'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
