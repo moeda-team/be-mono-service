@@ -235,10 +235,3 @@ model LogTableMove {
   prevOf LogTableMove[] @relation("NextRelation")
   nextOf LogTableMove[] @relation("PrevRelation")
 }
-
-model BestSeller {
-  menuId String @db.VarChar(36)
-  order  Int    @default(0)
-
-  menu Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
-}
