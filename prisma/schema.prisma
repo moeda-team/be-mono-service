@@ -18,7 +18,7 @@ model User {
   outletId    String?  @db.VarChar(36)
   name        String   @db.VarChar(100)
   position    String   @db.VarChar(100)
-  email       String   @db.VarChar(100)
+  email       String   @unique @db.VarChar(100)
   password    String   @db.VarChar(255)
   address     String   @db.VarChar(255)
   gender      String   @db.VarChar(10)
@@ -31,17 +31,27 @@ model User {
   outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
 
   transactions Transaction[]
+
+  @@index([email])
+  @@index([outletId])
+  @@index([role])
+  @@index([status])
+  @@map("users")
 }
 
 model Message {
   id        String   @id @default(uuid()) @db.VarChar(36)
-  outletId  String?
+  outletId  String?  @db.VarChar(36)
   message   String
   rating    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  @@index([outletId])
+  @@index([createdAt])
+  @@map("messages")
 }
 
 model Transaction {
@@ -55,11 +65,11 @@ model Transaction {
   paymentMethod       String   @db.VarChar(50)
   customerName        String?  @db.VarChar(100)
   totalSubTransaction Int      @default(0) @db.Integer
-  subTotal            Decimal  @default(0.0) @db.Decimal
-  discount            Decimal  @default(0.0) @db.Decimal
-  serviceCharge       Decimal  @default(0.0) @db.Decimal
-  rounding            Decimal  @default(0.0) @db.Decimal
-  total               Decimal  @default(0.0) @db.Decimal
+  subTotal            Decimal  @default(0.0) @db.Decimal(15, 2)
+  discount            Decimal  @default(0.0) @db.Decimal(15, 2)
+  serviceCharge       Decimal  @default(0.0) @db.Decimal(15, 2)
+  rounding            Decimal  @default(0.0) @db.Decimal(15, 2)
+  total               Decimal  @default(0.0) @db.Decimal(15, 2)
   additionalNote      String?  @db.VarChar(255)
   voucherId           String?  @db.VarChar(36)
   status              String   @default("pending") @db.VarChar(20)
@@ -74,6 +84,14 @@ model Transaction {
   logVoucher      LogVoucher[]
   subTransactions SubTransaction[]
   logTableMove    LogTableMove[]
+
+  @@index([userId])
+  @@index([outletId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([voucherId])
+  @@index([outletId, status, createdAt])
+  @@map("transactions")
 }
 
 model SubTransaction {
@@ -82,8 +100,8 @@ model SubTransaction {
   menuId        String   @db.VarChar(36)
   menuName      String   @db.VarChar(100)
   quantity      Int      @db.Integer
-  price         Decimal  @db.Decimal
-  subTotal      Decimal  @db.Decimal
+  price         Decimal  @db.Decimal(15, 2)
+  subTotal      Decimal  @db.Decimal(15, 2)
   addOn         String   @db.VarChar(255)
   note          String   @db.VarChar(255)
   status        String   @default("preparation") @db.VarChar(20)
@@ -92,6 +110,12 @@ model SubTransaction {
 
   menu        Menu        @relation(fields: [menuId], references: [id])
   transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+  @@index([menuId])
+  @@index([status])
+  @@index([transactionId, status])
+  @@map("sub_transactions")
 }
 
 model Outlet {
@@ -112,9 +136,12 @@ model Outlet {
   users        User[]
   categories   Category[]
   menus        Menu[]
-  Voucher      Voucher[]
-  LogVoucher   LogVoucher[]
-  LogTableMove LogTableMove[]
+  vouchers     Voucher[]
+  logVouchers  LogVoucher[]
+  logTableMove LogTableMove[]
+
+  @@index([status])
+  @@map("outlets")
 }
 
 model Category {
@@ -127,19 +154,28 @@ model Category {
 
   menus  Menu[]
   outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  @@index([outletId])
+  @@map("categories")
 }
 
 model LogVoucher {
   id            String   @id @default(uuid()) @db.VarChar(36)
-  outletId      String?
+  outletId      String?  @db.VarChar(36)
   transactionId String   @db.VarChar(36)
   voucherId     String   @db.VarChar(36)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  outlet      Outlet?      @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  voucher     Voucher?     @relation(fields: [voucherId], references: [id], onDelete: Cascade)
-  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  outlet      Outlet?     @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  voucher     Voucher     @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([outletId])
+  @@index([transactionId])
+  @@index([voucherId])
+  @@index([outletId, createdAt])
+  @@map("log_vouchers")
 }
 
 model Voucher {
@@ -148,9 +184,9 @@ model Voucher {
   name        String   @db.VarChar(100)
   description String?  @db.VarChar(255)
   type        String   @default("percent") @db.VarChar(20)
-  discount    Decimal  @default(0.0) @db.Decimal
-  usage       Decimal  @default(0.0) @db.Decimal
-  maxUsage    Decimal  @default(0.0) @db.Decimal
+  discount    Decimal  @default(0.0) @db.Decimal(15, 2)
+  usage       Decimal  @default(0.0) @db.Decimal(10, 0)
+  maxUsage    Decimal  @default(0.0) @db.Decimal(10, 0)
   allMenu     Boolean  @default(false)
   expiredAt   DateTime @default(now())
   createdAt   DateTime @default(now())
@@ -161,15 +197,20 @@ model Voucher {
   logVouchers  LogVoucher[]
 
   menus VoucherMenu[]
+
+  @@index([outletId])
+  @@index([expiredAt])
+  @@index([outletId, expiredAt])
+  @@map("vouchers")
 }
 
 model Menu {
   id         String   @id @default(uuid()) @db.VarChar(36)
   outletId   String?  @db.VarChar(36)
   name       String   @db.VarChar(100)
-  desc       String
+  desc       String   @db.Text
   img        String   @default("https://moeda-space.s3.ap-southeast-1.amazonaws.com/default.png")
-  price      Decimal
+  price      Decimal  @db.Decimal(15, 2)
   pdf        String?  @db.VarChar(255)
   categoryId String   @db.VarChar(36)
   isActive   Boolean  @default(true)
@@ -183,6 +224,12 @@ model Menu {
   vouchers        VoucherMenu[]
   options         Option[]
   bestSellerMenus BestSellerMenu[]
+
+  @@index([outletId])
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([outletId, isActive])
+  @@map("menus")
 }
 
 model VoucherMenu {
@@ -194,12 +241,13 @@ model VoucherMenu {
 
   @@id([voucherId, menuId])
   @@index([menuId])
+  @@map("voucher_menus")
 }
 
 model Option {
-  id       String  @id @default(uuid())
-  menuId   String?
-  optionId String? // parent option
+  id       String  @id @default(uuid()) @db.VarChar(36)
+  menuId   String? @db.VarChar(36)
+  optionId String? @db.VarChar(36)
 
   name        String
   values      String[]
@@ -213,11 +261,15 @@ model Option {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([menuId])
+  @@index([optionId])
+  @@map("options")
 }
 
 model LogTableMove {
   id            String   @id @default(uuid()) @db.VarChar(36)
-  outletId      String?
+  outletId      String?  @db.VarChar(36)
   transactionId String   @db.VarChar(36)
   tableNumber   Int      @db.Integer
   prevTableId   String?  @db.VarChar(36)
@@ -234,13 +286,22 @@ model LogTableMove {
 
   prevOf LogTableMove[] @relation("NextRelation")
   nextOf LogTableMove[] @relation("PrevRelation")
+
+  @@index([transactionId])
+  @@index([outletId])
+  @@index([outletId, createdAt])
+  @@map("log_table_moves")
 }
 
 model BestSellerMenu {
-  id String @id @default(uuid()) @db.VarChar(36)
-
-  menuId String @db.VarChar(36)
-  order  Int    @default(0)
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  menuId    String   @unique @db.VarChar(36)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   menu Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@index([order])
+  @@map("best_seller_menus")
 }

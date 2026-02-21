@@ -13,7 +13,10 @@
     "typecheck": "tsc --noEmit",
     "prepare": "husky install",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev --name \"$npm_package_name\""
+    "prisma:migrate": "prisma migrate dev --name \"$npm_package_name\"",
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "prisma:extract": "ts-node prisma/extract-data.ts",
+    "db:seed": "npm run prisma:extract && npm run prisma:seed"
   },
   "keywords": [
     "nodejs",

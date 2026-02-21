@@ -15,7 +15,11 @@ export const validateCreateTransaction = [
     .withMessage('Table number is required for dine-in')
     .isNumeric()
     .withMessage('Table number must be numeric'),
-  body('paymentMethod').trim().notEmpty().withMessage('Payment method is required'),
+  body('paymentMethod')
+    .isIn(['cash', 'qris'])
+    .trim()
+    .notEmpty()
+    .withMessage('Payment method is required'),
   body('customerName').trim().notEmpty().withMessage('Customer name is required'),
   body('totalSubTransaction')
     .optional()
