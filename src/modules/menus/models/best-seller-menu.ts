@@ -18,5 +18,3 @@ export interface CreateBestSellerMenuDTO {
   menuId: string;
   order?: number;
 }
-
-export interface UpdateBestSellerMenuDTO extends Partial<CreateBestSellerMenuDTO> {}
