@@ -28,9 +28,9 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: Cascade)
-
-  transactions Transaction[]
+  outlet            Outlet?            @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  transactions      Transaction[]
+  stockTransactions StockTransaction[]
 
   @@index([email])
   @@index([outletId])
@@ -131,14 +131,16 @@ model Outlet {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  transactions Transaction[]
-  messages     Message[]
-  users        User[]
-  categories   Category[]
-  menus        Menu[]
-  vouchers     Voucher[]
-  logVouchers  LogVoucher[]
-  logTableMove LogTableMove[]
+  transactions      Transaction[]
+  messages          Message[]
+  users             User[]
+  categories        Category[]
+  menus             Menu[]
+  vouchers          Voucher[]
+  logVouchers       LogVoucher[]
+  logTableMove      LogTableMove[]
+  ingredients       Ingredient[]
+  stockTransactions StockTransaction[]
 
   @@index([status])
   @@map("outlets")
@@ -304,4 +306,60 @@ model BestSellerMenu {
 
   @@index([order])
   @@map("best_seller_menus")
+}
+
+enum StockStatus {
+  SAFE
+  LOW
+  OUT
+}
+
+enum StockTransactionType {
+  ADD
+  REDUCE
+  ADJUST
+}
+
+model Ingredient {
+  id           String      @id @default(uuid()) @db.VarChar(36)
+  outletId     String      @db.VarChar(36)
+  name         String      @db.VarChar(100)
+  unit         String      @db.VarChar(50)
+  currentStock Decimal     @default(0) @db.Decimal(15, 3)
+  minimumStock Decimal     @default(0) @db.Decimal(15, 3)
+  status       StockStatus @default(SAFE)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  outlet            Outlet             @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  stockTransactions StockTransaction[]
+
+  @@index([outletId])
+  @@index([name])
+  @@index([status])
+  @@index([outletId, status])
+  @@map("ingredients")
+}
+
+model StockTransaction {
+  id           String               @id @default(uuid()) @db.VarChar(36)
+  ingredientId String               @db.VarChar(36)
+  outletId     String               @db.VarChar(36)
+  type         StockTransactionType
+  quantity     Decimal              @db.Decimal(15, 3)
+  note         String?              @db.VarChar(255)
+  createdBy    String?              @db.VarChar(36)
+  createdAt    DateTime             @default(now())
+
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  outlet     Outlet     @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  user       User?      @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@index([ingredientId])
+  @@index([outletId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([ingredientId, createdAt])
+  @@index([outletId, createdAt])
+  @@map("stock_transactions")
 }
