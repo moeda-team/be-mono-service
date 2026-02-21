@@ -151,6 +151,7 @@ model Voucher {
   discount    Decimal  @default(0.0) @db.Decimal
   usage       Decimal  @default(0.0) @db.Decimal
   maxUsage    Decimal  @default(0.0) @db.Decimal
+  allMenu     Boolean  @default(false)
   expiredAt   DateTime @default(now())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

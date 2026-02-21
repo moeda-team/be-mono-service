@@ -298,7 +298,6 @@ export class TransactionController {
           statusCode: 404,
         });
       }
-
       let voucherData;
       if (transactionData.voucher) {
         voucherData = await prisma.voucher.findFirst({
@@ -308,6 +307,35 @@ export class TransactionController {
           },
         });
         if (voucherData) {
+          // Validate voucher usage based on VoucherMenu and allMenu
+          if (!voucherData.allMenu) {
+            // Get all menu IDs from the cart
+            const cartMenuIds = transactionData.cart.map(item => item.menuId);
+
+            // Get voucher menus for this voucher
+            const voucherMenus = await prisma.voucherMenu.findMany({
+              where: {
+                voucherId: voucherData.id,
+              },
+              select: {
+                menuId: true,
+              },
+            });
+
+            const voucherMenuIds = voucherMenus.map(vm => vm.menuId);
+
+            // Check if all cart items are in the voucher menu list
+            const invalidItems = cartMenuIds.filter(menuId => !voucherMenuIds.includes(menuId));
+
+            if (invalidItems.length > 0) {
+              return ResponseHandler.error(res, {
+                message:
+                  'Voucher cannot be used with some items in cart. Voucher is only valid for specific menus.',
+                statusCode: 400,
+              });
+            }
+          }
+
           if (voucherData.type === 'percent' && Number(voucherData.discount) === 100) {
             const logVoucher = await prisma.logVoucher.findFirst({
               where: {
