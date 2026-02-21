@@ -8,7 +8,7 @@ import prisma from '../../../lib/prisma';
 
 export class MenuController {
   async getAllMenus(req: Request, res: Response) {
-    const outletId = req.headers.outletId as string;
+    const outletId = req.headers.Outletid as string;
     const { search, best, category } = req.query;
 
     const searchStr: string | undefined = typeof search === 'string' ? search : undefined;

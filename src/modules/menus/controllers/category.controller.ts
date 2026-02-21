@@ -5,7 +5,7 @@ import { ResponseHandler } from '../../../utils/response/responseHandler';
 
 export class CategoryController {
   async findAll(req: Request, res: Response) {
-    const outletId = req.headers.outletId as string;
+    const outletId = req.headers.Outletid as string;
 
     try {
       const categories = await prisma.category.findMany({
@@ -30,7 +30,7 @@ export class CategoryController {
 
   async findOne(req: Request, res: Response) {
     const { id } = req.params;
-    const outletId = req.headers.outletId as string;
+    const outletId = req.headers.Outletid as string;
 
     try {
       const category = await prisma.category.findUnique({
