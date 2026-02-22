@@ -443,16 +443,6 @@ export class TransactionController {
         });
       });
 
-      // Discount
-      if (discountAmount > 0) {
-        itemDetails.push({
-          id: 'discount',
-          price: -discountAmount,
-          quantity: 1,
-          name: 'Discount',
-        });
-      }
-
       // Tax
       if (tax > 0) {
         itemDetails.push({
@@ -557,7 +547,7 @@ export class TransactionController {
     } catch (error) {
       logger.error('Error creating transaction:', error);
       return ResponseHandler.error(res, {
-        message: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Internal server error',
         statusCode: 500,
       });
     }

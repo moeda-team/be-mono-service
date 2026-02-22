@@ -48,12 +48,6 @@ export class PaymentController {
         name: 'Service Charge',
       });
       itemDetails.push({
-        id: 'discount',
-        price: Decimal(Number(findTransaction.discount) * -1),
-        quantity: 1,
-        name: 'Discount',
-      });
-      itemDetails.push({
         id: 'rounding',
         price: findTransaction.rounding,
         quantity: 1,
