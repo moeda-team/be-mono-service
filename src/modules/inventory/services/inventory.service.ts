@@ -1,11 +1,17 @@
 import { PrismaClient, StockStatus, StockTransactionType } from '@prisma/client';
-import { AddStockRequest, ReduceStockRequest, IngredientResponse, ActivityResponse, ActivityItem } from '../models/inventory.types';
+import {
+  AddStockRequest,
+  ReduceStockRequest,
+  IngredientResponse,
+  ActivityResponse,
+  ActivityItem,
+} from '../models/inventory.types';
 
 export class InventoryService {
   constructor(private prisma: PrismaClient) {}
 
   async addStock(outletId: string, data: AddStockRequest, userId?: string): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction(async tx => {
       // Validate ingredient exists and belongs to outlet
       const ingredient = await tx.ingredient.findFirst({
         where: {
@@ -49,7 +55,7 @@ export class InventoryService {
   }
 
   async reduceStock(outletId: string, data: ReduceStockRequest, userId?: string): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction(async tx => {
       // Validate ingredient exists and belongs to outlet
       const ingredient = await tx.ingredient.findFirst({
         where: {
@@ -68,7 +74,9 @@ export class InventoryService {
 
       // Check if sufficient stock is available
       if (Number(ingredient.currentStock) < data.quantity) {
-        throw new Error(`Insufficient stock. Available: ${Number(ingredient.currentStock)}, Requested: ${data.quantity}`);
+        throw new Error(
+          `Insufficient stock. Available: ${Number(ingredient.currentStock)}, Requested: ${data.quantity}`,
+        );
       }
 
       // Create stock transaction
@@ -115,7 +123,7 @@ export class InventoryService {
       },
     });
 
-    return ingredients.map((ingredient) => ({
+    return ingredients.map(ingredient => ({
       id: ingredient.id,
       name: ingredient.name,
       unit: ingredient.unit,
@@ -141,7 +149,7 @@ export class InventoryService {
       },
     });
 
-    const activityItems: ActivityItem[] = transactions.map((transaction) => ({
+    const activityItems: ActivityItem[] = transactions.map(transaction => ({
       id: transaction.id,
       ingredientName: transaction.ingredient.name,
       type: transaction.type,
@@ -170,7 +178,7 @@ export class InventoryService {
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    items.forEach((item) => {
+    items.forEach(item => {
       const itemDate = new Date(item.createdAt);
       let dateKey: string;
 
