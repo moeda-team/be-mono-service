@@ -59,6 +59,12 @@ export class PaymentController {
         quantity: 1,
         name: 'Rounding',
       });
+      itemDetails.push({
+        id: 'tax',
+        price: findTransaction.tax,
+        quantity: 1,
+        name: 'Tax',
+      });
 
       const payload: MidtransPayload = {
         payment_type: transactionData.paymentType,
@@ -72,6 +78,7 @@ export class PaymentController {
         },
         item_details: itemDetails,
       };
+      console.log(payload);
 
       if (transactionData.paymentType === 'gopay') {
         payload.gopay = {
@@ -102,6 +109,7 @@ export class PaymentController {
           Authorization: `Basic ${BASE64_AUTH}`,
         },
       });
+      console.log(result);
 
       if (result.status_code !== '201') {
         return ResponseHandler.error(res, {
