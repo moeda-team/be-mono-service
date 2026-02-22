@@ -135,3 +135,31 @@ export const validateCheckTransactionStatus = [
     next();
   },
 ];
+
+export const validateCalculation = [
+  body('paymentMethod')
+    .trim()
+    .notEmpty()
+    .withMessage('Payment method is required')
+    .isIn(['cash', 'qris']),
+  body('total')
+    .notEmpty()
+    .withMessage('Total is required')
+    .isFloat({ gt: 0 })
+    .withMessage('Total must be a positive number'),
+  body('discount').optional().isFloat({ min: 0 }).withMessage('Discount must be a number'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return ResponseHandler.error(res, {
+        message: 'Validation failed',
+        statusCode: 400,
+        error: {
+          code: 'VALIDATION_FAILED',
+          details: errors.array(),
+        },
+      });
+    }
+    next();
+  },
+];

@@ -266,6 +266,90 @@ export class TransactionController {
     }
   }
 
+  async calculateTransaction(req: Request, res: Response) {
+    const { total, discount = 0, paymentMethod } = req.body;
+
+    try {
+      if (typeof total !== 'number' || total < 0) {
+        return ResponseHandler.error(res, {
+          message: 'Total must be a positive number',
+          statusCode: 400,
+        });
+      }
+
+      if (typeof discount !== 'number' || discount < 0) {
+        return ResponseHandler.error(res, {
+          message: 'Discount must be a positive number',
+          statusCode: 400,
+        });
+      }
+
+      if (!paymentMethod) {
+        return ResponseHandler.error(res, {
+          message: 'Payment method is required',
+          statusCode: 400,
+        });
+      }
+
+      const subTotal = total;
+      const discountAmount = Math.min(discount, subTotal);
+      const taxableAmount = subTotal - discountAmount;
+      const tax = Math.floor(taxableAmount * 0.11);
+
+      let serviceCharge = 0;
+      const baseAmount = taxableAmount + tax;
+
+      switch (paymentMethod) {
+        case 'qris':
+          serviceCharge = Math.ceil(baseAmount * 0.007 + 500);
+          break;
+
+        case 'gopay':
+          serviceCharge = Math.ceil(baseAmount * 0.02 + 500);
+          break;
+
+        case 'cash':
+          serviceCharge = 500;
+          break;
+
+        default:
+          serviceCharge = 500;
+          break;
+      }
+      const totalBeforeRounding = taxableAmount + tax + serviceCharge;
+
+      let rounding = 0;
+      const remainder = totalBeforeRounding % 1000;
+
+      if (remainder === 0) {
+        rounding = 0;
+      } else if (remainder <= 500) {
+        rounding = 500 - remainder;
+      } else {
+        rounding = 1000 - remainder;
+      }
+      const finalTotal = totalBeforeRounding + rounding;
+
+      return ResponseHandler.success(res, {
+        message: 'Transaction calculated successfully',
+        data: {
+          subTotal,
+          discount: discountAmount,
+          tax,
+          serviceCharge,
+          rounding,
+          total: finalTotal,
+        },
+      });
+    } catch (error) {
+      logger.error('Error calculating transaction:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
   async createTransaction(req: Request, res: Response) {
     const transactionData: CreateTransactionDTO = req.body;
 

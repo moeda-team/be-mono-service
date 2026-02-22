@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  validateCalculation,
   validateCheckTransactionStatus,
   validateCreateTransaction,
   validateUpdateTransactionStatus,
@@ -28,6 +29,7 @@ router.post(
   validateCheckTransactionStatus,
   transactionController.checkTransactionStatus,
 );
+router.post('/calculate', validateCalculation, transactionController.calculateTransaction);
 router.post(
   '/',
   jwtAuthNotRequired,
