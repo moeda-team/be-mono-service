@@ -78,7 +78,6 @@ export class PaymentController {
         },
         item_details: itemDetails,
       };
-      console.log(payload);
 
       if (transactionData.paymentType === 'gopay') {
         payload.gopay = {
@@ -109,7 +108,6 @@ export class PaymentController {
           Authorization: `Basic ${BASE64_AUTH}`,
         },
       });
-      console.log(result);
 
       if (result.status_code !== '201') {
         return ResponseHandler.error(res, {
@@ -124,9 +122,14 @@ export class PaymentController {
       });
     } catch (error) {
       logger.error('Error during transaction:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+      const errorCode =
+        error && typeof error === 'object' && 'statusCode' in error
+          ? Number(error.statusCode)
+          : 500;
       return ResponseHandler.error(res, {
-        message: 'Internal server error',
-        statusCode: 500,
+        message: errorMessage,
+        statusCode: errorCode,
       });
     }
   }

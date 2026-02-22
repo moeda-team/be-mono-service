@@ -378,7 +378,7 @@ export class TransactionController {
       const paymentNumber = await generatePaymentNumber(transactionData.outletId);
       const subTotal = transactionData.cart.reduce((total, item) => total + item.subTotal, 0);
 
-      let discountAmount = 0;
+      let discountAmount = transactionData.discount;
       if (voucherData) {
         if (voucherData.type === 'percent') {
           discountAmount = (subTotal * Number(voucherData.discount)) / 100;
@@ -388,9 +388,8 @@ export class TransactionController {
       }
 
       // Calculate tax (default 10% if not provided)
-      const taxRate = transactionData.tax ? transactionData.tax / 100 : 0.1;
       const taxableAmount = subTotal - discountAmount;
-      const tax = taxableAmount * taxRate;
+      const tax = taxableAmount * 0.11;
 
       let serviceCharge = 0;
       if (voucherData?.type === 'percent' && Number(voucherData?.discount) === 100) {
