@@ -89,6 +89,7 @@ export class PaymentController {
           callback_url: 'https://yourdomain.com/payment/callback',
         };
       }
+      console.log(payload);
 
       const serverKey = process.env.MIDTRANS_SERVER_KEY;
       if (!serverKey) {

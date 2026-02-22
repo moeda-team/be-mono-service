@@ -378,9 +378,7 @@ export class TransactionController {
       const paymentNumber = await generatePaymentNumber(transactionData.outletId);
       const subTotal = transactionData.cart.reduce((total, item) => total + item.subTotal, 0);
 
-      // 1️⃣ Calculate Discount
       let discountAmount = transactionData.discount ?? 0;
-
       if (voucherData) {
         if (voucherData.type === 'percent') {
           discountAmount = Math.floor((subTotal * Number(voucherData.discount)) / 100);
@@ -389,18 +387,11 @@ export class TransactionController {
         }
       }
 
-      // Make sure discount never exceeds subtotal
       discountAmount = Math.min(discountAmount, subTotal);
-
-      // 2️⃣ Taxable amount
       const taxableAmount = subTotal - discountAmount;
-
-      // 3️⃣ Tax (11%)
       const tax = Math.floor(taxableAmount * 0.11);
 
-      // 4️⃣ Service Charge
       let serviceCharge = 0;
-
       if (voucherData?.type === 'percent' && Number(voucherData?.discount) === 100) {
         serviceCharge = 0;
       } else {
@@ -415,10 +406,8 @@ export class TransactionController {
         }
       }
 
-      // 5️⃣ Total before rounding
       const totalBeforeRounding = taxableAmount + tax + serviceCharge;
 
-      // 6️⃣ Rounding to nearest 500 / 1000
       let rounding = 0;
       const remainder = totalBeforeRounding % 1000;
 
@@ -430,16 +419,75 @@ export class TransactionController {
         rounding = 1000 - remainder;
       }
 
-      // 7️⃣ Final total (NO double discount!)
       const total = totalBeforeRounding + rounding;
 
       let transactionStatus = 'pending';
+
       if (voucherData && total === 0) {
         transactionStatus = 'completed';
       } else if (transactionData.paymentMethod !== 'cash') {
         transactionStatus = transactionData.status;
-      } else if (transactionData.paymentMethod === 'cash') {
+      } else {
         transactionStatus = 'completed';
+      }
+
+      const itemDetails: any[] = [];
+
+      // Cart items
+      transactionData.cart.forEach(item => {
+        itemDetails.push({
+          id: item.id,
+          price: item.price,
+          quantity: item.quantity,
+          name: item.menuName,
+        });
+      });
+
+      // Discount
+      if (discountAmount > 0) {
+        itemDetails.push({
+          id: 'discount',
+          price: -discountAmount,
+          quantity: 1,
+          name: 'Discount',
+        });
+      }
+
+      // Tax
+      if (tax > 0) {
+        itemDetails.push({
+          id: 'tax',
+          price: tax,
+          quantity: 1,
+          name: 'Tax',
+        });
+      }
+
+      // Service Charge
+      if (serviceCharge > 0) {
+        itemDetails.push({
+          id: 'service_charge',
+          price: serviceCharge,
+          quantity: 1,
+          name: 'Service Charge',
+        });
+      }
+
+      // Rounding
+      if (rounding > 0) {
+        itemDetails.push({
+          id: 'rounding',
+          price: rounding,
+          quantity: 1,
+          name: 'Rounding',
+        });
+      }
+
+      const sumItems = itemDetails.reduce((acc, item) => acc + item.price * item.quantity, 0);
+      if (sumItems !== total) {
+        throw new Error(
+          `Midtrans validation error: item total (${sumItems}) does not match gross_amount (${total})`,
+        );
       }
 
       const transaction = await prisma.transaction.create({
