@@ -55,6 +55,10 @@ export const validateCreateTransaction = [
   body('cart.*.addOn').optional(),
   body('cart.*.note').optional(),
   body('voucher').optional(),
+  body('tax')
+    .optional()
+    .isFloat({ min: 0, max: 100 })
+    .withMessage('Tax must be a number between 0 and 100'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

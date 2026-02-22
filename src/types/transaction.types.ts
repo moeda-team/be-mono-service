@@ -18,6 +18,7 @@ export interface CreateTransactionDTO {
   voucher?: string;
   additionalNote?: string;
   status?: string;
+  tax?: number;
 }
 
 export interface TransactionQueryParams {

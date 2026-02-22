@@ -14,6 +14,7 @@ export interface Transaction {
   totalSubTransaction: number;
   subTotal: number;
   discount: number;
+  tax: number;
   serviceCharge: number;
   rounding: number;
   total: number;
@@ -31,6 +32,7 @@ export interface CreateTransactionDTO {
   paymentMethod: string;
   customerName: string;
   discount: number;
+  tax: number;
   additionalNote: string;
   voucher: string;
   status: string;

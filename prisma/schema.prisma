@@ -67,6 +67,7 @@ model Transaction {
   totalSubTransaction Int      @default(0) @db.Integer
   subTotal            Decimal  @default(0.0) @db.Decimal(15, 2)
   discount            Decimal  @default(0.0) @db.Decimal(15, 2)
+  tax                 Decimal  @default(0.0) @db.Decimal(15, 2)
   serviceCharge       Decimal  @default(0.0) @db.Decimal(15, 2)
   rounding            Decimal  @default(0.0) @db.Decimal(15, 2)
   total               Decimal  @default(0.0) @db.Decimal(15, 2)
@@ -85,7 +86,6 @@ model Transaction {
   subTransactions SubTransaction[]
   logTableMove    LogTableMove[]
   discounts       Discount[]
-  discountId      String?          @db.VarChar(36)
 
   @@index([userId])
   @@index([outletId])

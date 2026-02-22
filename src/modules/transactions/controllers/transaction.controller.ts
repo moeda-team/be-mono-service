@@ -387,20 +387,25 @@ export class TransactionController {
         }
       }
 
+      // Calculate tax (default 10% if not provided)
+      const taxRate = transactionData.tax ? transactionData.tax / 100 : 0.1;
+      const taxableAmount = subTotal - discountAmount;
+      const tax = taxableAmount * taxRate;
+
       let serviceCharge = 0;
       if (voucherData?.type === 'percent' && Number(voucherData?.discount) === 100) {
         serviceCharge = 0;
       } else {
         if (transactionData.paymentMethod === 'qris') {
-          serviceCharge = Math.ceil((subTotal - discountAmount) * 0.007 + 500);
+          serviceCharge = Math.ceil((taxableAmount + tax) * 0.007 + 500);
         } else if (transactionData.paymentMethod === 'gopay') {
-          serviceCharge = Math.ceil((subTotal - discountAmount) * 0.02 + 500);
+          serviceCharge = Math.ceil((taxableAmount + tax) * 0.02 + 500);
         } else {
           serviceCharge = 500;
         }
       }
 
-      const totalBeforeRounding = subTotal - discountAmount + serviceCharge;
+      const totalBeforeRounding = taxableAmount + tax + serviceCharge;
       let rounding = 0;
       const remainder = totalBeforeRounding % 1000;
       if (remainder === 0) {
@@ -436,6 +441,7 @@ export class TransactionController {
           serviceCharge: serviceCharge,
           rounding: rounding,
           discount: discountAmount,
+          tax: tax,
           total: total,
           additionalNote: transactionData.additionalNote,
           voucherId: voucherData?.id,

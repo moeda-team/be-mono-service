@@ -168,6 +168,7 @@ export class TransactionService extends BaseService {
         data.cart,
         voucherData,
         data.paymentMethod,
+        data.tax || 0.11, // Default 10% tax if not provided
       );
 
       // Generate numbers
@@ -198,6 +199,7 @@ export class TransactionService extends BaseService {
           serviceCharge: calculations.serviceCharge,
           rounding: calculations.rounding,
           discount: calculations.discountAmount,
+          tax: calculations.tax,
           total: calculations.total,
           additionalNote: data.additionalNote,
           voucherId: voucherData?.id,
@@ -333,7 +335,12 @@ export class TransactionService extends BaseService {
     return voucherData;
   }
 
-  private calculateTransactionTotals(cart: any[], voucherData: any, paymentMethod: string) {
+  private calculateTransactionTotals(
+    cart: any[],
+    voucherData: any,
+    paymentMethod: string,
+    taxRate: number = 0.1,
+  ) {
     const subTotal = cart.reduce((total, item) => total + item.subTotal, 0);
 
     let discountAmount = 0;
@@ -345,20 +352,24 @@ export class TransactionService extends BaseService {
       }
     }
 
+    // Calculate tax (typically 10% of subtotal after discount)
+    const taxableAmount = subTotal - discountAmount;
+    const tax = taxableAmount * taxRate;
+
     let serviceCharge = 0;
     if (voucherData?.type === 'percent' && Number(voucherData?.discount) === 100) {
       serviceCharge = 0;
     } else {
       if (paymentMethod === 'qris') {
-        serviceCharge = Math.ceil((subTotal - discountAmount) * 0.007 + 500);
+        serviceCharge = Math.ceil((taxableAmount + tax) * 0.007 + 500);
       } else if (paymentMethod === 'gopay') {
-        serviceCharge = Math.ceil((subTotal - discountAmount) * 0.02 + 500);
+        serviceCharge = Math.ceil((taxableAmount + tax) * 0.02 + 500);
       } else {
         serviceCharge = 500;
       }
     }
 
-    const totalBeforeRounding = subTotal - discountAmount + serviceCharge;
+    const totalBeforeRounding = taxableAmount + tax + serviceCharge;
     let rounding = 0;
     const remainder = totalBeforeRounding % 1000;
 
@@ -375,6 +386,7 @@ export class TransactionService extends BaseService {
     return {
       subTotal,
       discountAmount,
+      tax,
       serviceCharge,
       rounding,
       total,
