@@ -18,6 +18,8 @@ import outletRouter from './modules/outlets/routes';
 import menuRouter from './modules/menus/routes';
 import voucherRouter from './modules/vouchers/routes';
 import fileRouter from './modules/files/routes';
+import inventoryRouter from './modules/inventory/routes';
+import discountRouter from './modules/discounts/routes';
 
 const app = express();
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
@@ -51,6 +53,8 @@ router.use(`/v1/outlets`, outletRouter);
 router.use(`/v1/menus`, menuRouter);
 router.use(`/v1/vouchers`, voucherRouter);
 router.use(`/v1/files`, fileRouter);
+router.use(`/v1/inventory`, inventoryRouter);
+router.use(`/v1/discounts`, discountRouter);
 
 app.use(router);
 

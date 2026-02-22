@@ -84,6 +84,8 @@ model Transaction {
   logVoucher      LogVoucher[]
   subTransactions SubTransaction[]
   logTableMove    LogTableMove[]
+  discounts       Discount[]
+  discountId      String?          @db.VarChar(36)
 
   @@index([userId])
   @@index([outletId])
@@ -141,6 +143,7 @@ model Outlet {
   logTableMove      LogTableMove[]
   ingredients       Ingredient[]
   stockTransactions StockTransaction[]
+  discounts         Discount[]
 
   @@index([status])
   @@map("outlets")
@@ -180,6 +183,43 @@ model LogVoucher {
   @@map("log_vouchers")
 }
 
+model Discount {
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  outletId    String   @db.VarChar(36)
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(255)
+  type        String   @default("percent") @db.VarChar(20)
+  discount    Decimal  @default(0.0) @db.Decimal(15, 2)
+  usage       Decimal  @default(0.0) @db.Decimal(10, 0)
+  maxUsage    Decimal  @default(0.0) @db.Decimal(10, 0)
+  allMenu     Boolean  @default(false)
+  expiredAt   DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  outlet       Outlet?       @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  discountMenus DiscountMenu[]
+
+  @@index([outletId])
+  @@index([expiredAt])
+  @@index([outletId, expiredAt])
+  @@map("discounts")
+}
+
+model DiscountMenu {
+  discountId String @db.VarChar(36)
+  menuId     String @db.VarChar(36)
+
+  discount Discount @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  menu     Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@id([discountId, menuId])
+  @@index([menuId])
+  @@map("discount_menus")
+}
+
 model Voucher {
   id          String   @id @default(uuid()) @db.VarChar(36)
   outletId    String?  @db.VarChar(36)
@@ -198,12 +238,24 @@ model Voucher {
   transactions Transaction[]
   logVouchers  LogVoucher[]
 
-  menus VoucherMenu[]
+  voucherMenus VoucherMenu[]
 
   @@index([outletId])
   @@index([expiredAt])
   @@index([outletId, expiredAt])
   @@map("vouchers")
+}
+
+model VoucherMenu {
+  voucherId String @db.VarChar(36)
+  menuId    String @db.VarChar(36)
+
+  voucher Voucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  menu    Menu    @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  @@id([voucherId, menuId])
+  @@index([menuId])
+  @@map("voucher_menus")
 }
 
 model Menu {
@@ -223,7 +275,8 @@ model Menu {
   category       Category         @relation(fields: [categoryId], references: [id])
   subTransaction SubTransaction[]
 
-  vouchers        VoucherMenu[]
+  voucherMenus    VoucherMenu[]
+  discountMenus   DiscountMenu[]
   options         Option[]
   bestSellerMenus BestSellerMenu[]
 
@@ -232,18 +285,6 @@ model Menu {
   @@index([isActive])
   @@index([outletId, isActive])
   @@map("menus")
-}
-
-model VoucherMenu {
-  voucherId String @db.VarChar(36)
-  menuId    String @db.VarChar(36)
-
-  voucher Voucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
-  menu    Menu    @relation(fields: [menuId], references: [id], onDelete: Cascade)
-
-  @@id([voucherId, menuId])
-  @@index([menuId])
-  @@map("voucher_menus")
 }
 
 model Option {

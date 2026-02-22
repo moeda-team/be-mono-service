@@ -20,19 +20,6 @@ export class MenuController {
           options: {
             orderBy: { order: 'asc' },
           },
-          vouchers: {
-            select: {
-              voucherId: true,
-              voucher: {
-                select: {
-                  name: true,
-                  discount: true,
-                  type: true,
-                  maxUsage: true,
-                },
-              },
-            },
-          },
         },
       });
 
@@ -95,9 +82,9 @@ export class MenuController {
           options: {
             orderBy: { order: 'asc' },
           },
-          vouchers: {
+          discountMenus: {
             where: {
-              voucher: {
+              discount: {
                 NOT: {
                   OR: [
                     {
@@ -105,7 +92,7 @@ export class MenuController {
                         { maxUsage: { gt: 0 } },
                         {
                           usage: {
-                            gte: prisma.voucher.fields.maxUsage,
+                            gte: prisma.discount.fields.maxUsage,
                           },
                         },
                       ],
@@ -120,8 +107,8 @@ export class MenuController {
               },
             },
             select: {
-              voucherId: true,
-              voucher: {
+              discountId: true,
+              discount: {
                 select: {
                   name: true,
                   discount: true,
