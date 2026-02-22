@@ -111,8 +111,8 @@ export class PaymentController {
 
       if (result.status_code !== '201') {
         return ResponseHandler.error(res, {
-          message: result.status_message,
-          statusCode: Number(result.status_code),
+          message: result?.data?.status_message || 'Transaction payment failed',
+          statusCode: Number(result?.data?.status_code || 500),
         });
       }
 
@@ -123,13 +123,9 @@ export class PaymentController {
     } catch (error) {
       logger.error('Error during transaction:', error);
       const errorMessage = error instanceof Error ? error.message : 'Internal server error';
-      const errorCode =
-        error && typeof error === 'object' && 'statusCode' in error
-          ? Number(error.statusCode)
-          : 500;
       return ResponseHandler.error(res, {
         message: errorMessage,
-        statusCode: errorCode,
+        statusCode: 500,
       });
     }
   }

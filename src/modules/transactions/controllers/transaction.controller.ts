@@ -378,35 +378,50 @@ export class TransactionController {
       const paymentNumber = await generatePaymentNumber(transactionData.outletId);
       const subTotal = transactionData.cart.reduce((total, item) => total + item.subTotal, 0);
 
-      let discountAmount = transactionData.discount;
+      // 1️⃣ Calculate Discount
+      let discountAmount = transactionData.discount ?? 0;
+
       if (voucherData) {
         if (voucherData.type === 'percent') {
-          discountAmount = (subTotal * Number(voucherData.discount)) / 100;
+          discountAmount = Math.floor((subTotal * Number(voucherData.discount)) / 100);
         } else {
           discountAmount = Number(voucherData.discount);
         }
       }
 
-      // Calculate tax (default 10% if not provided)
-      const taxableAmount = subTotal - discountAmount;
-      const tax = taxableAmount * 0.11;
+      // Make sure discount never exceeds subtotal
+      discountAmount = Math.min(discountAmount, subTotal);
 
+      // 2️⃣ Taxable amount
+      const taxableAmount = subTotal - discountAmount;
+
+      // 3️⃣ Tax (11%)
+      const tax = Math.floor(taxableAmount * 0.11);
+
+      // 4️⃣ Service Charge
       let serviceCharge = 0;
+
       if (voucherData?.type === 'percent' && Number(voucherData?.discount) === 100) {
         serviceCharge = 0;
       } else {
+        const baseAmount = taxableAmount + tax;
+
         if (transactionData.paymentMethod === 'qris') {
-          serviceCharge = Math.ceil((taxableAmount + tax) * 0.007 + 500);
+          serviceCharge = Math.ceil(baseAmount * 0.007 + 500);
         } else if (transactionData.paymentMethod === 'gopay') {
-          serviceCharge = Math.ceil((taxableAmount + tax) * 0.02 + 500);
+          serviceCharge = Math.ceil(baseAmount * 0.02 + 500);
         } else {
           serviceCharge = 500;
         }
       }
 
+      // 5️⃣ Total before rounding
       const totalBeforeRounding = taxableAmount + tax + serviceCharge;
+
+      // 6️⃣ Rounding to nearest 500 / 1000
       let rounding = 0;
       const remainder = totalBeforeRounding % 1000;
+
       if (remainder === 0) {
         rounding = 0;
       } else if (remainder <= 500) {
@@ -414,6 +429,8 @@ export class TransactionController {
       } else {
         rounding = 1000 - remainder;
       }
+
+      // 7️⃣ Final total (NO double discount!)
       const total = totalBeforeRounding + rounding;
 
       let transactionStatus = 'pending';
