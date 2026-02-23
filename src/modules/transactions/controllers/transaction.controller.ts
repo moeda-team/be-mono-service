@@ -342,7 +342,7 @@ export class TransactionController {
         message: 'Transaction calculated successfully',
         data: {
           subTotal,
-          discount: discountAmount,
+          discount,
           discountMenu,
           tax,
           serviceCharge,
