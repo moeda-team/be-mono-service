@@ -14,12 +14,14 @@ export enum TokenType {
 }
 
 export enum UserRole {
+  ADMIN = 'ADMIN',
   OWNER = 'OWNER',
   STORE_MANAGER = 'STORE_MANAGER',
   EMPLOYEE = 'EMPLOYEE',
 }
 
 const roleHierarchy: Record<UserRole, UserRole[]> = {
+  [UserRole.ADMIN]: [UserRole.ADMIN, UserRole.OWNER, UserRole.STORE_MANAGER, UserRole.EMPLOYEE],
   [UserRole.OWNER]: [UserRole.OWNER, UserRole.STORE_MANAGER, UserRole.EMPLOYEE],
   [UserRole.STORE_MANAGER]: [UserRole.STORE_MANAGER, UserRole.EMPLOYEE],
   [UserRole.EMPLOYEE]: [UserRole.EMPLOYEE],
