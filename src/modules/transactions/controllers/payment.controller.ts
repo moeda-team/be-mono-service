@@ -37,27 +37,33 @@ export class PaymentController {
 
       const itemDetails = subTransactions.map(item => ({
         id: item.id,
-        price: item.price,
+        price: item.price.toNumber(),
         quantity: item.quantity,
         name: item.menuName,
       }));
       itemDetails.push({
         id: 'service_charge',
-        price: findTransaction.serviceCharge,
+        price: findTransaction.serviceCharge.toNumber(),
         quantity: 1,
         name: 'Service Charge',
       });
       itemDetails.push({
         id: 'rounding',
-        price: findTransaction.rounding,
+        price: findTransaction.rounding.toNumber(),
         quantity: 1,
         name: 'Rounding',
       });
       itemDetails.push({
         id: 'tax',
-        price: findTransaction.tax,
+        price: findTransaction.tax.toNumber(),
         quantity: 1,
         name: 'Tax',
+      });
+      itemDetails.push({
+        id: 'discount',
+        price: -findTransaction.discount.toNumber(),
+        quantity: 1,
+        name: 'Discount',
       });
 
       const payload: MidtransPayload = {

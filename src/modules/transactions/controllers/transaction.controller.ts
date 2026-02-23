@@ -557,6 +557,16 @@ export class TransactionController {
         });
       }
 
+      // Discount
+      if (discountAmount > 0) {
+        itemDetails.push({
+          id: 'discount',
+          price: -discountAmount,
+          quantity: 1,
+          name: 'Discount',
+        });
+      }
+
       const sumItems = itemDetails.reduce((acc, item) => acc + item.price * item.quantity, 0);
       if (sumItems !== total) {
         throw new Error(
