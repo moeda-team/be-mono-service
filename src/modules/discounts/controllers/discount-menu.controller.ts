@@ -44,7 +44,7 @@ export class DiscountMenuController {
         });
       }
 
-      // Check if discount menus already exist
+      // Check for existing discount menus
       const existingDiscountMenus = await prisma.discountMenu.findMany({
         where: {
           discountId: discountMenuData.discountId,
@@ -52,58 +52,245 @@ export class DiscountMenuController {
         },
       });
 
-      if (existingDiscountMenus.length > 0) {
-        return ResponseHandler.error(res, {
-          message: 'One or more discount menus already exist',
-          statusCode: 400,
+      // Separate new and existing menus
+      const existingMenuIds: string[] = existingDiscountMenus.map(dm => dm.menuId);
+      const newMenuIds: string[] = discountMenuData.menuId.filter(
+        menuId => !existingMenuIds.includes(menuId),
+      );
+
+      let createdDiscountMenus: any[] = [];
+      let updatedDiscountMenus: any[] = [];
+
+      // Create new discount menus
+      if (newMenuIds.length > 0) {
+        await prisma.discountMenu.createMany({
+          data: newMenuIds.map(menuId => ({
+            discountId: discountMenuData.discountId,
+            menuId,
+          })),
+        });
+
+        // Fetch the created discount menus with relations
+        createdDiscountMenus = await prisma.discountMenu.findMany({
+          where: {
+            discountId: discountMenuData.discountId,
+            menuId: { in: newMenuIds },
+          },
+          include: {
+            discount: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                type: true,
+                discount: true,
+                usage: true,
+                maxUsage: true,
+                expiredAt: true,
+                outletId: true,
+              },
+            },
+            menu: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                categoryId: true,
+              },
+            },
+          },
         });
       }
 
-      // Create discount menus for all menu IDs
-      const discountMenus = await prisma.discountMenu.createMany({
-        data: discountMenuData.menuId.map(menuId => ({
-          discountId: discountMenuData.discountId,
-          menuId,
-        })),
-      });
+      // Fetch existing discount menus with relations
+      if (existingMenuIds.length > 0) {
+        updatedDiscountMenus = await prisma.discountMenu.findMany({
+          where: {
+            discountId: discountMenuData.discountId,
+            menuId: { in: existingMenuIds },
+          },
+          include: {
+            discount: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                type: true,
+                discount: true,
+                usage: true,
+                maxUsage: true,
+                expiredAt: true,
+                outletId: true,
+              },
+            },
+            menu: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                categoryId: true,
+              },
+            },
+          },
+        });
+      }
 
-      // Fetch the created discount menus with relations
-      const createdDiscountMenus = await prisma.discountMenu.findMany({
-        where: {
-          discountId: discountMenuData.discountId,
-          menuId: { in: discountMenuData.menuId },
-        },
-        include: {
-          discount: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-              type: true,
-              discount: true,
-              usage: true,
-              maxUsage: true,
-              expiredAt: true,
-              outletId: true,
-            },
-          },
-          menu: {
-            select: {
-              id: true,
-              name: true,
-              price: true,
-              categoryId: true,
-            },
-          },
-        },
-      });
+      const message =
+        newMenuIds.length > 0
+          ? `${newMenuIds.length} discount menu(s) created successfully${existingMenuIds.length > 0 ? `, ${existingMenuIds.length} already existed` : ''}`
+          : `All discount menus already exist`;
 
       return ResponseHandler.success(res, {
-        message: `${discountMenus.count} discount menu(s) created successfully`,
-        data: createdDiscountMenus,
+        message,
+        data: {
+          created: createdDiscountMenus,
+          existing: updatedDiscountMenus,
+          total: discountMenuData.menuId.length,
+        },
       });
     } catch (error) {
       logger.error('Error creating discount menu:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async updateDiscountMenu(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string } }).user;
+    const { discountId, menuId } = req.params;
+    const discountMenuData: UpdateDiscountMenuDTO = req.body;
+
+    try {
+      if (!user.outletId) {
+        return ResponseHandler.error(res, {
+          message: 'Outlet not found',
+          statusCode: 404,
+        });
+      }
+
+      // Find existing discount menu
+      const existingDiscountMenu = await prisma.discountMenu.findUnique({
+        where: {
+          discountId_menuId: {
+            discountId,
+            menuId,
+          },
+        },
+        include: {
+          discount: true,
+        },
+      });
+
+      if (!existingDiscountMenu) {
+        return ResponseHandler.error(res, {
+          message: 'Discount menu not found',
+          statusCode: 404,
+        });
+      }
+
+      if (existingDiscountMenu.discount?.outletId !== user.outletId) {
+        return ResponseHandler.error(res, {
+          message: 'Access denied',
+          statusCode: 403,
+        });
+      }
+
+      // Validate new discountId if provided
+      if (discountMenuData.discountId) {
+        const newDiscount = await prisma.discount.findUnique({
+          where: { id: discountMenuData.discountId },
+        });
+
+        if (!newDiscount || newDiscount.outletId !== user.outletId) {
+          return ResponseHandler.error(res, {
+            message: 'New discount not found or access denied',
+            statusCode: 404,
+          });
+        }
+      }
+
+      // Validate new menuId if provided
+      if (discountMenuData.menuId && discountMenuData.menuId.length > 0) {
+        const menus = await prisma.menu.findMany({
+          where: {
+            id: { in: discountMenuData.menuId },
+            outletId: user.outletId,
+          },
+        });
+
+        if (menus.length !== discountMenuData.menuId.length) {
+          return ResponseHandler.error(res, {
+            message: 'One or more menus not found or access denied',
+            statusCode: 404,
+          });
+        }
+      }
+
+      // Delete the existing discount menu
+      await prisma.discountMenu.delete({
+        where: {
+          discountId_menuId: {
+            discountId,
+            menuId,
+          },
+        },
+      });
+
+      // Create new discount menu associations if menuId array is provided
+      let updatedDiscountMenus: any[] = [];
+      if (discountMenuData.menuId && discountMenuData.menuId.length > 0) {
+        const newDiscountId = discountMenuData.discountId || discountId;
+
+        await prisma.discountMenu.createMany({
+          data: discountMenuData.menuId.map(newMenuId => ({
+            discountId: newDiscountId,
+            menuId: newMenuId,
+          })),
+        });
+
+        // Fetch the created discount menus with relations
+        updatedDiscountMenus = await prisma.discountMenu.findMany({
+          where: {
+            discountId: newDiscountId,
+            menuId: { in: discountMenuData.menuId },
+          },
+          include: {
+            discount: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                type: true,
+                discount: true,
+                usage: true,
+                maxUsage: true,
+                expiredAt: true,
+                outletId: true,
+              },
+            },
+            menu: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                categoryId: true,
+              },
+            },
+          },
+        });
+      }
+
+      return ResponseHandler.success(res, {
+        message: 'Discount menu updated successfully',
+        data: {
+          deleted: existingDiscountMenu,
+          created: updatedDiscountMenus,
+        },
+      });
+    } catch (error) {
+      logger.error('Error updating discount menu:', error);
       return ResponseHandler.error(res, {
         message: 'Internal server error',
         statusCode: 500,

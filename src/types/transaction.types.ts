@@ -11,7 +11,7 @@ export interface CartItem {
 export interface CreateTransactionDTO {
   outletId: string;
   transactionType: string;
-  tableNumber: number;
+  tableId: string;
   paymentMethod: string;
   customerName?: string;
   cart: CartItem[];

@@ -30,7 +30,7 @@ export class TransactionService extends BaseService {
       const tableNumber = Number(search);
       if (!isNaN(tableNumber)) {
         orFilters.push({
-          tableNumber: { equals: tableNumber },
+          tableId: { equals: tableNumber },
         });
       }
 
@@ -190,7 +190,7 @@ export class TransactionService extends BaseService {
           outletId: data.outletId,
           number: orderNumber,
           transactionType: data.transactionType,
-          tableNumber: data.tableNumber,
+          tableId: data.tableId,
           paymentNumber,
           paymentMethod: data.paymentMethod,
           customerName: data.customerName,
