@@ -366,11 +366,37 @@ export class TransactionController {
       const reqWithUser = req as Request & { user?: JwtPayload };
       const user = reqWithUser.user;
 
+      if (!transactionData.cart || transactionData.cart.length === 0) {
+        return ResponseHandler.error(res, {
+          message: 'Cart cannot be empty',
+          statusCode: 400,
+        });
+      }
+
+      const allowedPaymentMethods = ['cash', 'qris'];
+      if (!allowedPaymentMethods.includes(transactionData.paymentMethod)) {
+        return ResponseHandler.error(res, {
+          message: 'Invalid payment method',
+          statusCode: 400,
+        });
+      }
+
+      // Validate outlet
+      const outlet = await prisma.outlet.findUnique({
+        where: { id: transactionData.outletId },
+      });
+
+      if (!outlet) {
+        return ResponseHandler.error(res, {
+          message: 'Outlet not found',
+          statusCode: 404,
+        });
+      }
+
+      // Validate user (if exists)
       if (user) {
         const findUser = await prisma.user.findUnique({
-          where: {
-            id: user.userId,
-          },
+          where: { id: user.userId },
         });
         if (!findUser) {
           return ResponseHandler.error(res, {
@@ -380,18 +406,51 @@ export class TransactionController {
         }
       }
 
-      const outlet = await prisma.outlet.findUnique({
+      // Fetch menus securely
+      const menuIds = transactionData.cart.map(item => item.menuId);
+
+      const menus = await prisma.menu.findMany({
         where: {
-          id: transactionData.outletId,
+          id: { in: menuIds },
+          outletId: transactionData.outletId,
         },
       });
-      if (!outlet) {
+
+      if (menus.length !== menuIds.length) {
         return ResponseHandler.error(res, {
-          message: 'Outlet not found',
-          statusCode: 404,
+          message: 'Invalid menu detected in cart',
+          statusCode: 400,
         });
       }
-      let voucherData;
+
+      // Recalculate subtotal from DB
+      let subTotal = 0;
+
+      const cartWithPrices = transactionData.cart.map(item => {
+        const menu = menus.find(m => m.id === item.menuId);
+        if (!menu) throw new Error('Menu not found');
+
+        if (item.quantity <= 0) {
+          throw new Error('Invalid quantity');
+        }
+
+        const itemSubTotal = menu.price.toNumber() * item.quantity;
+        subTotal += itemSubTotal;
+
+        return {
+          menuId: item.menuId,
+          menuName: menu.name,
+          quantity: item.quantity,
+          price: menu.price,
+          subTotal: itemSubTotal,
+          addOn: item.addOn,
+          note: item.note,
+        };
+      });
+
+      let voucherData: any = null;
+      let discountAmount = 0;
+
       if (transactionData.voucher) {
         voucherData = await prisma.voucher.findFirst({
           where: {
@@ -399,256 +458,162 @@ export class TransactionController {
             name: transactionData.voucher,
           },
         });
-        if (voucherData) {
-          // Validate voucher usage based on VoucherMenu and allMenu
-          if (!voucherData.allMenu) {
-            // Get all menu IDs from the cart
-            const cartMenuIds = transactionData.cart.map(item => item.menuId);
-
-            // Get voucher menus for this voucher
-            const voucherMenus = await prisma.voucherMenu.findMany({
-              where: {
-                voucherId: voucherData.id,
-              },
-              select: {
-                menuId: true,
-              },
-            });
-
-            const voucherMenuIds = voucherMenus.map(vm => vm.menuId);
-
-            // Check if all cart items are in the voucher menu list
-            const invalidItems = cartMenuIds.filter(menuId => !voucherMenuIds.includes(menuId));
-
-            if (invalidItems.length > 0) {
-              return ResponseHandler.error(res, {
-                message:
-                  'Voucher cannot be used with some items in cart. Voucher is only valid for specific menus.',
-                statusCode: 400,
-              });
-            }
-          }
-
-          if (voucherData.type === 'percent' && Number(voucherData.discount) === 100) {
-            const logVoucher = await prisma.logVoucher.findFirst({
-              where: {
-                voucherId: voucherData.id,
-              },
-              orderBy: {
-                createdAt: 'desc',
-              },
-            });
-            if (logVoucher) {
-              return ResponseHandler.error(res, {
-                message: 'This employee voucher has been used for today.',
-                statusCode: 400,
-              });
-            }
-          }
-          if (Number(voucherData.usage) + 1 > Number(voucherData.maxUsage)) {
-            return ResponseHandler.error(res, {
-              message: 'This voucher has reached its usage limit.',
-              statusCode: 400,
-            });
-          }
-          if (voucherData?.expiredAt < new Date()) {
-            return ResponseHandler.error(res, {
-              message: 'This voucher has expired. Please try another one.',
-              statusCode: 400,
-            });
-          }
-        }
 
         if (!voucherData) {
           return ResponseHandler.error(res, {
-            message: 'Invalid voucher code. Please check and try again.',
+            message: 'Invalid voucher code',
             statusCode: 404,
           });
         }
-      }
 
-      const orderNumber = await generateOrderNumber(transactionData.outletId);
-      const paymentNumber = await generatePaymentNumber(transactionData.outletId);
-      const subTotal = transactionData.cart.reduce((total, item) => total + item.subTotal, 0);
+        if (voucherData.expiredAt < new Date()) {
+          return ResponseHandler.error(res, {
+            message: 'Voucher expired',
+            statusCode: 400,
+          });
+        }
 
-      let discountAmount = transactionData.discount ?? 0;
-      if (voucherData) {
+        if (voucherData.usage >= voucherData.maxUsage) {
+          return ResponseHandler.error(res, {
+            message: 'Voucher usage limit reached',
+            statusCode: 400,
+          });
+        }
+
+        // Validate voucher menu restriction
+        if (!voucherData.allMenu) {
+          const voucherMenus = await prisma.voucherMenu.findMany({
+            where: { voucherId: voucherData.id },
+            select: { menuId: true },
+          });
+
+          const allowedMenuIds = voucherMenus.map(v => v.menuId);
+
+          const invalidItem = cartWithPrices.find(item => !allowedMenuIds.includes(item.menuId));
+
+          if (invalidItem) {
+            return ResponseHandler.error(res, {
+              message: 'Voucher is only valid for specific menus',
+              statusCode: 400,
+            });
+          }
+        }
+
+        // Calculate discount securely
         if (voucherData.type === 'percent') {
           discountAmount = Math.floor((subTotal * Number(voucherData.discount)) / 100);
         } else {
           discountAmount = Number(voucherData.discount);
         }
+        discountAmount = Math.min(discountAmount, subTotal);
       }
 
-      discountAmount = Math.min(discountAmount, subTotal);
       const taxableAmount = subTotal - discountAmount;
       const tax = Math.floor(taxableAmount * 0.11);
 
       let serviceCharge = 0;
-      if (voucherData?.type === 'percent' && Number(voucherData?.discount) === 100) {
-        serviceCharge = 0;
-      } else {
+
+      if (!(voucherData?.type === 'percent' && Number(voucherData?.discount) === 100)) {
         const baseAmount = taxableAmount + tax;
 
         if (transactionData.paymentMethod === 'qris') {
           serviceCharge = Math.ceil(baseAmount * 0.007 + 500);
-        } else if (transactionData.paymentMethod === 'gopay') {
-          serviceCharge = Math.ceil(baseAmount * 0.02 + 500);
         } else {
           serviceCharge = 500;
         }
       }
-
       const totalBeforeRounding = taxableAmount + tax + serviceCharge;
 
       let rounding = 0;
       const remainder = totalBeforeRounding % 1000;
-
-      if (remainder === 0) {
-        rounding = 0;
-      } else if (remainder <= 500) {
-        rounding = 500 - remainder;
-      } else {
-        rounding = 1000 - remainder;
+      if (remainder !== 0) {
+        rounding = remainder <= 500 ? 500 - remainder : 1000 - remainder;
       }
 
       const total = totalBeforeRounding + rounding;
+      if (total < 0) {
+        throw new Error('Invalid total calculation');
+      }
 
-      let transactionStatus = 'pending';
-
+      let transactionStatus: 'pending' | 'completed' = 'pending';
       if (voucherData && total === 0) {
         transactionStatus = 'completed';
-      } else if (transactionData.paymentMethod !== 'cash') {
-        transactionStatus = transactionData.status;
-      } else {
+      } else if (transactionData.paymentMethod === 'cash') {
         transactionStatus = 'completed';
       }
 
-      const itemDetails: any[] = [];
+      const orderNumber = await generateOrderNumber(transactionData.outletId);
+      const paymentNumber = await generatePaymentNumber(transactionData.outletId);
 
-      // Cart items
-      transactionData.cart.forEach(item => {
-        itemDetails.push({
-          id: item.id,
-          price: item.price,
-          quantity: item.quantity,
-          name: item.menuName,
-        });
-      });
-
-      // Tax
-      if (tax > 0) {
-        itemDetails.push({
-          id: 'tax',
-          price: tax,
-          quantity: 1,
-          name: 'Tax',
-        });
-      }
-
-      // Service Charge
-      if (serviceCharge > 0) {
-        itemDetails.push({
-          id: 'service_charge',
-          price: serviceCharge,
-          quantity: 1,
-          name: 'Service Charge',
-        });
-      }
-
-      // Rounding
-      if (rounding > 0) {
-        itemDetails.push({
-          id: 'rounding',
-          price: rounding,
-          quantity: 1,
-          name: 'Rounding',
-        });
-      }
-
-      // Discount
-      if (discountAmount > 0) {
-        itemDetails.push({
-          id: 'discount',
-          price: -discountAmount,
-          quantity: 1,
-          name: 'Discount',
-        });
-      }
-
-      const sumItems = itemDetails.reduce((acc, item) => acc + item.price * item.quantity, 0);
-      if (sumItems !== total) {
-        throw new Error(
-          `Midtrans validation error: item total (${sumItems}) does not match gross_amount (${total})`,
-        );
-      }
-
-      const transaction = await prisma.transaction.create({
-        data: {
-          userId: user?.userId,
-          outletId: transactionData.outletId,
-          number: orderNumber,
-          transactionType: transactionData.transactionType,
-          tableNumber: transactionData.tableNumber,
-          paymentNumber: paymentNumber,
-          paymentMethod: transactionData.paymentMethod,
-          customerName: transactionData.customerName,
-          totalSubTransaction: transactionData.cart.length,
-          subTotal: subTotal,
-          serviceCharge: serviceCharge,
-          rounding: rounding,
-          discount: discountAmount,
-          tax: tax,
-          total: total,
-          additionalNote: transactionData.additionalNote,
-          voucherId: voucherData?.id,
-          status: transactionStatus,
-        },
-      });
-
-      for (const item of transactionData.cart) {
-        await prisma.subTransaction.create({
+      const result = await prisma.$transaction(async tx => {
+        const transaction = await tx.transaction.create({
           data: {
-            transactionId: transaction.id,
-            menuId: item.menuId,
-            menuName: item.menuName,
-            quantity: item.quantity,
-            price: item.price,
-            subTotal: item.subTotal,
-            addOn: item.addOn,
-            note: item.note,
-            status: 'preparation',
-          },
-        });
-      }
-
-      if (voucherData) {
-        await prisma.voucher.update({
-          where: { id: voucherData.id },
-          data: {
-            usage: Number(voucherData.usage) + 1,
-          },
-        });
-        await prisma.logVoucher.create({
-          data: {
+            userId: user?.userId,
             outletId: transactionData.outletId,
-            transactionId: transaction.id,
-            voucherId: voucherData.id,
+            number: orderNumber,
+            transactionType: transactionData.transactionType,
+            tableNumber: transactionData.tableNumber,
+            paymentNumber: paymentNumber,
+            paymentMethod: transactionData.paymentMethod,
+            customerName: transactionData.customerName,
+            totalSubTransaction: cartWithPrices.length,
+            subTotal: subTotal,
+            serviceCharge,
+            rounding,
+            discount: discountAmount,
+            tax,
+            total,
+            additionalNote: transactionData.additionalNote,
+            voucherId: voucherData?.id,
+            status: transactionStatus,
           },
         });
-      }
+
+        for (const item of cartWithPrices) {
+          await tx.subTransaction.create({
+            data: {
+              transactionId: transaction.id,
+              menuId: item.menuId,
+              menuName: item.menuName,
+              quantity: item.quantity,
+              price: item.price,
+              subTotal: item.subTotal,
+              addOn: item.addOn,
+              note: item.note,
+              status: 'preparation',
+            },
+          });
+        }
+
+        if (voucherData) {
+          await tx.voucher.update({
+            where: {
+              id: voucherData.id,
+            },
+            data: {
+              usage: { increment: 1 },
+            },
+          });
+
+          await tx.logVoucher.create({
+            data: {
+              outletId: transactionData.outletId,
+              transactionId: transaction.id,
+              voucherId: voucherData.id,
+            },
+          });
+        }
+
+        return transaction;
+      });
 
       return ResponseHandler.success(res, {
         message: 'Transaction created successfully',
-        data: {
-          ...transaction,
-          details: await prisma.subTransaction.findMany({
-            where: { transactionId: transaction.id },
-          }),
-        },
+        data: result,
       });
     } catch (error) {
       logger.error('Error creating transaction:', error);
+
       return ResponseHandler.error(res, {
         message: error instanceof Error ? error.message : 'Internal server error',
         statusCode: 500,
