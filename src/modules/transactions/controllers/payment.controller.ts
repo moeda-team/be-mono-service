@@ -188,8 +188,7 @@ export class PaymentController {
           data: {
             outletId: transaction?.outletId,
             transactionId: transaction?.id,
-            tableNumber: transaction?.tableNumber,
-            prevTableId: null,
+            prevTableId: transaction?.tableId,
             nextTableId: null,
           },
         });

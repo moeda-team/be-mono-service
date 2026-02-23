@@ -19,7 +19,7 @@ export class TransactionController {
     const limit = parseInt(req.query.limit as string) || null;
     const search = (req.query.search as string)?.trim() || null;
     const active = req.query.active === 'true';
-    const table = parseInt(req.query.table as string) || null;
+    const table = (req.query.table as string)?.trim() || null;
     const month = parseInt(req.query.month as string) || null;
     const year = parseInt(req.query.year as string) || null;
 
@@ -35,10 +35,8 @@ export class TransactionController {
 
       if (search) {
         orFilters.push({ customerName: { contains: search, mode: 'insensitive' } });
-        const tableNumber = Number(search);
-        if (!isNaN(tableNumber)) {
-          orFilters.push({ tableNumber: { equals: tableNumber } });
-        }
+        // Note: Table search by name will need to be implemented differently
+        // since we now use tableId (UUID) instead of tableNumber
 
         whereClause.OR = orFilters;
       }
@@ -54,7 +52,7 @@ export class TransactionController {
       }
 
       if (table) {
-        whereClause.tableNumber = { equals: table };
+        whereClause.tableId = { equals: table };
       }
 
       if (month && year) {
@@ -73,6 +71,7 @@ export class TransactionController {
               createdAt: 'asc',
             },
           },
+          table: true,
           subTransactions: {
             include: {
               menu: true,
@@ -141,7 +140,7 @@ export class TransactionController {
       if (search) {
         whereClause.OR = [
           { customerName: { contains: search, mode: 'insensitive' } },
-          ...(isNaN(Number(search)) ? [] : [{ tableNumber: { equals: Number(search) } }]),
+          // Note: Table search by number is no longer available since we use tableId (UUID)
         ];
       }
 
@@ -194,6 +193,7 @@ export class TransactionController {
               createdAt: 'asc',
             },
           },
+          table: true,
           subTransactions: {
             include: {
               menu: true,
@@ -552,7 +552,7 @@ export class TransactionController {
             outletId: transactionData.outletId,
             number: orderNumber,
             transactionType: transactionData.transactionType,
-            tableNumber: transactionData.tableNumber,
+            tableId: transactionData.tableId,
             paymentNumber: paymentNumber,
             paymentMethod: transactionData.paymentMethod,
             customerName: transactionData.customerName,
@@ -723,7 +723,7 @@ export class TransactionController {
 
   async updateTransactionTable(req: Request, res: Response) {
     const { id } = req.params;
-    const { tableNumber, note } = req.body;
+    const { tableId, note } = req.body;
 
     try {
       const transaction = await prisma.transaction.findUnique({
@@ -740,7 +740,7 @@ export class TransactionController {
         where: {
           transactionId: id,
           outletId: transaction.outletId,
-          tableNumber: transaction.tableNumber,
+          nextTableId: transaction.tableId,
         },
         orderBy: {
           createdAt: 'desc',
@@ -768,9 +768,8 @@ export class TransactionController {
         data: {
           outletId: transaction?.outletId,
           transactionId: transaction?.id,
-          tableNumber: parseInt(tableNumber),
-          prevTableId: findLogTableMove?.id,
-          nextTableId: null,
+          prevTableId: findLogTableMove?.nextTableId,
+          nextTableId: tableId,
           note: note,
         },
       });
@@ -786,7 +785,7 @@ export class TransactionController {
       await prisma.transaction.update({
         where: { id },
         data: {
-          tableNumber: parseInt(tableNumber),
+          tableId: tableId,
         },
       });
 

@@ -51,7 +51,7 @@ export class TransactionController {
         .isString()
         .isLength({ min: 1, max: 50 })
         .withMessage('Transaction type is required'),
-      body('tableNumber').isInt({ min: 1 }).withMessage('Table number must be a positive integer'),
+      body('tableId').isUUID().withMessage('Table ID must be a valid UUID'),
       body('paymentMethod')
         .isString()
         .isIn(['cash', 'qris', 'gopay', 'shopeepay'])
@@ -152,10 +152,10 @@ export class TransactionController {
 
   updateTransactionTable = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { tableNumber, note } = req.body;
+    const { tableId, note } = req.body;
 
     // This would be implemented in the service
-    // const result = await transactionService.updateTransactionTable(id, tableNumber, note);
+    // const result = await transactionService.updateTransactionTable(id, tableId, note);
 
     return ResponseHandler.success(res, {
       message: 'Transaction table updated successfully',

@@ -6,7 +6,7 @@ export interface Transaction {
   userId: string;
   number: string;
   transactionType: string;
-  tableNumber: number;
+  tableId: string;
   paymentNumber: string;
   paymentMethod: string;
   paymentMethodId: string;
@@ -28,7 +28,7 @@ export interface Transaction {
 export interface CreateTransactionDTO {
   outletId: string;
   transactionType: string;
-  tableNumber: number;
+  tableId: string;
   paymentMethod: string;
   customerName: string;
   discount: number;

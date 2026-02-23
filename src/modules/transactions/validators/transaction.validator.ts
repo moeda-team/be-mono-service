@@ -9,12 +9,12 @@ export const validateCreateTransaction = [
     .notEmpty()
     .withMessage('Transaction type is required')
     .isIn(['dine-in', 'take-away', 'delivery']),
-  body('tableNumber')
+  body('tableId')
     .if((value, { req }) => req.body.transactionType === 'dine-in')
     .notEmpty()
-    .withMessage('Table number is required for dine-in')
-    .isNumeric()
-    .withMessage('Table number must be numeric'),
+    .withMessage('Table ID is required for dine-in')
+    .isUUID()
+    .withMessage('Table ID must be a valid UUID'),
   body('paymentMethod')
     .isIn(['cash', 'qris'])
     .trim()
@@ -95,12 +95,12 @@ export const validateUpdateTransactionStatus = [
 ];
 
 export const validateUpdateTransactionTable = [
-  body('tableNumber')
+  body('tableId')
     .trim()
     .notEmpty()
-    .withMessage('Table number is required for dine-in')
-    .isNumeric()
-    .withMessage('Table number must be numeric'),
+    .withMessage('Table ID is required for dine-in')
+    .isUUID()
+    .withMessage('Table ID must be a valid UUID'),
   body('note').optional(),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
