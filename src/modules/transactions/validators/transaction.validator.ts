@@ -148,6 +148,7 @@ export const validateCalculation = [
     .isFloat({ gt: 0 })
     .withMessage('Total must be a positive number'),
   body('discount').optional().isFloat({ min: 0 }).withMessage('Discount must be a number'),
+  body('discountMenu').optional().isFloat({ min: 0 }).withMessage('Discount menu must be a number'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

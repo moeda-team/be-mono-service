@@ -267,7 +267,7 @@ export class TransactionController {
   }
 
   async calculateTransaction(req: Request, res: Response) {
-    const { total, discount = 0, paymentMethod } = req.body;
+    const { total, discount = 0, paymentMethod, discountMenu = 0 } = req.body;
 
     try {
       if (typeof total !== 'number' || total < 0) {
@@ -284,6 +284,13 @@ export class TransactionController {
         });
       }
 
+      if (typeof discountMenu !== 'number' || discountMenu < 0) {
+        return ResponseHandler.error(res, {
+          message: 'Discount menu must be a positive number',
+          statusCode: 400,
+        });
+      }
+
       if (!paymentMethod) {
         return ResponseHandler.error(res, {
           message: 'Payment method is required',
@@ -292,7 +299,8 @@ export class TransactionController {
       }
 
       const subTotal = total;
-      const discountAmount = Math.min(discount, subTotal);
+      const totalDiscount = discount + discountMenu;
+      const discountAmount = Math.min(totalDiscount, subTotal);
       const taxableAmount = subTotal - discountAmount;
       const tax = Math.floor(taxableAmount * 0.11);
 
