@@ -14,7 +14,7 @@ export class TableService {
           outlet: true,
         },
       });
-      
+
       return table;
     } catch (error) {
       logger.error('Error creating table:', error);
@@ -31,7 +31,7 @@ export class TableService {
         },
         orderBy: { name: 'asc' },
       });
-      
+
       return tables;
     } catch (error) {
       logger.error('Error getting tables by outlet:', error);
@@ -47,7 +47,7 @@ export class TableService {
           outlet: true,
         },
       });
-      
+
       return table;
     } catch (error) {
       logger.error('Error getting table by id:', error);
@@ -64,7 +64,7 @@ export class TableService {
           outlet: true,
         },
       });
-      
+
       return table;
     } catch (error) {
       logger.error('Error updating table:', error);
@@ -95,7 +95,7 @@ export class TableService {
         },
         orderBy: { name: 'asc' },
       });
-      
+
       return tables;
     } catch (error) {
       logger.error('Error getting tables by status:', error);
