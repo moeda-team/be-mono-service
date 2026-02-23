@@ -299,9 +299,9 @@ export class TransactionController {
       }
 
       const subTotal = total;
-      const totalDiscount = discount + discountMenu;
+      const totalDiscount = discountMenu;
       const discountAmount = Math.min(totalDiscount, subTotal);
-      const taxableAmount = subTotal - discountAmount;
+      const taxableAmount = subTotal - discountAmount - discount;
       const tax = Math.floor(taxableAmount * 0.11);
 
       let serviceCharge = 0;
@@ -343,6 +343,7 @@ export class TransactionController {
         data: {
           subTotal,
           discount: discountAmount,
+          discountMenu,
           tax,
           serviceCharge,
           rounding,
