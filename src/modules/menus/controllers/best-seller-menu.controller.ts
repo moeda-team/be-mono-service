@@ -12,6 +12,8 @@ export class BestSellerMenuController {
     const outletId = req.headers.outletid as string;
 
     try {
+      const now = new Date();
+
       const bestSellerMenus = await prisma.bestSellerMenu.findMany({
         where: {
           menu: {
@@ -26,6 +28,42 @@ export class BestSellerMenuController {
             include: {
               options: {
                 orderBy: { order: 'asc' },
+              },
+              discountMenus: {
+                where: {
+                  discount: {
+                    NOT: {
+                      OR: [
+                        {
+                          AND: [
+                            { maxUsage: { gt: 0 } },
+                            {
+                              usage: {
+                                gte: prisma.discount.fields.maxUsage,
+                              },
+                            },
+                          ],
+                        },
+                        {
+                          expiredAt: {
+                            lte: now,
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
+                select: {
+                  discountId: true,
+                  discount: {
+                    select: {
+                      name: true,
+                      discount: true,
+                      type: true,
+                      maxUsage: true,
+                    },
+                  },
+                },
               },
             },
           },
