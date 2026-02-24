@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import { CategoryController } from '../controllers/category.controller';
-import { jwtAuth, roleAuth, basicAuth } from '../../../middlewares';
+import { jwtAuth, roleAuth, basicAuth, jwtAuthNotRequired } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
 import { validateCreateCategory, validateUpdateCategory } from '../validators/category.validator';
 
 const router = Router();
 const categoryController = new CategoryController();
 
-router.get('/', basicAuth, categoryController.findAll);
-router.get('/:id', basicAuth, categoryController.findOne);
+router.get('/', jwtAuthNotRequired, categoryController.findAll);
+router.get('/:id', jwtAuthNotRequired, categoryController.findOne);
 router.post(
   '/',
   jwtAuth,
