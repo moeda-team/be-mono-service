@@ -35,6 +35,8 @@ export class DiscountController {
         ];
       }
 
+      const now = new Date();
+
       const discounts = await prisma.discount.findMany({
         where: whereClause,
         orderBy: {
@@ -42,8 +44,39 @@ export class DiscountController {
         },
         include: {
           discountMenus: {
-            include: {
-              menu: true,
+            where: {
+              discount: {
+                NOT: {
+                  OR: [
+                    {
+                      AND: [
+                        { maxUsage: { gt: 0 } },
+                        {
+                          usage: {
+                            gte: prisma.discount.fields.maxUsage,
+                          },
+                        },
+                      ],
+                    },
+                    {
+                      expiredAt: {
+                        lte: now,
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+            select: {
+              discountId: true,
+              discount: {
+                select: {
+                  name: true,
+                  discount: true,
+                  type: true,
+                  maxUsage: true,
+                },
+              },
             },
           },
         },
