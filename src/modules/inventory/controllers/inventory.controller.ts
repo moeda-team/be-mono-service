@@ -10,7 +10,7 @@ export class InventoryController extends BaseController {
 
   async addStock(req: Request, res: Response): Promise<Response> {
     try {
-      const outletId = req.headers['outlet-id'] as string;
+      const outletId = req.headers['Outletid'] as string;
       const userId = req.headers['user-id'] as string;
 
       if (!outletId) {
@@ -64,7 +64,7 @@ export class InventoryController extends BaseController {
 
   async reduceStock(req: Request, res: Response): Promise<Response> {
     try {
-      const outletId = req.headers['outlet-id'] as string;
+      const outletId = req.headers['Outletid'] as string;
       const userId = req.headers['user-id'] as string;
 
       if (!outletId) {
@@ -121,7 +121,7 @@ export class InventoryController extends BaseController {
 
   async getIngredients(req: Request, res: Response): Promise<Response> {
     try {
-      const outletId = req.headers['outlet-id'] as string;
+      const outletId = req.headers['Outletid'] as string;
 
       if (!outletId) {
         return this.sendError(res, {
@@ -154,7 +154,7 @@ export class InventoryController extends BaseController {
 
   async getActivity(req: Request, res: Response): Promise<Response> {
     try {
-      const outletId = req.headers['outlet-id'] as string;
+      const outletId = req.headers['Outletid'] as string;
 
       if (!outletId) {
         return this.sendError(res, {

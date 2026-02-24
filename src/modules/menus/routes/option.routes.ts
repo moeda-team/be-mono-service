@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { OptionController } from '../controllers/option.controller';
-import { jwtAuth, roleAuth, basicAuth, jwtAuthNotRequired } from '../../../middlewares';
+import { jwtAuth, roleAuth, jwtAuthNotRequired } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
 import { validateCreateOption, validateUpdateOption } from '../validators/option.validator';
 

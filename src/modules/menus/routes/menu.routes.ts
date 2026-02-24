@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { MenuController } from '../controllers/menu.controller';
 import { validateCreateMenu, validateUpdateMenu } from '../validators/menu.validator';
 import { HealthController } from '../controllers/health.controller';
-import { basicAuth, jwtAuth, jwtAuthNotRequired, roleAuth } from '../../../middlewares';
+import { jwtAuth, jwtAuthNotRequired, roleAuth } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
 
 const router = Router();

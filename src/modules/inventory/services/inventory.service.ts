@@ -1,4 +1,5 @@
-import { PrismaClient, StockStatus, StockTransactionType } from '@prisma/client';
+import { StockStatus, StockTransactionType } from '@prisma/client';
+import prisma from '../../../lib/prisma';
 import {
   AddStockRequest,
   ReduceStockRequest,
@@ -8,10 +9,10 @@ import {
 } from '../models/inventory.types';
 
 export class InventoryService {
-  constructor(private prisma: PrismaClient) {}
+  constructor() {}
 
   async addStock(outletId: string, data: AddStockRequest, userId?: string): Promise<void> {
-    await this.prisma.$transaction(async tx => {
+    await prisma.$transaction(async (tx: any) => {
       // Validate ingredient exists and belongs to outlet
       const ingredient = await tx.ingredient.findFirst({
         where: {
@@ -55,7 +56,7 @@ export class InventoryService {
   }
 
   async reduceStock(outletId: string, data: ReduceStockRequest, userId?: string): Promise<void> {
-    await this.prisma.$transaction(async tx => {
+    await prisma.$transaction(async (tx: any) => {
       // Validate ingredient exists and belongs to outlet
       const ingredient = await tx.ingredient.findFirst({
         where: {
@@ -106,7 +107,7 @@ export class InventoryService {
   }
 
   async getIngredients(outletId: string): Promise<IngredientResponse[]> {
-    const ingredients = await this.prisma.ingredient.findMany({
+    const ingredients = await prisma.ingredient.findMany({
       where: {
         outletId,
       },
@@ -133,7 +134,7 @@ export class InventoryService {
   }
 
   async getActivity(outletId: string): Promise<ActivityResponse> {
-    const transactions = await this.prisma.stockTransaction.findMany({
+    const transactions = await prisma.stockTransaction.findMany({
       where: {
         outletId,
       },

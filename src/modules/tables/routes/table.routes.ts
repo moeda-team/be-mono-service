@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { TableController } from '../controllers/table.controller';
 import { HealthController } from '../controllers/health.controller';
 import { validateCreateTable, validateUpdateTable } from '../validators/table.validator';
-import { basicAuth, jwtAuth, jwtAuthNotRequired, roleAuth } from '../../../middlewares';
+import { jwtAuth, jwtAuthNotRequired, roleAuth } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
 
 const router = Router();

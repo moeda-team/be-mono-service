@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import { BestSellerMenuController } from '../controllers/best-seller-menu.controller';
 import { validateCreateBestSellerMenu } from '../validators/best-seller-menu.validator';
-import { basicAuth, jwtAuth, roleAuth } from '../../../middlewares';
+import { jwtAuth, roleAuth, jwtAuthNotRequired } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
 
 const router = Router();
 const bestSellerMenuController = new BestSellerMenuController();
 
-router.get('/', basicAuth, bestSellerMenuController.getAllBestSellerMenus);
-router.get('/:id', basicAuth, bestSellerMenuController.getBestSellerMenuById);
+router.get('/', jwtAuthNotRequired, bestSellerMenuController.getAllBestSellerMenus);
+router.get('/:id', jwtAuthNotRequired, bestSellerMenuController.getBestSellerMenuById);
 router.post(
   '/',
   jwtAuth,

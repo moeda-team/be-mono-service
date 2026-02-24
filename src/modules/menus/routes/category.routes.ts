@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { CategoryController } from '../controllers/category.controller';
-import { jwtAuth, roleAuth, basicAuth, jwtAuthNotRequired } from '../../../middlewares';
+import { jwtAuth, roleAuth, jwtAuthNotRequired } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
 import { validateCreateCategory, validateUpdateCategory } from '../validators/category.validator';
 
