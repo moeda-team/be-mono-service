@@ -219,6 +219,7 @@ export class PaymentController {
         },
         include: {
           subTransactions: true,
+          table: true,
         },
       });
 

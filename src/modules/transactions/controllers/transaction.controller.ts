@@ -250,6 +250,7 @@ export class TransactionController {
             },
           },
           logTableMove: true,
+          table: true,
         },
       });
 
@@ -729,6 +730,7 @@ export class TransactionController {
       const transaction = await prisma.transaction.findUnique({
         where: { id },
       });
+
       if (!transaction) {
         return ResponseHandler.error(res, {
           message: 'Transaction not found',
@@ -736,70 +738,28 @@ export class TransactionController {
         });
       }
 
-      const findLogTableMove = await prisma.logTableMove.findFirst({
-        where: {
-          transactionId: id,
-          outletId: transaction.outletId,
-          nextTableId: transaction.tableId,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
-
-      const countLogTableMove = await prisma.logTableMove.count({
-        where: {
-          transactionId: id,
-          outletId: transaction.outletId,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
-
-      if (countLogTableMove > 2) {
-        return ResponseHandler.error(res, {
-          message: 'Transaction table move limit reached',
-          statusCode: 400,
+      await prisma.$transaction(async tx => {
+        await tx.logTableMove.create({
+          data: {
+            outletId: transaction.outletId,
+            transactionId: transaction.id,
+            prevTableId: transaction.tableId,
+            nextTableId: tableId,
+            note,
+          },
         });
-      }
 
-      const updateLogTableMove = await prisma.logTableMove.create({
-        data: {
-          outletId: transaction?.outletId,
-          transactionId: transaction?.id,
-          prevTableId: findLogTableMove?.nextTableId,
-          nextTableId: tableId,
-          note: note,
-        },
-      });
-
-      await prisma.logTableMove.update({
-        where: { id: findLogTableMove?.id },
-        data: {
-          nextTableId: updateLogTableMove.id,
-          note: note,
-        },
-      });
-
-      await prisma.transaction.update({
-        where: { id },
-        data: {
-          tableId: tableId,
-        },
+        await tx.transaction.update({
+          where: { id },
+          data: { tableId },
+        });
       });
 
       return ResponseHandler.success(res, {
         message: 'Transaction table updated successfully',
-        data: updateLogTableMove,
+        data: null,
       });
     } catch (error) {
-      if (error instanceof Error && 'code' in error && error.code === 'P2025') {
-        return ResponseHandler.error(res, {
-          message: 'Transaction not found',
-          statusCode: 404,
-        });
-      }
       logger.error('Error updating transaction table:', error);
       return ResponseHandler.error(res, {
         message: 'Internal server error',
