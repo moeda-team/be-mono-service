@@ -26,9 +26,7 @@ export class BestSellerMenuController {
         include: {
           menu: {
             include: {
-              options: {
-                orderBy: { order: 'asc' },
-              },
+              options: true,
               discountMenus: {
                 where: {
                   discount: {
@@ -100,9 +98,7 @@ export class BestSellerMenuController {
         include: {
           menu: {
             include: {
-              options: {
-                orderBy: { order: 'asc' },
-              },
+              options: true,
             },
           },
         },

@@ -5,9 +5,6 @@ import { CreateMenuDTO, UpdateMenuDTO } from '../models/menu';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { Prisma } from '@prisma/client';
 import prisma from '../../../lib/prisma';
-import { MenuService } from '../../../services/menu.service';
-
-const menuService = new MenuService();
 
 export class MenuController {
   getMenuById = async (req: Request, res: Response) => {
@@ -17,9 +14,7 @@ export class MenuController {
       const menu = await prisma.menu.findUnique({
         where: { id },
         include: {
-          options: {
-            orderBy: { order: 'asc' },
-          },
+          options: true,
         },
       });
 
@@ -30,13 +25,10 @@ export class MenuController {
         });
       }
 
-      const structuredOptions = menuService.BuildOptionTree(menu.options);
-
       return ResponseHandler.success(res, {
         message: 'Menu retrieved successfully',
         data: {
           ...menu,
-          options: structuredOptions,
         },
       });
     } catch (error) {
@@ -79,9 +71,7 @@ export class MenuController {
           createdAt: 'desc',
         },
         include: {
-          options: {
-            orderBy: { order: 'asc' },
-          },
+          options: true,
           discountMenus: {
             where: {
               discount: {
@@ -123,7 +113,6 @@ export class MenuController {
 
       const structuredMenus = menus.map(menu => ({
         ...menu,
-        options: menuService.BuildOptionTree(menu.options),
       }));
 
       return ResponseHandler.success(res, {

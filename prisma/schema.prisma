@@ -291,25 +291,16 @@ model Menu {
 }
 
 model Option {
-  id       String  @id @default(uuid()) @db.VarChar(36)
-  menuId   String? @db.VarChar(36)
-  optionId String? @db.VarChar(36)
-
-  name        String
-  values      String[]
-  extraPrices Decimal[]
-  order       Int       @default(0)
-
-  menu Menu? @relation(fields: [menuId], references: [id])
-
-  parent   Option?  @relation("OptionToOption", fields: [optionId], references: [id])
-  children Option[] @relation("OptionToOption")
+  id     String @id @default(uuid()) @db.VarChar(36)
+  menuId String @db.VarChar(36)
+  data   Json   @default("[]")
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
+
+  menu Menu @relation(fields: [menuId], references: [id])
 
   @@index([menuId])
-  @@index([optionId])
   @@map("options")
 }
 

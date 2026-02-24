@@ -53,14 +53,19 @@ export class OptionController {
     res: Response,
   ) {
     try {
+      const { menuId, data } = req.body;
+
+      if (!menuId) {
+        return ResponseHandler.error(res, {
+          message: 'menuId is required',
+          statusCode: 400,
+        });
+      }
+
       const option = await prisma.option.create({
         data: {
-          name: req.body.name,
-          values: req.body.values,
-          extraPrices: req.body.extraPrices,
-          menuId: req.body.menuId,
-          optionId: req.body.optionId,
-          order: req.body.order || 0,
+          menuId,
+          data: data || [],
         },
       });
       return ResponseHandler.success(res, {
@@ -80,27 +85,13 @@ export class OptionController {
     res: Response,
   ) {
     try {
-      const option = await prisma.option.findFirst({
-        where: {
-          id: { not: req.params.id },
-          name: req.body.name,
-        },
-      });
-      if (option) {
-        return ResponseHandler.error(res, {
-          message: 'Option already exists',
-          statusCode: 400,
-        });
-      }
+      const { menuId, data } = req.body;
+
       const updatedOption = await prisma.option.update({
         where: { id: req.params.id },
         data: {
-          name: req.body.name,
-          values: req.body.values,
-          extraPrices: req.body.extraPrices,
-          menuId: req.body.menuId,
-          optionId: req.body.optionId,
-          order: req.body.order,
+          ...(menuId && { menuId }),
+          ...(data !== undefined && { data }),
         },
       });
       return ResponseHandler.success(res, {
