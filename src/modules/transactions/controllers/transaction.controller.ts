@@ -18,10 +18,10 @@ export class TransactionController {
     const page = parseInt(req.query.page as string) || null;
     const limit = parseInt(req.query.limit as string) || null;
     const search = (req.query.search as string)?.trim() || null;
-    const active = req.query.active === 'true';
     const table = (req.query.table as string)?.trim() || null;
     const month = parseInt(req.query.month as string) || null;
     const year = parseInt(req.query.year as string) || null;
+    const status = (req.query.status as string)?.trim() || null;
 
     const skip = page && limit ? (page - 1) * limit : undefined;
     const take = limit || undefined;
@@ -35,18 +35,21 @@ export class TransactionController {
 
       if (search) {
         orFilters.push({ customerName: { contains: search, mode: 'insensitive' } });
-        // Note: Table search by name will need to be implemented differently
-        // since we now use tableId (UUID) instead of tableNumber
-
         whereClause.OR = orFilters;
       }
 
-      if (active) {
+      if (status === 'active') {
         whereClause.subTransactions = {
           some: {
             status: {
               not: 'completed',
             },
+          },
+        };
+      } else if (status === 'completed') {
+        whereClause.subTransactions = {
+          every: {
+            status: 'completed',
           },
         };
       }
