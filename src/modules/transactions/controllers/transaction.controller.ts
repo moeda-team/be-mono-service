@@ -252,7 +252,12 @@ export class TransactionController {
               menu: true,
             },
           },
-          logTableMove: true,
+          logTableMove: {
+            include: {
+              nextTable: true,
+              prevTable: true,
+            },
+          },
           table: true,
         },
       });
