@@ -10,7 +10,7 @@ const optionController = new OptionController();
 router.get('', jwtAuthNotRequired, roleAuth(UserRole.STORE_MANAGER), optionController.findAll);
 router.get('/:menuId', jwtAuthNotRequired, optionController.findOne);
 router.post(
-  '/:menuId',
+  '/',
   jwtAuth,
   roleAuth(UserRole.STORE_MANAGER),
   validateUpsertOption,
