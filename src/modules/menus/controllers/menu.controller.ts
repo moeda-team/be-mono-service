@@ -72,6 +72,7 @@ export class MenuController {
         },
         include: {
           options: true,
+          bestSellerMenus: true,
           discountMenus: {
             where: {
               discount: {
