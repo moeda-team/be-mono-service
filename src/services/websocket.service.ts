@@ -34,7 +34,7 @@ export class WebSocketService {
     this.io.use(async (socket: any, next) => {
       try {
         // Try JWT token from auth parameter first
-        let token = socket.handshake.auth.token;
+        let token = socket.handshake.auth.token || socket.handshake.headers.token;
 
         // If no token, try basic auth from headers
         if (!token && socket.handshake.headers.authorization) {
