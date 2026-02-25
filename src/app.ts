@@ -26,7 +26,13 @@ import websocketRouter from './modules/websockets/routes';
 const app = express();
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
 
-app.use(rateLimiter);
+// Apply rate limiter to all routes except WebSocket
+app.use((req, res, next) => {
+  if (req.path.startsWith('/v1/websockets') || req.path.includes('/socket.io/')) {
+    return next();
+  }
+  return rateLimiter(req, res, next);
+});
 app.use(timeout('10s'));
 app.use(helmet());
 app.use(

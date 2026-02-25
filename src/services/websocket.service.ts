@@ -23,7 +23,9 @@ export class WebSocketService {
         ],
         credentials: true,
       },
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'], // Prefer WebSocket only, disable polling
+      pingTimeout: 60000,
+      pingInterval: 25000,
     });
 
     this.setupMiddleware();
