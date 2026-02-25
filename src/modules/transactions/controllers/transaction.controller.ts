@@ -9,6 +9,7 @@ import {
 } from '../../../utils/generator/generate.number';
 import { JwtPayload } from 'jsonwebtoken';
 import { Prisma } from '@prisma/client';
+import { getWebSocketService } from '../../../services/websocket.service';
 
 export class TransactionController {
   async getAllTransactions(req: Request, res: Response) {
@@ -616,6 +617,28 @@ export class TransactionController {
         return transaction;
       });
 
+      // Emit WebSocket event for transaction creation
+      try {
+        const wsService = getWebSocketService();
+        const transactionWithDetails = await prisma.transaction.findUnique({
+          where: { id: result.id },
+          include: {
+            table: true,
+            subTransactions: {
+              include: {
+                menu: true,
+              },
+            },
+          },
+        });
+        if (transactionWithDetails && transactionWithDetails.outletId) {
+          wsService.emitTransactionCreated(transactionWithDetails.outletId, transactionWithDetails);
+        }
+      } catch (wsError) {
+        logger.error('Error emitting WebSocket event:', wsError);
+        // Don't fail the transaction if WebSocket fails
+      }
+
       return ResponseHandler.success(res, {
         message: 'Transaction created successfully',
         data: result,
@@ -650,6 +673,17 @@ export class TransactionController {
           status: 'cancelled',
         },
       });
+
+      // Emit WebSocket event for transaction deletion
+      try {
+        if (transaction.outletId) {
+          const wsService = getWebSocketService();
+          wsService.emitTransactionDeleted(transaction.outletId, transaction.id);
+        }
+      } catch (wsError) {
+        logger.error('Error emitting WebSocket deletion event:', wsError);
+        // Don't fail the transaction if WebSocket fails
+      }
 
       return ResponseHandler.success(res, {
         message: 'Transaction deleted successfully',
@@ -691,6 +725,19 @@ export class TransactionController {
         data: { status },
       });
 
+      // Get transaction details for WebSocket emission
+      const updatedSubTransaction = await prisma.subTransaction.findUnique({
+        where: { id },
+        include: {
+          transaction: {
+            select: {
+              id: true,
+              outletId: true,
+            },
+          },
+        },
+      });
+
       const subTransactions = await prisma.subTransaction.findMany({
         where: { transactionId: transaction.transactionId },
         select: { status: true },
@@ -703,6 +750,22 @@ export class TransactionController {
           where: { id: transaction.transactionId },
           data: { status: 'complete' },
         });
+      }
+
+      // Emit WebSocket event for status update
+      try {
+        if (updatedSubTransaction && updatedSubTransaction.transaction.outletId) {
+          const wsService = getWebSocketService();
+          wsService.emitTransactionStatusUpdated(
+            updatedSubTransaction.transaction.outletId,
+            transaction.transactionId,
+            status,
+            id,
+          );
+        }
+      } catch (wsError) {
+        logger.error('Error emitting WebSocket status update event:', wsError);
+        // Don't fail the transaction if WebSocket fails
       }
 
       return ResponseHandler.success(res, {
@@ -762,6 +825,22 @@ export class TransactionController {
           data: { tableId },
         });
       });
+
+      // Emit WebSocket event for table update
+      try {
+        if (transaction.outletId) {
+          const wsService = getWebSocketService();
+          wsService.emitTransactionTableUpdated(
+            transaction.outletId,
+            transaction.id,
+            tableId,
+            transaction.tableId || undefined,
+          );
+        }
+      } catch (wsError) {
+        logger.error('Error emitting WebSocket table update event:', wsError);
+        // Don't fail the transaction if WebSocket fails
+      }
 
       return ResponseHandler.success(res, {
         message: 'Transaction table updated successfully',

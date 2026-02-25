@@ -37,6 +37,14 @@ A robust, production-ready Node.js TypeScript REST API service for restaurant ma
 - **Query Optimization** and N+1 prevention
 - **Graceful Shutdown** handling
 
+### Real-time Communication
+
+- **WebSocket Support** with Socket.IO
+- **Real-time Transaction Updates** for live monitoring
+- **Room-based Communication** for outlet-specific events
+- **JWT Authentication** for WebSocket connections
+- **Event-driven Architecture** for transaction lifecycle
+
 ### Development Experience
 
 - **Hot Reloading** with Nodemon
@@ -89,6 +97,7 @@ npm run dev
 ```
 
 The server will start on `http://localhost:3000` with hot reloading enabled.
+WebSocket server will also be initialized for real-time transaction updates.
 
 ### Code Quality Checks
 
@@ -223,6 +232,40 @@ Production: https://your-domain.com/api/v1
 - `POST /api/v1/files/upload` - Upload file
 - `GET /api/v1/files/:id` - Get file by ID
 - `DELETE /api/v1/files/:id` - Delete file
+
+#### WebSockets
+
+- `GET /api/v1/websockets/stats` - Get WebSocket connection statistics
+
+### WebSocket Events
+
+The application provides real-time transaction updates through WebSocket connections:
+
+#### Transaction Events
+
+- `transaction:created` - New transaction created
+- `transaction:status-updated` - Transaction status changed
+- `transaction:table-updated` - Transaction moved to different table
+- `transaction:deleted` - Transaction cancelled/deleted
+
+#### Client Events
+
+- `join-transaction` - Join specific transaction room
+- `leave-transaction` - Leave specific transaction room
+
+#### WebSocket Connection
+
+Connect to `ws://localhost:3000` (or your server URL) with JWT authentication:
+
+```javascript
+const socket = io('ws://localhost:3000', {
+  auth: { token: 'your-jwt-token' },
+});
+
+socket.on('transaction:created', event => {
+  console.log('New transaction:', event.data);
+});
+```
 
 ### Health Check
 
@@ -402,6 +445,7 @@ For issues and questions:
 - Create an issue on GitHub
 - Check the [REFACTORING_GUIDE.md](./REFACTORING_GUIDE.md) for architecture details
 - Review the API documentation above
+- See [docs/websocket-implementation.md](./docs/websocket-implementation.md) for WebSocket details
 
 ---
 

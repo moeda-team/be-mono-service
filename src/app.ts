@@ -21,6 +21,7 @@ import fileRouter from './modules/files/routes';
 import inventoryRouter from './modules/inventory/routes';
 import discountRouter from './modules/discounts/routes';
 import tableRouter from './modules/tables/routes';
+import websocketRouter from './modules/websockets/routes';
 
 const app = express();
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
@@ -57,6 +58,7 @@ router.use(`/v1/files`, fileRouter);
 router.use(`/v1/inventory`, inventoryRouter);
 router.use(`/v1/discounts`, discountRouter);
 router.use(`/v1/tables`, tableRouter);
+router.use(`/v1/websockets`, websocketRouter);
 
 app.use(router);
 
