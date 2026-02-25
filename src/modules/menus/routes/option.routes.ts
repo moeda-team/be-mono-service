@@ -2,27 +2,20 @@ import { Router } from 'express';
 import { OptionController } from '../controllers/option.controller';
 import { jwtAuth, roleAuth, jwtAuthNotRequired } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
-import { validateCreateOption, validateUpdateOption } from '../validators/option.validator';
+import { validateUpsertOption } from '../validators/option.validator';
 
 const router = Router();
 const optionController = new OptionController();
 
 router.get('', jwtAuthNotRequired, roleAuth(UserRole.STORE_MANAGER), optionController.findAll);
-router.get('/:id', jwtAuthNotRequired, optionController.findOne);
+router.get('/:menuId', jwtAuthNotRequired, optionController.findOne);
 router.post(
-  '/',
+  '/:menuId',
   jwtAuth,
   roleAuth(UserRole.STORE_MANAGER),
-  validateCreateOption,
-  optionController.create,
+  validateUpsertOption,
+  optionController.upsert,
 );
-router.put(
-  '/:id',
-  jwtAuth,
-  roleAuth(UserRole.STORE_MANAGER),
-  validateUpdateOption,
-  optionController.update,
-);
-router.delete('/:id', jwtAuth, roleAuth(UserRole.STORE_MANAGER), optionController.delete);
+router.delete('/:menuId', jwtAuth, roleAuth(UserRole.STORE_MANAGER), optionController.delete);
 
 export default router;

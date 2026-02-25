@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../../../lib/prisma';
-import { CreateOptionDTO, UpdateOptionDTO } from '../models/option';
+import { UpsertOptionDTO } from '../models/option';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 
 export class OptionController {
@@ -24,11 +24,11 @@ export class OptionController {
   }
 
   async findOne(req: Request, res: Response) {
-    const { id } = req.params;
+    const { menuId } = req.params;
 
     try {
       const option = await prisma.option.findUnique({
-        where: { id },
+        where: { menuId },
       });
       if (!option) {
         return ResponseHandler.error(res, {
@@ -48,8 +48,8 @@ export class OptionController {
     }
   }
 
-  async create(
-    req: Request<Record<string, never>, Record<string, never>, CreateOptionDTO>,
+  async upsert(
+    req: Request<Record<string, never>, Record<string, never>, UpsertOptionDTO>,
     res: Response,
   ) {
     try {
@@ -62,54 +62,32 @@ export class OptionController {
         });
       }
 
-      const option = await prisma.option.create({
-        data: {
+      const option = await prisma.option.upsert({
+        where: { menuId },
+        update: {
+          data: data !== undefined ? data : undefined,
+        },
+        create: {
           menuId,
           data: data || [],
         },
       });
       return ResponseHandler.success(res, {
-        message: 'Option created successfully',
+        message: 'Option upserted successfully',
         data: option,
       });
     } catch (error) {
       return ResponseHandler.error(res, {
-        message: 'Failed to create option',
+        message: 'Failed to upsert option',
         statusCode: 500,
       });
     }
   }
 
-  async update(
-    req: Request<{ id: string }, Record<string, never>, UpdateOptionDTO>,
-    res: Response,
-  ) {
+  async delete(req: Request<{ menuId: string }>, res: Response) {
     try {
-      const { menuId, data } = req.body;
-
-      const updatedOption = await prisma.option.update({
-        where: { id: req.params.id },
-        data: {
-          ...(menuId && { menuId }),
-          ...(data !== undefined && { data }),
-        },
-      });
-      return ResponseHandler.success(res, {
-        message: 'Option updated successfully',
-        data: updatedOption,
-      });
-    } catch (error) {
-      return ResponseHandler.error(res, {
-        message: 'Failed to update option',
-        statusCode: 500,
-      });
-    }
-  }
-
-  async delete(req: Request<{ id: string }>, res: Response) {
-    try {
-      const option = await prisma.option.findFirst({
-        where: { id: req.params.id },
+      const option = await prisma.option.findUnique({
+        where: { menuId: req.params.menuId },
       });
       if (!option) {
         return ResponseHandler.error(res, {
@@ -118,7 +96,7 @@ export class OptionController {
         });
       }
       await prisma.option.delete({
-        where: { id: req.params.id },
+        where: { menuId: req.params.menuId },
       });
       return ResponseHandler.success(res, {
         message: 'Option deleted successfully',

@@ -160,47 +160,47 @@ async function main() {
     });
   }
 
-  console.log('📦 Seeding options...');
-  if (seedData.options?.length) {
-    // Handle options with parent-child relationships
-    // First, seed options without parent (optionId is null)
-    const parentOptions = seedData.options.filter((o: any) => !o.optionId);
-    const childOptions = seedData.options.filter((o: any) => o.optionId);
+  // console.log('📦 Seeding options...');
+  // if (seedData.options?.length) {
+  //   // Handle options with parent-child relationships
+  //   // First, seed options without parent (optionId is null)
+  //   const parentOptions = seedData.options.filter((o: any) => !o.optionId);
+  //   const childOptions = seedData.options.filter((o: any) => o.optionId);
 
-    if (parentOptions.length) {
-      await prisma.option.createMany({
-        data: parentOptions.map((o: any) => ({
-          id: o.id,
-          menuId: o.menuId,
-          optionId: o.optionId,
-          name: o.name,
-          values: o.values,
-          extraPrices: o.extraPrices,
-          order: o.order,
-          createdAt: new Date(o.createdAt),
-          updatedAt: new Date(o.updatedAt),
-        })),
-        skipDuplicates: true,
-      });
-    }
+  //   if (parentOptions.length) {
+  //     await prisma.option.createMany({
+  //       data: parentOptions.map((o: any) => ({
+  //         id: o.id,
+  //         menuId: o.menuId,
+  //         optionId: o.optionId,
+  //         name: o.name,
+  //         values: o.values,
+  //         extraPrices: o.extraPrices,
+  //         order: o.order,
+  //         createdAt: new Date(o.createdAt),
+  //         updatedAt: new Date(o.updatedAt),
+  //       })),
+  //       skipDuplicates: true,
+  //     });
+  //   }
 
-    if (childOptions.length) {
-      await prisma.option.createMany({
-        data: childOptions.map((o: any) => ({
-          id: o.id,
-          menuId: o.menuId,
-          optionId: o.optionId,
-          name: o.name,
-          values: o.values,
-          extraPrices: o.extraPrices,
-          order: o.order,
-          createdAt: new Date(o.createdAt),
-          updatedAt: new Date(o.updatedAt),
-        })),
-        skipDuplicates: true,
-      });
-    }
-  }
+  //   if (childOptions.length) {
+  //     await prisma.option.createMany({
+  //       data: childOptions.map((o: any) => ({
+  //         id: o.id,
+  //         menuId: o.menuId,
+  //         optionId: o.optionId,
+  //         name: o.name,
+  //         values: o.values,
+  //         extraPrices: o.extraPrices,
+  //         order: o.order,
+  //         createdAt: new Date(o.createdAt),
+  //         updatedAt: new Date(o.updatedAt),
+  //       })),
+  //       skipDuplicates: true,
+  //     });
+  //   }
+  // }
 
   console.log('📦 Seeding best seller menus...');
   if (seedData.bestSellerMenus?.length) {
@@ -216,89 +216,89 @@ async function main() {
     });
   }
 
-  console.log('📦 Seeding transactions...');
-  if (seedData.transactions?.length) {
-    await prisma.transaction.createMany({
-      data: seedData.transactions.map((t: any) => ({
-        id: t.id,
-        userId: t.userId,
-        outletId: t.outletId,
-        number: t.number,
-        transactionType: t.transactionType,
-        tableNumber: t.tableNumber,
-        paymentNumber: t.paymentNumber,
-        paymentMethod: t.paymentMethod,
-        customerName: t.customerName,
-        totalSubTransaction: t.totalSubTransaction,
-        subTotal: t.subTotal,
-        discount: t.discount,
-        serviceCharge: t.serviceCharge,
-        rounding: t.rounding,
-        total: t.total,
-        additionalNote: t.additionalNote,
-        voucherId: t.voucherId,
-        status: t.status,
-        fraudStatus: t.fraudStatus,
-        createdAt: new Date(t.createdAt),
-        updatedAt: new Date(t.updatedAt),
-      })),
-      skipDuplicates: true,
-    });
-  }
+  // console.log('📦 Seeding transactions...');
+  // if (seedData.transactions?.length) {
+  //   await prisma.transaction.createMany({
+  //     data: seedData.transactions.map((t: any) => ({
+  //       id: t.id,
+  //       userId: t.userId,
+  //       outletId: t.outletId,
+  //       number: t.number,
+  //       transactionType: t.transactionType,
+  //       tableNumber: t.tableNumber,
+  //       paymentNumber: t.paymentNumber,
+  //       paymentMethod: t.paymentMethod,
+  //       customerName: t.customerName,
+  //       totalSubTransaction: t.totalSubTransaction,
+  //       subTotal: t.subTotal,
+  //       discount: t.discount,
+  //       serviceCharge: t.serviceCharge,
+  //       rounding: t.rounding,
+  //       total: t.total,
+  //       additionalNote: t.additionalNote,
+  //       voucherId: t.voucherId,
+  //       status: t.status,
+  //       fraudStatus: t.fraudStatus,
+  //       createdAt: new Date(t.createdAt),
+  //       updatedAt: new Date(t.updatedAt),
+  //     })),
+  //     skipDuplicates: true,
+  //   });
+  // }
 
-  console.log('📦 Seeding sub transactions...');
-  if (seedData.subTransactions?.length) {
-    await prisma.subTransaction.createMany({
-      data: seedData.subTransactions.map((st: any) => ({
-        id: st.id,
-        transactionId: st.transactionId,
-        menuId: st.menuId,
-        menuName: st.menuName,
-        quantity: st.quantity,
-        price: st.price,
-        subTotal: st.subTotal,
-        addOn: st.addOn,
-        note: st.note,
-        status: st.status,
-        createdAt: new Date(st.createdAt),
-        updatedAt: new Date(st.updatedAt),
-      })),
-      skipDuplicates: true,
-    });
-  }
+  // console.log('📦 Seeding sub transactions...');
+  // if (seedData.subTransactions?.length) {
+  //   await prisma.subTransaction.createMany({
+  //     data: seedData.subTransactions.map((st: any) => ({
+  //       id: st.id,
+  //       transactionId: st.transactionId,
+  //       menuId: st.menuId,
+  //       menuName: st.menuName,
+  //       quantity: st.quantity,
+  //       price: st.price,
+  //       subTotal: st.subTotal,
+  //       addOn: st.addOn,
+  //       note: st.note,
+  //       status: st.status,
+  //       createdAt: new Date(st.createdAt),
+  //       updatedAt: new Date(st.updatedAt),
+  //     })),
+  //     skipDuplicates: true,
+  //   });
+  // }
 
-  console.log('📦 Seeding log vouchers...');
-  if (seedData.logVouchers?.length) {
-    await prisma.logVoucher.createMany({
-      data: seedData.logVouchers.map((lv: any) => ({
-        id: lv.id,
-        outletId: lv.outletId,
-        transactionId: lv.transactionId,
-        voucherId: lv.voucherId,
-        createdAt: new Date(lv.createdAt),
-        updatedAt: new Date(lv.updatedAt),
-      })),
-      skipDuplicates: true,
-    });
-  }
+  // console.log('📦 Seeding log vouchers...');
+  // if (seedData.logVouchers?.length) {
+  //   await prisma.logVoucher.createMany({
+  //     data: seedData.logVouchers.map((lv: any) => ({
+  //       id: lv.id,
+  //       outletId: lv.outletId,
+  //       transactionId: lv.transactionId,
+  //       voucherId: lv.voucherId,
+  //       createdAt: new Date(lv.createdAt),
+  //       updatedAt: new Date(lv.updatedAt),
+  //     })),
+  //     skipDuplicates: true,
+  //   });
+  // }
 
-  console.log('📦 Seeding log table moves...');
-  if (seedData.logTableMoves?.length) {
-    await prisma.logTableMove.createMany({
-      data: seedData.logTableMoves.map((ltm: any) => ({
-        id: ltm.id,
-        outletId: ltm.outletId,
-        transactionId: ltm.transactionId,
-        tableNumber: ltm.tableNumber,
-        prevTableId: ltm.prevTableId,
-        nextTableId: ltm.nextTableId,
-        note: ltm.note,
-        createdAt: new Date(ltm.createdAt),
-        updatedAt: new Date(ltm.updatedAt),
-      })),
-      skipDuplicates: true,
-    });
-  }
+  // console.log('📦 Seeding log table moves...');
+  // if (seedData.logTableMoves?.length) {
+  //   await prisma.logTableMove.createMany({
+  //     data: seedData.logTableMoves.map((ltm: any) => ({
+  //       id: ltm.id,
+  //       outletId: ltm.outletId,
+  //       transactionId: ltm.transactionId,
+  //       tableNumber: ltm.tableNumber,
+  //       prevTableId: ltm.prevTableId,
+  //       nextTableId: ltm.nextTableId,
+  //       note: ltm.note,
+  //       createdAt: new Date(ltm.createdAt),
+  //       updatedAt: new Date(ltm.updatedAt),
+  //     })),
+  //     skipDuplicates: true,
+  //   });
+  // }
 
   console.log('✅ Database seeded successfully!');
 }

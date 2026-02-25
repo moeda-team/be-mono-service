@@ -291,8 +291,7 @@ model Menu {
 }
 
 model Option {
-  id     String @id @default(uuid()) @db.VarChar(36)
-  menuId String @db.VarChar(36)
+  menuId String @id @db.VarChar(36)
   data   Json   @default("[]")
 
   createdAt DateTime @default(now())
@@ -300,7 +299,6 @@ model Option {
 
   menu Menu @relation(fields: [menuId], references: [id])
 
-  @@index([menuId])
   @@map("options")
 }
 
