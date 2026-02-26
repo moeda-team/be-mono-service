@@ -12,6 +12,6 @@ router.post(
   paymentController.handlePaymentNotification,
 );
 router.post('/', jwtAuthNotRequired, validatePayment, paymentController.paymentTransaction);
-router.get('/status/:paymentNumber', basicAuth, paymentController.getPaymentStatus);
+router.get('/status/:paymentNumber', jwtAuthNotRequired, paymentController.getPaymentStatus);
 
 export default router;
