@@ -460,6 +460,7 @@ export class TransactionController {
           quantity: item.quantity,
           price: basePrice,
           addOnPrice,
+          discount: item.discount || 0,
           subTotal: calculatedSubTotal,
           addOn: item.addOn,
           note: item.note,
