@@ -73,15 +73,8 @@ export class UserController {
 
       const user = await prisma.user.create({
         data: {
-          outletId: userData.outletId,
-          name: userData.name,
-          position: userData.position,
-          email: userData.email,
+          ...userData,
           password: hashedPassword,
-          address: userData.address,
-          gender: userData.gender,
-          phoneNumber: userData.phoneNumber,
-          status: userData.status,
         },
       });
       return ResponseHandler.success(res, {
