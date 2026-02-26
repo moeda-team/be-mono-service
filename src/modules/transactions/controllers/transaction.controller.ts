@@ -23,6 +23,7 @@ export class TransactionController {
     const month = parseInt(req.query.month as string) || null;
     const year = parseInt(req.query.year as string) || null;
     const status = (req.query.status as string)?.trim() || null;
+    const paymentStatus = (req.query.paymentStatus as string)?.trim() || null;
 
     const skip = page && limit ? (page - 1) * limit : undefined;
     const take = limit || undefined;
@@ -53,6 +54,10 @@ export class TransactionController {
             status: 'completed',
           },
         };
+      }
+
+      if (paymentStatus) {
+        whereClause.status = paymentStatus;
       }
 
       if (table) {
