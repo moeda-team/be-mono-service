@@ -73,8 +73,16 @@ export class UserController {
 
       const user = await prisma.user.create({
         data: {
-          ...userData,
+          outletId: userData.outletId,
+          name: userData.name,
+          position: userData.position,
+          email: userData.email,
           password: hashedPassword,
+          address: userData.address,
+          gender: userData.gender,
+          phoneNumber: userData.phoneNumber,
+          status: userData.status,
+          role: userData.role,
         },
       });
       return ResponseHandler.success(res, {
@@ -117,10 +125,19 @@ export class UserController {
         });
       }
 
-      const password = existingUser?.password;
       const updatedUser = await prisma.user.update({
         where: { id },
-        data: { ...userData, password },
+        data: {
+          outletId: userData.outletId,
+          name: userData.name,
+          position: userData.position,
+          email: userData.email,
+          address: userData.address,
+          gender: userData.gender,
+          phoneNumber: userData.phoneNumber,
+          status: userData.status,
+          role: userData.role,
+        },
       });
 
       return ResponseHandler.success(res, {
