@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { body, validationResult } from 'express-validator';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
+import { UserRole } from '../../../utils/auth/jwt';
 
 export const validateCreateUser = [
   body('outletId').trim().notEmpty().withMessage('Outlet ID is required'),
@@ -65,6 +66,12 @@ export const validateUpdateUser = [
   body('outletId').optional().trim().notEmpty().withMessage('Outlet ID is required'),
   body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
   body('position').optional().trim().notEmpty().withMessage('Position cannot be empty'),
+  body('role')
+    .trim()
+    .notEmpty()
+    .withMessage('Role is required')
+    .isIn([UserRole.ADMIN, UserRole.OWNER, UserRole.STORE_MANAGER, UserRole.EMPLOYEE])
+    .withMessage('Role must be one registered role'),
   body('email')
     .trim()
     .notEmpty()

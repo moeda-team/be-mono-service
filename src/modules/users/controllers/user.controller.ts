@@ -126,16 +126,7 @@ export class UserController {
 
       const updatedUser = await prisma.user.update({
         where: { id },
-        data: {
-          outletId: userData.outletId,
-          name: userData.name,
-          position: userData.position,
-          email: userData.email,
-          address: userData.address,
-          gender: userData.gender,
-          phoneNumber: userData.phoneNumber,
-          status: userData.status,
-        },
+        data: { ...userData },
       });
 
       return ResponseHandler.success(res, {
