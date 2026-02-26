@@ -24,6 +24,7 @@ export interface CreateUserDTO {
   phoneNumber: string;
   fee: number;
   status: string;
+  role: string;
 }
 
 export interface UpdateUserDTO extends Partial<CreateUserDTO> {}

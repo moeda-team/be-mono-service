@@ -7,6 +7,12 @@ export const validateCreateUser = [
   body('outletId').trim().notEmpty().withMessage('Outlet ID is required'),
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('position').trim().notEmpty().withMessage('Position is required'),
+  body('role')
+    .trim()
+    .notEmpty()
+    .withMessage('Role is required')
+    .isIn([UserRole.ADMIN, UserRole.OWNER, UserRole.STORE_MANAGER, UserRole.EMPLOYEE])
+    .withMessage('Role must be one registered role'),
   body('email')
     .trim()
     .notEmpty()
