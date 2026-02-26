@@ -117,9 +117,10 @@ export class UserController {
         });
       }
 
+      const password = existingUser?.password;
       const updatedUser = await prisma.user.update({
         where: { id },
-        data: { ...userData },
+        data: { ...userData, password },
       });
 
       return ResponseHandler.success(res, {
