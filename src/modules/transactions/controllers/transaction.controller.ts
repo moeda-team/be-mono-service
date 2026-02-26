@@ -396,7 +396,6 @@ export class TransactionController {
         });
       }
 
-      // Validate outlet
       const outlet = await prisma.outlet.findUnique({
         where: { id: transactionData.outletId },
       });
@@ -408,7 +407,6 @@ export class TransactionController {
         });
       }
 
-      // Validate user (if exists)
       if (user) {
         const findUser = await prisma.user.findUnique({
           where: { id: user.userId },
@@ -421,7 +419,7 @@ export class TransactionController {
         }
       }
 
-      // Validate menus exist (no need to fetch all data since client provides prices)
+      // Fetch menus with real price
       const menuIds = transactionData.cart.map(item => item.menuId);
 
       const menus = await prisma.menu.findMany({
@@ -429,7 +427,6 @@ export class TransactionController {
           id: { in: menuIds },
           outletId: transactionData.outletId,
         },
-        select: { id: true, name: true },
       });
 
       if (menus.length !== menuIds.length) {
@@ -439,7 +436,10 @@ export class TransactionController {
         });
       }
 
-      // Use client-provided values and validate them
+      // ===============================
+      // 🔥 BACKEND CALCULATION STARTS
+      // ===============================
+
       let subTotal = 0;
 
       const cartWithPrices = transactionData.cart.map(item => {
@@ -450,32 +450,29 @@ export class TransactionController {
           throw new Error('Invalid quantity');
         }
 
-        if (item.price <= 0 || item.subTotal <= 0) {
-          throw new Error('Invalid price values');
-        }
+        // 🔥 ALWAYS USE DB PRICE
+        const basePrice = Number(menu.price);
+        const addOnPrice = Number(item.addOnPrice || 0);
 
-        // Validate that subTotal matches calculation (allowing for reasonable rounding differences)
-        const expectedSubTotal = (item.price + (item.addOnPrice || 0)) * item.quantity;
-        if (Math.abs(item.subTotal - expectedSubTotal) > 5000) {
-          // Allow larger rounding differences
-          throw new Error(
-            `SubTotal calculation mismatch for ${menu.name}. Expected: ${expectedSubTotal}, Got: ${item.subTotal}`,
-          );
-        }
+        const calculatedSubTotal = (basePrice + addOnPrice) * item.quantity;
 
-        subTotal += item.subTotal;
+        subTotal += calculatedSubTotal;
 
         return {
-          menuId: item.menuId,
+          menuId: menu.id,
           menuName: menu.name,
           quantity: item.quantity,
-          price: item.price,
-          addOnPrice: item.addOnPrice || 0,
-          subTotal: item.subTotal,
+          price: basePrice,
+          addOnPrice,
+          subTotal: calculatedSubTotal,
           addOn: item.addOn,
           note: item.note,
         };
       });
+
+      // ===============================
+      // VOUCHER LOGIC
+      // ===============================
 
       let voucherData: any = null;
       let voucherDiscountAmount = 0;
@@ -509,36 +506,16 @@ export class TransactionController {
           });
         }
 
-        // Validate voucher menu restriction
-        if (!voucherData.allMenu) {
-          const voucherMenus = await prisma.voucherMenu.findMany({
-            where: { voucherId: voucherData.id },
-            select: { menuId: true },
-          });
-
-          const allowedMenuIds = voucherMenus.map(v => v.menuId);
-
-          const invalidItem = cartWithPrices.find(item => !allowedMenuIds.includes(item.menuId));
-
-          if (invalidItem) {
-            return ResponseHandler.error(res, {
-              message: 'Voucher is only valid for specific menus',
-              statusCode: 400,
-            });
-          }
-        }
-
-        // Calculate voucher discount
         if (voucherData.type === 'percent') {
           voucherDiscountAmount = Math.floor((subTotal * Number(voucherData.discount)) / 100);
         } else {
           voucherDiscountAmount = Number(voucherData.discount);
         }
+
         voucherDiscountAmount = Math.min(voucherDiscountAmount, subTotal);
       }
 
-      // Combine client-provided discount with voucher discount
-      const clientDiscountAmount = transactionData.discount || 0;
+      const clientDiscountAmount = Number(transactionData.discount || 0);
       const totalDiscountAmount = voucherDiscountAmount + clientDiscountAmount;
       const discountAmount = Math.min(totalDiscountAmount, subTotal);
 
@@ -556,21 +533,29 @@ export class TransactionController {
           serviceCharge = 500;
         }
       }
+
       const totalBeforeRounding = taxableAmount + tax + serviceCharge;
 
       let rounding = 0;
       const remainder = totalBeforeRounding % 1000;
+
       if (remainder !== 0) {
-        rounding = remainder <= 500 ? 500 - remainder : 1000 - remainder;
+        rounding = 1000 - remainder; // always round UP
       }
 
       const total = totalBeforeRounding + rounding;
+
       if (total < 0) {
         throw new Error('Invalid total calculation');
       }
 
+      // ===============================
+      // STATUS LOGIC (FIXED)
+      // ===============================
+
       let transactionStatus: 'pending' | 'completed' = 'pending';
-      if ((voucherData || clientDiscountAmount > 0) && total === 0) {
+
+      if ((voucherData !== null || clientDiscountAmount > 0) && total === 0) {
         transactionStatus = 'completed';
       } else if (transactionData.paymentMethod === 'cash') {
         transactionStatus = 'completed';
@@ -578,6 +563,10 @@ export class TransactionController {
 
       const orderNumber = await generateOrderNumber(transactionData.outletId);
       const paymentNumber = await generatePaymentNumber(transactionData.outletId);
+
+      // ===============================
+      // SAVE TO DATABASE
+      // ===============================
 
       const result = await prisma.$transaction(async tx => {
         const transaction = await tx.transaction.create({
@@ -587,11 +576,11 @@ export class TransactionController {
             number: orderNumber,
             transactionType: transactionData.transactionType,
             tableId: transactionData.tableId,
-            paymentNumber: paymentNumber,
+            paymentNumber,
             paymentMethod: transactionData.paymentMethod,
             customerName: transactionData.customerName,
             totalSubTransaction: cartWithPrices.length,
-            subTotal: subTotal,
+            subTotal,
             serviceCharge,
             rounding,
             discount: discountAmount,
@@ -613,6 +602,7 @@ export class TransactionController {
               price: item.price,
               subTotal: item.subTotal,
               addOn: item.addOn,
+              addOnPrice: item.addOnPrice,
               note: item.note,
               status: 'preparation',
             },
@@ -621,12 +611,8 @@ export class TransactionController {
 
         if (voucherData) {
           await tx.voucher.update({
-            where: {
-              id: voucherData.id,
-            },
-            data: {
-              usage: { increment: 1 },
-            },
+            where: { id: voucherData.id },
+            data: { usage: { increment: 1 } },
           });
 
           await tx.logVoucher.create({
@@ -640,28 +626,6 @@ export class TransactionController {
 
         return transaction;
       });
-
-      // Emit WebSocket event for transaction creation
-      try {
-        const wsService = getWebSocketService();
-        const transactionWithDetails = await prisma.transaction.findUnique({
-          where: { id: result.id },
-          include: {
-            table: true,
-            subTransactions: {
-              include: {
-                menu: true,
-              },
-            },
-          },
-        });
-        if (transactionWithDetails && transactionWithDetails.outletId) {
-          wsService.emitTransactionCreated(transactionWithDetails.outletId, transactionWithDetails);
-        }
-      } catch (wsError) {
-        logger.error('Error emitting WebSocket event:', wsError);
-        // Don't fail the transaction if WebSocket fails
-      }
 
       return ResponseHandler.success(res, {
         message: 'Transaction created successfully',

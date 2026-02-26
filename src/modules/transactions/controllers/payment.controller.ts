@@ -15,7 +15,11 @@ export class PaymentController {
         where: {
           paymentNumber: transactionData.transactionDetails.orderId,
         },
+        include: {
+          subTransactions: true,
+        },
       });
+
       if (!findTransaction) {
         return ResponseHandler.error(res, {
           message: 'Transaction not found',
@@ -23,58 +27,82 @@ export class PaymentController {
         });
       }
 
-      const subTransactions = await prisma.subTransaction.findMany({
-        where: {
-          transactionId: findTransaction.id,
-        },
-      });
-      if (!subTransactions) {
+      if (!findTransaction.subTransactions.length) {
         return ResponseHandler.error(res, {
           message: 'Sub transactions not found',
           statusCode: 404,
         });
       }
 
-      const itemDetails = subTransactions.map(item => ({
+      // ✅ Build item details ONLY from DB values
+      const itemDetails = findTransaction.subTransactions.map(item => ({
         id: item.id,
-        price: item.price.toNumber() + item.addOnPrice.toNumber(),
+        price: Number(item.price) + Number(item.addOnPrice || 0),
         quantity: item.quantity,
         name: item.menuName,
       }));
-      itemDetails.push({
-        id: 'service_charge',
-        price: findTransaction.serviceCharge.toNumber(),
-        quantity: 1,
-        name: 'Service Charge',
-      });
-      itemDetails.push({
-        id: 'rounding',
-        price: findTransaction.rounding.toNumber(),
-        quantity: 1,
-        name: 'Rounding',
-      });
-      itemDetails.push({
-        id: 'tax',
-        price: findTransaction.tax.toNumber(),
-        quantity: 1,
-        name: 'Tax',
-      });
-      itemDetails.push({
-        id: 'discount',
-        price: -findTransaction.discount.toNumber(),
-        quantity: 1,
-        name: 'Discount',
-      });
+
+      // ✅ Only push non-zero values
+      if (Number(findTransaction.tax) > 0) {
+        itemDetails.push({
+          id: 'tax',
+          price: Number(findTransaction.tax),
+          quantity: 1,
+          name: 'Tax',
+        });
+      }
+
+      if (Number(findTransaction.serviceCharge) > 0) {
+        itemDetails.push({
+          id: 'service_charge',
+          price: Number(findTransaction.serviceCharge),
+          quantity: 1,
+          name: 'Service Charge',
+        });
+      }
+
+      if (Number(findTransaction.rounding) > 0) {
+        itemDetails.push({
+          id: 'rounding',
+          price: Number(findTransaction.rounding),
+          quantity: 1,
+          name: 'Rounding',
+        });
+      }
+
+      if (Number(findTransaction.discount) > 0) {
+        itemDetails.push({
+          id: 'discount',
+          price: -Number(findTransaction.discount),
+          quantity: 1,
+          name: 'Discount',
+        });
+      }
+
+      // 🔥 STRICT VALIDATION BEFORE MIDTRANS
+      const calculatedTotal = itemDetails.reduce(
+        (acc, item) => acc + item.price * item.quantity,
+        0,
+      );
+
+      const dbTotal = Number(findTransaction.total);
+
+      if (calculatedTotal !== dbTotal) {
+        return ResponseHandler.error(res, {
+          message: `Total mismatch. DB: ${dbTotal}, Items: ${calculatedTotal}`,
+          statusCode: 400,
+        });
+      }
 
       const payload: MidtransPayload = {
         payment_type: transactionData.paymentType,
         transaction_details: {
-          order_id: transactionData.transactionDetails.orderId,
-          gross_amount: findTransaction.total.toNumber(),
+          order_id: findTransaction.paymentNumber,
+          gross_amount: dbTotal,
         },
         customer_details: {
-          first_name: findTransaction.customerName,
-          last_name: findTransaction.customerName,
+          first_name: findTransaction.customerName || 'Customer',
+          last_name: findTransaction.customerName || '',
         },
         item_details: itemDetails,
       };
