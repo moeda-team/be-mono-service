@@ -86,8 +86,5 @@ export function jwtAuthNotRequired(req: Request, res: Response, next: NextFuncti
   }
 
   // If auth header is present but doesn't match Bearer or Basic, return unauthorized
-  return ResponseHandler.error(res, {
-    message: 'Invalid authentication method',
-    statusCode: 401,
-  });
+  next();
 }
