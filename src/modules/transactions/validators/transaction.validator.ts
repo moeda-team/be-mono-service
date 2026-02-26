@@ -52,8 +52,11 @@ export const validateCreateTransaction = [
     .withMessage('subTotal is required')
     .isFloat({ gt: 0 })
     .withMessage('subTotal must be a positive number'),
-  body('options').isArray(),
-  body('cart.*.addOn').optional(),
+  body('cart.*.addOn').optional().isString().withMessage('addOn must be a string'),
+  body('cart.*.addOnPrice')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('addOnPrice must be a non-negative number'),
   body('cart.*.note').optional(),
   body('voucher').optional(),
   body('discount').default(0).isFloat({ min: 0 }).withMessage('Discount must be a number'),

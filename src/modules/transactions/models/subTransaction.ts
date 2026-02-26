@@ -7,6 +7,7 @@ export interface SubTransaction {
   price: number;
   subTotal: number;
   addOn: string;
+  addOnPrice: number;
   note: string;
   status: string;
   createdAt: Date;
@@ -29,6 +30,7 @@ export interface CreateSubTransactionDTO {
   price: number;
   subTotal: number;
   addOn: string;
+  addOnPrice?: number;
   note: string;
   status: string;
 }

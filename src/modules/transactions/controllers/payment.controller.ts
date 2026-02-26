@@ -37,7 +37,7 @@ export class PaymentController {
 
       const itemDetails = subTransactions.map(item => ({
         id: item.id,
-        price: item.price.toNumber(),
+        price: item.price.toNumber() + item.addOnPrice.toNumber(),
         quantity: item.quantity,
         name: item.menuName,
       }));

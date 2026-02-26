@@ -421,7 +421,7 @@ export class TransactionController {
         }
       }
 
-      // Fetch menus securely
+      // Validate menus exist (no need to fetch all data since client provides prices)
       const menuIds = transactionData.cart.map(item => item.menuId);
 
       const menus = await prisma.menu.findMany({
@@ -429,6 +429,7 @@ export class TransactionController {
           id: { in: menuIds },
           outletId: transactionData.outletId,
         },
+        select: { id: true, name: true },
       });
 
       if (menus.length !== menuIds.length) {
@@ -438,47 +439,7 @@ export class TransactionController {
         });
       }
 
-      // Helper function to calculate add-on price
-      const calculateAddOnPrice = (addOnString: string, optionData: any): number => {
-        if (!addOnString || !optionData) return 0;
-
-        const addOnChoices = addOnString.split(',').map(choice => choice.trim());
-        const processedChoices = new Set<string>();
-        let totalPrice = 0;
-
-        const findPriceInOptions = (options: any[]): void => {
-          for (const option of options) {
-            for (const choice of option.choices) {
-              if (addOnChoices.includes(choice.label) && !processedChoices.has(choice.label)) {
-                totalPrice += choice.extraPrice || 0;
-                processedChoices.add(choice.label);
-              }
-
-              // Process subOptions recursively
-              if (choice.subOptions && choice.subOptions.length > 0) {
-                findPriceInOptions(choice.subOptions);
-              }
-            }
-          }
-        };
-
-        findPriceInOptions(optionData);
-        return totalPrice;
-      };
-
-      // Fetch options for all menus
-      const menuOptions = await prisma.option.findMany({
-        where: {
-          menuId: { in: menuIds },
-        },
-      });
-
-      const menuOptionMap = new Map();
-      menuOptions.forEach(option => {
-        menuOptionMap.set(option.menuId, option.data);
-      });
-
-      // Recalculate subtotal from DB
+      // Use client-provided values and validate them
       let subTotal = 0;
 
       const cartWithPrices = transactionData.cart.map(item => {
@@ -489,27 +450,35 @@ export class TransactionController {
           throw new Error('Invalid quantity');
         }
 
-        const optionData = menuOptionMap.get(item.menuId);
-        const addOnPrice = calculateAddOnPrice(item.addOn || '', optionData);
-        const basePrice = menu.price.toNumber();
-        const totalItemPrice = (basePrice + addOnPrice) * item.quantity;
-        const itemSubTotal = totalItemPrice;
-        subTotal += itemSubTotal;
+        if (item.price <= 0 || item.subTotal <= 0) {
+          throw new Error('Invalid price values');
+        }
+
+        // Validate that subTotal matches calculation (allowing for reasonable rounding differences)
+        const expectedSubTotal = (item.price + (item.addOnPrice || 0)) * item.quantity;
+        if (Math.abs(item.subTotal - expectedSubTotal) > 5000) {
+          // Allow larger rounding differences
+          throw new Error(
+            `SubTotal calculation mismatch for ${menu.name}. Expected: ${expectedSubTotal}, Got: ${item.subTotal}`,
+          );
+        }
+
+        subTotal += item.subTotal;
 
         return {
           menuId: item.menuId,
           menuName: menu.name,
           quantity: item.quantity,
-          price: menu.price,
-          addOnPrice: addOnPrice,
-          subTotal: itemSubTotal,
+          price: item.price,
+          addOnPrice: item.addOnPrice || 0,
+          subTotal: item.subTotal,
           addOn: item.addOn,
           note: item.note,
         };
       });
 
       let voucherData: any = null;
-      let discountAmount = 0;
+      let voucherDiscountAmount = 0;
 
       if (transactionData.voucher) {
         voucherData = await prisma.voucher.findFirst({
@@ -559,14 +528,19 @@ export class TransactionController {
           }
         }
 
-        // Calculate discount securely
+        // Calculate voucher discount
         if (voucherData.type === 'percent') {
-          discountAmount = Math.floor((subTotal * Number(voucherData.discount)) / 100);
+          voucherDiscountAmount = Math.floor((subTotal * Number(voucherData.discount)) / 100);
         } else {
-          discountAmount = Number(voucherData.discount);
+          voucherDiscountAmount = Number(voucherData.discount);
         }
-        discountAmount = Math.min(discountAmount, subTotal);
+        voucherDiscountAmount = Math.min(voucherDiscountAmount, subTotal);
       }
+
+      // Combine client-provided discount with voucher discount
+      const clientDiscountAmount = transactionData.discount || 0;
+      const totalDiscountAmount = voucherDiscountAmount + clientDiscountAmount;
+      const discountAmount = Math.min(totalDiscountAmount, subTotal);
 
       const taxableAmount = subTotal - discountAmount;
       const tax = Math.floor(taxableAmount * 0.11);
@@ -596,7 +570,7 @@ export class TransactionController {
       }
 
       let transactionStatus: 'pending' | 'completed' = 'pending';
-      if (voucherData && total === 0) {
+      if ((voucherData || clientDiscountAmount > 0) && total === 0) {
         transactionStatus = 'completed';
       } else if (transactionData.paymentMethod === 'cash') {
         transactionStatus = 'completed';

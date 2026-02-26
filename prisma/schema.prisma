@@ -107,6 +107,7 @@ model SubTransaction {
   price         Decimal  @db.Decimal(15, 2)
   subTotal      Decimal  @db.Decimal(15, 2)
   addOn         String   @db.VarChar(255)
+  addOnPrice    Decimal  @default(0) @db.Decimal(15, 2)
   note          String   @db.VarChar(255)
   status        String   @default("preparation") @db.VarChar(20)
   createdAt     DateTime @default(now())
