@@ -438,6 +438,46 @@ export class TransactionController {
         });
       }
 
+      // Helper function to calculate add-on price
+      const calculateAddOnPrice = (addOnString: string, optionData: any): number => {
+        if (!addOnString || !optionData) return 0;
+
+        const addOnChoices = addOnString.split(',').map(choice => choice.trim());
+        const processedChoices = new Set<string>();
+        let totalPrice = 0;
+
+        const findPriceInOptions = (options: any[]): void => {
+          for (const option of options) {
+            for (const choice of option.choices) {
+              if (addOnChoices.includes(choice.label) && !processedChoices.has(choice.label)) {
+                totalPrice += choice.extraPrice || 0;
+                processedChoices.add(choice.label);
+              }
+
+              // Process subOptions recursively
+              if (choice.subOptions && choice.subOptions.length > 0) {
+                findPriceInOptions(choice.subOptions);
+              }
+            }
+          }
+        };
+
+        findPriceInOptions(optionData);
+        return totalPrice;
+      };
+
+      // Fetch options for all menus
+      const menuOptions = await prisma.option.findMany({
+        where: {
+          menuId: { in: menuIds },
+        },
+      });
+
+      const menuOptionMap = new Map();
+      menuOptions.forEach(option => {
+        menuOptionMap.set(option.menuId, option.data);
+      });
+
       // Recalculate subtotal from DB
       let subTotal = 0;
 
@@ -449,7 +489,11 @@ export class TransactionController {
           throw new Error('Invalid quantity');
         }
 
-        const itemSubTotal = menu.price.toNumber() * item.quantity;
+        const optionData = menuOptionMap.get(item.menuId);
+        const addOnPrice = calculateAddOnPrice(item.addOn || '', optionData);
+        const basePrice = menu.price.toNumber();
+        const totalItemPrice = (basePrice + addOnPrice) * item.quantity;
+        const itemSubTotal = totalItemPrice;
         subTotal += itemSubTotal;
 
         return {
@@ -457,6 +501,7 @@ export class TransactionController {
           menuName: menu.name,
           quantity: item.quantity,
           price: menu.price,
+          addOnPrice: addOnPrice,
           subTotal: itemSubTotal,
           addOn: item.addOn,
           note: item.note,
