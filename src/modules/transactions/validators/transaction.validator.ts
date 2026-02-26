@@ -58,8 +58,15 @@ export const validateCreateTransaction = [
     .isFloat({ min: 0 })
     .withMessage('addOnPrice must be a non-negative number'),
   body('cart.*.note').optional(),
+  body('cart.*.discount')
+    .default(0)
+    .isFloat({ min: 0 })
+    .withMessage('Discount must be a non-negative number'),
   body('voucher').optional(),
-  body('discount').default(0).isFloat({ min: 0 }).withMessage('Discount must be a number'),
+  body('discount')
+    .default(0)
+    .isFloat({ min: 0 })
+    .withMessage('Discount must be a non-negative number'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

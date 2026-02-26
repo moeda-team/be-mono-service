@@ -327,10 +327,6 @@ export class TransactionController {
           serviceCharge = Math.ceil(baseAmount * 0.007 + 500);
           break;
 
-        case 'gopay':
-          serviceCharge = Math.ceil(baseAmount * 0.02 + 500);
-          break;
-
         case 'cash':
           serviceCharge = 500;
           break;

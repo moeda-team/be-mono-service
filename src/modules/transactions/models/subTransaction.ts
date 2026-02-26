@@ -8,6 +8,7 @@ export interface SubTransaction {
   subTotal: number;
   addOn: string;
   addOnPrice: number;
+  discount: number;
   note: string;
   status: string;
   createdAt: Date;

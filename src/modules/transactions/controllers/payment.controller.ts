@@ -107,18 +107,6 @@ export class PaymentController {
         item_details: itemDetails,
       };
 
-      if (transactionData.paymentType === 'gopay') {
-        payload.gopay = {
-          enable_callback: true,
-          callback_url: 'https://yourdomain.com/payment/callback',
-        };
-      } else if (transactionData.paymentType === 'shopeepay') {
-        payload.shopeePay = {
-          callback_url: 'https://yourdomain.com/payment/callback',
-        };
-      }
-      console.log(payload);
-
       const serverKey = process.env.MIDTRANS_SERVER_KEY;
       if (!serverKey) {
         throw new Error('Midtrans server key is not configured');
