@@ -15,6 +15,20 @@ export class MenuController {
         where: { id },
         include: {
           options: true,
+          menuIngredients: {
+            include: {
+              ingredient: {
+                select: {
+                  id: true,
+                  name: true,
+                  unit: true,
+                  currentStock: true,
+                  minimumStock: true,
+                  status: true,
+                },
+              },
+            },
+          },
         },
       });
 
@@ -42,10 +56,11 @@ export class MenuController {
 
   getAllMenus = async (req: Request, res: Response) => {
     const outletId = req.headers.outletid as string;
-    const { search, category } = req.query;
+    const { search, category, includeIngredients } = req.query;
 
     const searchStr = typeof search === 'string' ? search : undefined;
     const categoryStr = typeof category === 'string' ? category : undefined;
+    const shouldIncludeIngredients = includeIngredients === 'true';
 
     try {
       const whereClause: Prisma.MenuWhereInput = {
@@ -109,6 +124,22 @@ export class MenuController {
               },
             },
           },
+          ...(shouldIncludeIngredients && {
+            menuIngredients: {
+              include: {
+                ingredient: {
+                  select: {
+                    id: true,
+                    name: true,
+                    unit: true,
+                    currentStock: true,
+                    minimumStock: true,
+                    status: true,
+                  },
+                },
+              },
+            },
+          }),
         },
       });
 
