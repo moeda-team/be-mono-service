@@ -319,7 +319,6 @@ export class TransactionController {
 
       // 🔥 Samakan dengan createTransaction
       const totalDiscountAmount = Math.min(subTotal, discount + discountMenu);
-
       const taxableAmount = subTotal - totalDiscountAmount;
 
       const taxRate = 0.11;
@@ -351,7 +350,8 @@ export class TransactionController {
         message: 'Transaction calculated successfully',
         data: {
           subTotal,
-          discount: totalDiscountAmount,
+          discount: discountMenu,
+          discountVoucher: discount,
           tax,
           serviceCharge,
           rounding,
