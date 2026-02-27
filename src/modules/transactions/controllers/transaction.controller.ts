@@ -316,47 +316,42 @@ export class TransactionController {
       }
 
       const subTotal = total;
-      const totalDiscount = discountMenu;
-      const discountAmount = Math.min(totalDiscount, subTotal);
-      const taxableAmount = subTotal - discountAmount - discount;
-      const tax = Math.floor(taxableAmount * 0.11);
+
+      // 🔥 Samakan dengan createTransaction
+      const totalDiscountAmount = Math.min(subTotal, discount + discountMenu);
+
+      const taxableAmount = subTotal - totalDiscountAmount;
+
+      const taxRate = 0.11;
+      const tax = Math.floor(taxableAmount * taxRate);
 
       let serviceCharge = 0;
-      const baseAmount = taxableAmount + tax;
 
-      switch (paymentMethod) {
-        case 'qris':
+      const isFullFree = taxableAmount === 0;
+
+      if (!isFullFree) {
+        const baseAmount = taxableAmount + tax;
+
+        if (paymentMethod === 'qris') {
           serviceCharge = Math.ceil(baseAmount * 0.007 + 500);
-          break;
-
-        case 'cash':
+        } else {
           serviceCharge = 500;
-          break;
-
-        default:
-          serviceCharge = 500;
-          break;
+        }
       }
+
       const totalBeforeRounding = taxableAmount + tax + serviceCharge;
 
-      let rounding = 0;
+      // 🔥 Samakan rounding dengan createTransaction
       const remainder = totalBeforeRounding % 1000;
+      const rounding = remainder === 0 ? 0 : 1000 - remainder;
 
-      if (remainder === 0) {
-        rounding = 0;
-      } else if (remainder <= 500) {
-        rounding = 500 - remainder;
-      } else {
-        rounding = 1000 - remainder;
-      }
       const finalTotal = totalBeforeRounding + rounding;
 
       return ResponseHandler.success(res, {
         message: 'Transaction calculated successfully',
         data: {
           subTotal,
-          discount,
-          discountMenu,
+          discount: totalDiscountAmount,
           tax,
           serviceCharge,
           rounding,
