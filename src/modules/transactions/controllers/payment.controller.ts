@@ -235,6 +235,7 @@ export class PaymentController {
         },
         include: {
           subTransactions: true,
+          voucher: true,
           table: true,
         },
       });

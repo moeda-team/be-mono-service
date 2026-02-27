@@ -89,6 +89,7 @@ export class TransactionController {
               status: 'desc',
             },
           },
+          voucher: true,
         },
         skip,
         take,
@@ -211,6 +212,7 @@ export class TransactionController {
               status: 'desc',
             },
           },
+          voucher: true,
         },
       });
       if (!transaction) {
