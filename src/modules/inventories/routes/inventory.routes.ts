@@ -15,10 +15,10 @@ const healthController = new HealthController();
 router.get('/health', healthController.check);
 
 router.get(
-  '/low-stock',
+  '/count-by-status',
   jwtAuth,
   roleAuth(UserRole.EMPLOYEE),
-  inventoryController.getLowStockInventories,
+  inventoryController.countByStatus,
 );
 router.get('/:id', inventoryController.getInventoryById);
 router.get('/', jwtAuth, roleAuth(UserRole.EMPLOYEE), inventoryController.getAllInventories);

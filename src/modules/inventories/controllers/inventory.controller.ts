@@ -272,49 +272,39 @@ export class InventoryController {
     }
   }
 
-  async getLowStockInventories(req: Request, res: Response) {
+  async countByStatus(req: Request, res: Response) {
     try {
       const { outletId } = req.query;
 
-      const where: any = {
-        OR: [
-          {
-            currentStock: {
-              lte: prisma.inventory.fields.minimumStock,
-            },
-          },
-          {
-            status: StockStatus.LOW,
-          },
-          {
-            status: StockStatus.OUT,
-          },
-        ],
-      };
-
+      const where: any = {};
       if (outletId) where.outletId = outletId as string;
 
-      const inventories = await prisma.inventory.findMany({
+      const counts = await prisma.inventory.groupBy({
+        by: ['status'],
         where,
-        include: {
-          outlet: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
+        _count: {
+          status: true,
         },
-        orderBy: {
-          currentStock: 'asc',
-        },
+      });
+
+      const result = {
+        SAFE: 0,
+        LOW: 0,
+        OUT: 0,
+        total: 0,
+      };
+
+      counts.forEach(count => {
+        result[count.status as keyof typeof result] = count._count.status;
+        result.total += count._count.status;
       });
 
       return ResponseHandler.success(res, {
-        message: 'Low stock inventories retrieved successfully',
-        data: inventories,
+        message: 'Inventory count by status retrieved successfully',
+        data: result,
       });
     } catch (error) {
-      logger.error('Error getting low stock inventories:', error);
+      logger.error('Error getting inventory count by status:', error);
       return ResponseHandler.error(res, {
         message: 'Internal server error',
         statusCode: 500,
