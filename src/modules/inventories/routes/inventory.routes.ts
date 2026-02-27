@@ -17,25 +17,25 @@ router.get('/health', healthController.check);
 router.get(
   '/low-stock',
   jwtAuth,
-  roleAuth(UserRole.OWNER),
+  roleAuth(UserRole.EMPLOYEE),
   inventoryController.getLowStockInventories,
 );
 router.get('/:id', inventoryController.getInventoryById);
-router.get('/', jwtAuth, roleAuth(UserRole.OWNER), inventoryController.getAllInventories);
+router.get('/', jwtAuth, roleAuth(UserRole.EMPLOYEE), inventoryController.getAllInventories);
 router.post(
   '/',
   jwtAuth,
-  roleAuth(UserRole.OWNER),
+  roleAuth(UserRole.EMPLOYEE),
   validateCreateInventory,
   inventoryController.createInventory,
 );
 router.put(
   '/:id',
   jwtAuth,
-  roleAuth(UserRole.OWNER),
+  roleAuth(UserRole.EMPLOYEE),
   validateUpdateInventory,
   inventoryController.updateInventory,
 );
-router.delete('/:id', jwtAuth, roleAuth(UserRole.OWNER), inventoryController.deleteInventory);
+router.delete('/:id', jwtAuth, roleAuth(UserRole.EMPLOYEE), inventoryController.deleteInventory);
 
 export default router;
