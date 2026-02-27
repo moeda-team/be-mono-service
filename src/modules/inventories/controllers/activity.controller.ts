@@ -4,9 +4,14 @@ import { CreateActivityDTO, UpdateActivityDTO, ActivityType } from '../models/ac
 import { StockStatus } from '../models/inventory';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../lib/prisma';
+import { JwtPayload } from '../../../utils/auth/jwt';
+
+interface AuthenticatedRequest extends Request {
+  user?: JwtPayload;
+}
 
 export class ActivityController {
-  async getAllActivities(req: Request, res: Response) {
+  async getAllActivities(req: AuthenticatedRequest, res: Response) {
     try {
       const { inventoryId, type } = req.query;
 
@@ -30,6 +35,11 @@ export class ActivityController {
           outlet: {
             select: {
               id: true,
+              name: true,
+            },
+          },
+          user: {
+            select: {
               name: true,
             },
           },
@@ -75,6 +85,11 @@ export class ActivityController {
               name: true,
             },
           },
+          user: {
+            select: {
+              name: true,
+            },
+          },
         },
       });
 
@@ -98,11 +113,13 @@ export class ActivityController {
     }
   }
 
-  async createActivity(req: Request, res: Response) {
+  async createActivity(req: AuthenticatedRequest, res: Response) {
     const activityData: CreateActivityDTO = {
       ...req.body,
       quantity: parseFloat(req.body.quantity),
     };
+    const user = req.user;
+    console.log('User:', user);
 
     try {
       const inventory = await prisma.inventory.findUnique({
@@ -162,6 +179,7 @@ export class ActivityController {
             quantity: activityData.quantity,
             note: activityData.notes,
             outletId: inventory.outletId,
+            createdBy: user?.userId ? String(user.userId) : null,
           },
           include: {
             inventory: {
@@ -172,6 +190,12 @@ export class ActivityController {
                     name: true,
                   },
                 },
+              },
+            },
+            user: {
+              select: {
+                id: true,
+                name: true,
               },
             },
           },

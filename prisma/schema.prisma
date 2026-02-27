@@ -383,12 +383,12 @@ model StockTransaction {
   quantity     Decimal              @db.Decimal(15, 3)
   note         String?              @db.VarChar(255)
   createdAt    DateTime             @default(now())
+  createdBy    String?              @db.VarChar(36)
   updatedAt    DateTime             @default(now()) @updatedAt
 
   inventory Inventory @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
   outlet    Outlet    @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  user      User?     @relation(fields: [userId], references: [id])
-  userId    String?   @db.VarChar(36)
+  user      User?     @relation(fields: [createdBy], references: [id])
 
   @@index([ingredientId])
   @@index([outletId])

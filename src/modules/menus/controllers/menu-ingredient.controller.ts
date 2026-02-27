@@ -13,8 +13,6 @@ export class MenuIngredientController {
   upsertMenuIngredient = async (req: AuthenticatedRequest, res: Response) => {
     const { menuId } = req.body;
     const ingredients = req.body.ingredients || [req.body];
-    const user = req.user;
-    console.log('User:', user);
 
     try {
       // Check if menu exists
