@@ -379,15 +379,15 @@ export class TransactionController {
       const reqWithUser = req as Request & { user?: JwtPayload };
       const user = reqWithUser.user;
 
-      if (!transactionData.cart || transactionData.cart.length === 0) {
+      if (!transactionData.cart?.length) {
         return ResponseHandler.error(res, {
           message: 'Cart cannot be empty',
           statusCode: 400,
         });
       }
 
-      const allowedPaymentMethods = ['cash', 'qris'];
-      if (!allowedPaymentMethods.includes(transactionData.paymentMethod)) {
+      const allowedPaymentMethods = ['cash', 'qris'] as const;
+      if (!allowedPaymentMethods.includes(transactionData.paymentMethod as any)) {
         return ResponseHandler.error(res, {
           message: 'Invalid payment method',
           statusCode: 400,
@@ -417,8 +417,7 @@ export class TransactionController {
         }
       }
 
-      // Fetch menus with real price
-      const menuIds = transactionData.cart.map(item => item.menuId);
+      const menuIds = [...new Set(transactionData.cart.map(i => i.menuId))];
 
       const menus = await prisma.menu.findMany({
         where: {
@@ -434,27 +433,22 @@ export class TransactionController {
         });
       }
 
-      // ===============================
-      // 🔥 BACKEND CALCULATION STARTS
-      // ===============================
+      const menuMap = new Map(menus.map(m => [m.id, m]));
 
       let subTotal = 0;
-
       const cartWithPrices = transactionData.cart.map(item => {
-        const menu = menus.find(m => m.id === item.menuId);
+        const menu = menuMap.get(item.menuId);
         if (!menu) throw new Error('Menu not found');
 
         if (item.quantity <= 0) {
           throw new Error('Invalid quantity');
         }
 
-        // 🔥 ALWAYS USE DB PRICE
         const basePrice = Number(menu.price);
         const addOnPrice = Number(item.addOnPrice || 0);
 
-        const calculatedSubTotal = (basePrice + addOnPrice) * item.quantity;
-
-        subTotal += calculatedSubTotal;
+        const itemTotal = (basePrice + addOnPrice) * item.quantity;
+        subTotal += itemTotal;
 
         return {
           menuId: menu.id,
@@ -462,16 +456,11 @@ export class TransactionController {
           quantity: item.quantity,
           price: basePrice,
           addOnPrice,
-          discount: item.discount || 0,
-          subTotal: calculatedSubTotal,
+          subTotal: itemTotal,
           addOn: item.addOn,
           note: item.note,
         };
       });
-
-      // ===============================
-      // VOUCHER LOGIC
-      // ===============================
 
       let voucherData: any = null;
       let voucherDiscountAmount = 0;
@@ -498,32 +487,35 @@ export class TransactionController {
           });
         }
 
-        if (voucherData.usage >= voucherData.maxUsage) {
+        if (Number(voucherData.usage.toFixed(2)) >= Number(voucherData.maxUsage.toFixed(2))) {
           return ResponseHandler.error(res, {
             message: 'Voucher usage limit reached',
             statusCode: 400,
           });
         }
 
-        if (voucherData.type === 'percent') {
-          voucherDiscountAmount = Math.floor((subTotal * Number(voucherData.discount)) / 100);
-        } else {
-          voucherDiscountAmount = Number(voucherData.discount);
-        }
+        voucherDiscountAmount =
+          voucherData.type === 'percent'
+            ? Math.floor((subTotal * Number(voucherData.discount)) / 100)
+            : Number(voucherData.discount);
 
         voucherDiscountAmount = Math.min(voucherDiscountAmount, subTotal);
       }
 
-      const clientDiscountAmount = Number(transactionData.discount || 0);
-      const totalDiscountAmount = voucherDiscountAmount + clientDiscountAmount;
-      const discountAmount = Math.min(totalDiscountAmount, subTotal);
+      const clientDiscountAmount = Math.max(0, Number(transactionData.discount || 0));
 
-      const taxableAmount = subTotal - discountAmount;
-      const tax = Math.floor(taxableAmount * 0.11);
+      const totalDiscountAmount = Math.min(subTotal, voucherDiscountAmount + clientDiscountAmount);
+
+      const taxableAmount = subTotal - totalDiscountAmount;
+
+      const taxRate = 0.11;
+      const tax = Math.floor(taxableAmount * taxRate);
 
       let serviceCharge = 0;
 
-      if (!(voucherData?.type === 'percent' && Number(voucherData?.discount) === 100)) {
+      const isFullFree = voucherData?.type === 'percent' && Number(voucherData?.discount) === 100;
+
+      if (!isFullFree) {
         const baseAmount = taxableAmount + tax;
 
         if (transactionData.paymentMethod === 'qris') {
@@ -535,12 +527,8 @@ export class TransactionController {
 
       const totalBeforeRounding = taxableAmount + tax + serviceCharge;
 
-      let rounding = 0;
       const remainder = totalBeforeRounding % 1000;
-
-      if (remainder !== 0) {
-        rounding = 1000 - remainder; // always round UP
-      }
+      const rounding = remainder === 0 ? 0 : 1000 - remainder;
 
       const total = totalBeforeRounding + rounding;
 
@@ -548,13 +536,9 @@ export class TransactionController {
         throw new Error('Invalid total calculation');
       }
 
-      // ===============================
-      // STATUS LOGIC (FIXED)
-      // ===============================
-
       let transactionStatus: 'pending' | 'completed' = 'pending';
 
-      if ((voucherData !== null || clientDiscountAmount > 0) && total === 0) {
+      if (total === 0) {
         transactionStatus = 'completed';
       } else if (transactionData.paymentMethod === 'cash') {
         transactionStatus = 'completed';
@@ -562,10 +546,6 @@ export class TransactionController {
 
       const orderNumber = await generateOrderNumber(transactionData.outletId);
       const paymentNumber = await generatePaymentNumber(transactionData.outletId);
-
-      // ===============================
-      // SAVE TO DATABASE
-      // ===============================
 
       const result = await prisma.$transaction(async tx => {
         const transaction = await tx.transaction.create({
@@ -582,7 +562,7 @@ export class TransactionController {
             subTotal,
             serviceCharge,
             rounding,
-            discount: discountAmount,
+            discount: totalDiscountAmount,
             tax,
             total,
             additionalNote: transactionData.additionalNote,
@@ -591,28 +571,35 @@ export class TransactionController {
           },
         });
 
-        for (const item of cartWithPrices) {
-          await tx.subTransaction.create({
-            data: {
-              transactionId: transaction.id,
-              menuId: item.menuId,
-              menuName: item.menuName,
-              quantity: item.quantity,
-              price: item.price,
-              subTotal: item.subTotal,
-              addOn: item.addOn,
-              addOnPrice: item.addOnPrice,
-              note: item.note,
-              status: 'preparation',
-            },
-          });
-        }
+        await tx.subTransaction.createMany({
+          data: cartWithPrices.map(item => ({
+            transactionId: transaction.id,
+            menuId: item.menuId,
+            menuName: item.menuName,
+            quantity: item.quantity,
+            price: item.price,
+            subTotal: item.subTotal,
+            addOn: item.addOn,
+            addOnPrice: item.addOnPrice,
+            note: item.note,
+            status: 'preparation',
+          })),
+        });
 
         if (voucherData) {
-          await tx.voucher.update({
-            where: { id: voucherData.id },
-            data: { usage: { increment: 1 } },
+          const updated = await tx.voucher.updateMany({
+            where: {
+              id: voucherData.id,
+              usage: { lt: voucherData.maxUsage },
+            },
+            data: {
+              usage: { increment: 1 },
+            },
           });
+
+          if (updated.count === 0) {
+            throw new Error('Voucher usage exceeded');
+          }
 
           await tx.logVoucher.create({
             data: {
