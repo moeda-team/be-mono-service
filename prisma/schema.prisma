@@ -145,7 +145,7 @@ model Outlet {
   vouchers          Voucher[]
   logVouchers       LogVoucher[]
   logTableMove      LogTableMove[]
-  ingredients       Ingredient[]
+  inventories       Inventory[]
   stockTransactions StockTransaction[]
   discounts         Discount[]
   tables            Tables[]
@@ -352,7 +352,7 @@ enum StockTransactionType {
   ADJUST
 }
 
-model Ingredient {
+model Inventory {
   id           String      @id @default(uuid()) @db.VarChar(36)
   outletId     String      @db.VarChar(36)
   name         String      @db.VarChar(100)
@@ -370,7 +370,7 @@ model Ingredient {
   @@index([name])
   @@index([status])
   @@index([outletId, status])
-  @@map("ingredients")
+  @@map("inventories")
 }
 
 model StockTransaction {
@@ -383,9 +383,9 @@ model StockTransaction {
   createdBy    String?              @db.VarChar(36)
   createdAt    DateTime             @default(now())
 
-  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
-  outlet     Outlet     @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  user       User?      @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  inventory Inventory @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  outlet    Outlet    @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [createdBy], references: [id], onDelete: SetNull)
 
   @@index([ingredientId])
   @@index([outletId])
