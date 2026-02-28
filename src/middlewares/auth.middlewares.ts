@@ -45,8 +45,9 @@ export const jwtAuth = asyncHandler(
 
     try {
       const decoded = jwt.verify(token, jwtSecret) as JwtPayloadExtended;
+      console.log(decoded);
 
-      if (!decoded.userId || !decoded.role || !decoded.email) {
+      if (!decoded.userId) {
         throw AppError.unauthorized('Invalid token structure', ErrorCode.INVALID_TOKEN);
       }
 
