@@ -3,9 +3,6 @@ import { logger } from '../../../utils/common/logger';
 import { CreateBestSellerMenuDTO } from '../models/best-seller-menu';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
-import { MenuService } from '../../../services/menu.service';
-
-const menuService = new MenuService();
 
 export class BestSellerMenuController {
   getAllBestSellerMenus = async (req: Request, res: Response) => {
@@ -72,7 +69,6 @@ export class BestSellerMenuController {
         ...item,
         menu: {
           ...item.menu,
-          options: menuService.BuildOptionTree(item.menu.options),
         },
       }));
 
@@ -122,7 +118,6 @@ export class BestSellerMenuController {
         ...bestSellerMenu,
         menu: {
           ...bestSellerMenu.menu,
-          options: menuService.BuildOptionTree(bestSellerMenu.menu.options),
         },
       };
 
