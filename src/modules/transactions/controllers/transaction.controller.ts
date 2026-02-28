@@ -246,13 +246,6 @@ export class TransactionController {
           id: {
             in: orderIds,
           },
-          subTransactions: {
-            some: {
-              status: {
-                not: 'completed',
-              },
-            },
-          },
         },
         include: {
           subTransactions: {
