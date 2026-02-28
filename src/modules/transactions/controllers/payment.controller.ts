@@ -4,6 +4,7 @@ import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
 import { MidtransPayload, PaymentDTO, PaymentNotification } from '../models/payment';
 import { axiosPost } from '../../../utils/common/axios.custom';
+import { IngredientService } from '../../../services/ingredient.service';
 
 export class PaymentController {
   async paymentTransaction(req: Request, res: Response) {
@@ -214,6 +215,9 @@ export class PaymentController {
             nextTableId: null,
           },
         });
+
+        // Reduce ingredients and log activity
+        await IngredientService.reduceIngredientsAndLogActivity(transaction);
       }
 
       logger.info(`Transaction ${transaction.id} status updated to ${newStatus}`);

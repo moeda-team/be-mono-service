@@ -10,6 +10,7 @@ import {
 import { JwtPayload } from 'jsonwebtoken';
 import { Prisma } from '@prisma/client';
 import { getWebSocketService } from '../../../services/websocket.service';
+import { IngredientService } from '../../../services/ingredient.service';
 
 export class TransactionController {
   async getAllTransactions(req: Request, res: Response) {
@@ -612,6 +613,11 @@ export class TransactionController {
 
         return transaction;
       });
+
+      // Reduce ingredients and log activity for auto-complete transactions
+      if (isAutoComplete || transactionData.paymentMethod === 'cash') {
+        await IngredientService.reduceIngredientsAndLogActivity(result);
+      }
 
       return ResponseHandler.success(res, {
         message: 'Transaction created successfully',
