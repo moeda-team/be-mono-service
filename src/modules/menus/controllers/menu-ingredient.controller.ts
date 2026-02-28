@@ -113,6 +113,11 @@ export class MenuIngredientController {
 
   getMenuIngredients = async (req: AuthenticatedRequest, res: Response) => {
     const { menuId } = req.params;
+    const page = parseInt(req.query.page as string) || null;
+    const limit = parseInt(req.query.limit as string) || null;
+
+    const skip = page && limit ? (page - 1) * limit : undefined;
+    const take = limit || undefined;
 
     try {
       const menu = await prisma.menu.findUnique({
@@ -143,11 +148,27 @@ export class MenuIngredientController {
         orderBy: {
           createdAt: 'desc',
         },
+        skip,
+        take,
       });
+
+      const responseData: Record<string, unknown> = {
+        menuIngredients,
+      };
+
+      if (page && limit) {
+        const total = await prisma.menuIngredient.count({ where: { menuId } });
+        responseData.pagination = {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        };
+      }
 
       return ResponseHandler.success(res, {
         message: 'Menu ingredients retrieved successfully',
-        data: menuIngredients,
+        data: responseData,
       });
     } catch (error) {
       logger.error('Error getting menu ingredients:', error);

@@ -5,6 +5,7 @@ import { StockStatus } from '../models/inventory';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
 import { JwtPayload } from '../../../utils/auth/jwt';
+import { Prisma } from '@prisma/client';
 
 interface AuthenticatedRequest extends Request {
   user?: JwtPayload;
@@ -14,10 +15,23 @@ export class ActivityController {
   async getAllActivities(req: AuthenticatedRequest, res: Response) {
     try {
       const { inventoryId, type } = req.query;
+      const page = parseInt(req.query.page as string) || null;
+      const limit = parseInt(req.query.limit as string) || null;
+      const search = (req.query.search as string)?.trim() || null;
 
-      const where: any = {};
+      const where: Prisma.StockTransactionWhereInput = {};
       if (inventoryId) where.ingredientId = inventoryId as string;
       if (type) where.type = type as ActivityType;
+
+      if (search) {
+        where.note = {
+          contains: search,
+          mode: 'insensitive',
+        };
+      }
+
+      const skip = page && limit ? (page - 1) * limit : undefined;
+      const take = limit || undefined;
 
       const activities = await prisma.stockTransaction.findMany({
         where,
@@ -47,11 +61,27 @@ export class ActivityController {
         orderBy: {
           createdAt: 'desc',
         },
+        skip,
+        take,
       });
+
+      const responseData: Record<string, unknown> = {
+        activities,
+      };
+
+      if (page && limit) {
+        const total = await prisma.stockTransaction.count({ where });
+        responseData.pagination = {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        };
+      }
 
       return ResponseHandler.success(res, {
         message: 'Activities retrieved successfully',
-        data: activities,
+        data: responseData,
       });
     } catch (error) {
       logger.error('Error getting activities:', error);

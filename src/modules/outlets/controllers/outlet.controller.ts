@@ -3,18 +3,55 @@ import { logger } from '../../../utils/common/logger';
 import { CreateOutletDTO, UpdateOutletDTO } from '../models/outlet';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
+import { Prisma } from '@prisma/client';
 
 export class OutletController {
   async getAllOutlets(req: Request, res: Response) {
+    const page = parseInt(req.query.page as string) || null;
+    const limit = parseInt(req.query.limit as string) || null;
+    const search = (req.query.search as string)?.trim() || null;
+
+    const skip = page && limit ? (page - 1) * limit : undefined;
+    const take = limit || undefined;
+
     try {
+      const where: Prisma.OutletWhereInput = {};
+
+      if (search) {
+        where.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { address: { contains: search, mode: 'insensitive' } },
+          { city: { contains: search, mode: 'insensitive' } },
+          { province: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+
       const outlets = await prisma.outlet.findMany({
+        where,
         orderBy: {
           createdAt: 'desc',
         },
+        skip,
+        take,
       });
+
+      const responseData: Record<string, unknown> = {
+        outlets,
+      };
+
+      if (page && limit) {
+        const total = await prisma.outlet.count({ where });
+        responseData.pagination = {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        };
+      }
+
       return ResponseHandler.success(res, {
         message: 'Outlets retrieved successfully',
-        data: outlets,
+        data: responseData,
       });
     } catch (error) {
       logger.error('Error getting outlets:', error);

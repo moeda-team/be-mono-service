@@ -3,21 +3,56 @@ import { logger } from '../../../utils/common/logger';
 import { CreateMessageDTO } from '../models/message';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
+import { Prisma } from '@prisma/client';
 
 export class MessageController {
   async getAllMessages(req: Request, res: Response) {
     const user = (req as Request & { user: { outletId: string } }).user;
+    const page = parseInt(req.query.page as string) || null;
+    const limit = parseInt(req.query.limit as string) || null;
+    const search = (req.query.search as string)?.trim() || null;
+
+    const skip = page && limit ? (page - 1) * limit : undefined;
+    const take = limit || undefined;
 
     try {
+      const where: Prisma.MessageWhereInput = {
+        outletId: user.outletId,
+      };
+
+      if (search) {
+        where.message = {
+          contains: search,
+          mode: 'insensitive',
+        };
+      }
+
       const messages = await prisma.message.findMany({
-        where: { outletId: user.outletId },
+        where,
         orderBy: {
           createdAt: 'desc',
         },
+        skip,
+        take,
       });
+
+      const responseData: Record<string, unknown> = {
+        messages,
+      };
+
+      if (page && limit) {
+        const total = await prisma.message.count({ where });
+        responseData.pagination = {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        };
+      }
+
       return ResponseHandler.success(res, {
         message: 'Messages retrieved successfully',
-        data: messages,
+        data: responseData,
       });
     } catch (error) {
       logger.error('Error getting messages:', error);

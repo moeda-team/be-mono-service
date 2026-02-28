@@ -7,16 +7,31 @@ import prisma from '../../../config/database';
 export class BestSellerMenuController {
   getAllBestSellerMenus = async (req: Request, res: Response) => {
     const outletId = req.headers.outletid as string;
+    const page = parseInt(req.query.page as string) || null;
+    const limit = parseInt(req.query.limit as string) || null;
+    const search = (req.query.search as string)?.trim() || null;
+
+    const skip = page && limit ? (page - 1) * limit : undefined;
+    const take = limit || undefined;
 
     try {
       const now = new Date();
 
-      const bestSellerMenus = await prisma.bestSellerMenu.findMany({
-        where: {
-          menu: {
-            outletId,
-          },
+      const where: any = {
+        menu: {
+          outletId,
         },
+      };
+
+      if (search) {
+        where.menu.name = {
+          contains: search,
+          mode: 'insensitive',
+        };
+      }
+
+      const bestSellerMenus = await prisma.bestSellerMenu.findMany({
+        where,
         orderBy: {
           order: 'asc',
         },
@@ -77,6 +92,8 @@ export class BestSellerMenuController {
             },
           },
         },
+        skip,
+        take,
       });
 
       const structured = bestSellerMenus.map(item => ({
@@ -89,9 +106,23 @@ export class BestSellerMenuController {
         },
       }));
 
+      const responseData: Record<string, unknown> = {
+        bestSellerMenus: structured,
+      };
+
+      if (page && limit) {
+        const total = await prisma.bestSellerMenu.count({ where });
+        responseData.pagination = {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        };
+      }
+
       return ResponseHandler.success(res, {
         message: 'Best seller menus retrieved successfully',
-        data: structured,
+        data: responseData,
       });
     } catch (error) {
       logger.error('Error getting best seller menus:', error);

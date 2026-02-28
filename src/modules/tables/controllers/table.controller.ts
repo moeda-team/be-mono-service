@@ -29,12 +29,28 @@ export class TableController extends BaseController {
   getTablesByOutlet = async (req: Request, res: Response) => {
     try {
       const outletId = req.headers.Outletid as string;
+      const page = parseInt(req.query.page as string) || null;
+      const limit = parseInt(req.query.limit as string) || null;
+      const search = (req.query.search as string)?.trim() || null;
 
-      const tables = await tableService.getTablesByOutlet(outletId);
+      const result = await tableService.getTablesByOutlet(outletId, page, limit, search);
+
+      const responseData: Record<string, unknown> = {
+        tables: result.tables,
+      };
+
+      if (page && limit && result.total !== undefined) {
+        responseData.pagination = {
+          page,
+          limit,
+          total: result.total,
+          totalPages: Math.ceil(result.total / limit),
+        };
+      }
 
       return this.sendSuccess(res, {
         message: 'Tables retrieved successfully',
-        data: tables,
+        data: responseData,
       });
     } catch (error) {
       logger.error('Error getting tables by outlet:', error);

@@ -63,9 +63,14 @@ export class MenuController {
   getAllMenus = async (req: Request, res: Response) => {
     const outletId = req.headers.outletid as string;
     const { search, category } = req.query;
+    const page = parseInt(req.query.page as string) || null;
+    const limit = parseInt(req.query.limit as string) || null;
 
     const searchStr = typeof search === 'string' ? search : undefined;
     const categoryStr = typeof category === 'string' ? category : undefined;
+
+    const skip = page && limit ? (page - 1) * limit : undefined;
+    const take = limit || undefined;
 
     try {
       const whereClause: Prisma.MenuWhereInput = {
@@ -144,6 +149,8 @@ export class MenuController {
             },
           },
         },
+        skip,
+        take,
       });
 
       const structuredMenus = menus.map(menu => ({
@@ -151,9 +158,23 @@ export class MenuController {
         isAvailable: menu.menuIngredients.every(mi => mi.ingredient.currentStock >= mi.quantity),
       }));
 
+      const responseData: Record<string, unknown> = {
+        menus: structuredMenus,
+      };
+
+      if (page && limit) {
+        const total = await prisma.menu.count({ where: whereClause });
+        responseData.pagination = {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        };
+      }
+
       return ResponseHandler.success(res, {
         message: 'Menus retrieved successfully',
-        data: structuredMenus,
+        data: responseData,
       });
     } catch (error) {
       logger.error('Error getting menus:', error);

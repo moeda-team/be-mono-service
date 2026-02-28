@@ -2,23 +2,56 @@ import { Request, Response } from 'express';
 import prisma from '../../../config/database';
 import { CreateCategoryDTO, UpdateCategoryDTO } from '../models/category';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
+import { Prisma } from '@prisma/client';
 
 export class CategoryController {
   async findAll(req: Request, res: Response) {
     const outletId = req.headers.Outletid as string;
+    const page = parseInt(req.query.page as string) || null;
+    const limit = parseInt(req.query.limit as string) || null;
+    const search = (req.query.search as string)?.trim() || null;
+
+    const skip = page && limit ? (page - 1) * limit : undefined;
+    const take = limit || undefined;
 
     try {
+      const where: Prisma.CategoryWhereInput = {
+        outletId,
+      };
+
+      if (search) {
+        where.name = {
+          contains: search,
+          mode: 'insensitive',
+        };
+      }
+
       const categories = await prisma.category.findMany({
-        where: {
-          outletId,
-        },
+        where,
         orderBy: {
           createdAt: 'desc',
         },
+        skip,
+        take,
       });
+
+      const responseData: Record<string, unknown> = {
+        categories,
+      };
+
+      if (page && limit) {
+        const total = await prisma.category.count({ where });
+        responseData.pagination = {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        };
+      }
+
       return ResponseHandler.success(res, {
         message: 'Categories retrieved successfully',
-        data: categories,
+        data: responseData,
       });
     } catch (error) {
       return ResponseHandler.error(res, {

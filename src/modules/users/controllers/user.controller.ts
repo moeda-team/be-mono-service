@@ -4,18 +4,54 @@ import { CreateUserDTO, UpdateUserDTO } from '../models/user';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
 import { hashPassword } from '../../../utils/auth/hash';
+import { Prisma } from '@prisma/client';
 
 export class UserController {
   async getAllUsers(req: Request, res: Response) {
+    const page = parseInt(req.query.page as string) || null;
+    const limit = parseInt(req.query.limit as string) || null;
+    const search = (req.query.search as string)?.trim() || null;
+
+    const skip = page && limit ? (page - 1) * limit : undefined;
+    const take = limit || undefined;
+
     try {
+      const where: Prisma.UserWhereInput = {};
+
+      if (search) {
+        where.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { phoneNumber: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+
       const users = await prisma.user.findMany({
+        where,
         orderBy: {
           createdAt: 'desc',
         },
+        skip,
+        take,
       });
+
+      const responseData: Record<string, unknown> = {
+        users,
+      };
+
+      if (page && limit) {
+        const total = await prisma.user.count({ where });
+        responseData.pagination = {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        };
+      }
+
       return ResponseHandler.success(res, {
         message: 'Users retrieved successfully',
-        data: users,
+        data: responseData,
       });
     } catch (error) {
       logger.error('Error getting users:', error);

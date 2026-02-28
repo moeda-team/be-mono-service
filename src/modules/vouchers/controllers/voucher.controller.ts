@@ -10,8 +10,12 @@ export class VoucherController {
     const user = (req as Request & { user: { outletId: string } }).user;
 
     const { search } = req.query as { search: string };
+    const page = parseInt(req.query.page as string) || null;
+    const limit = parseInt(req.query.limit as string) || null;
 
     const searchStr: string | undefined = typeof search === 'string' ? search : undefined;
+    const skip = page && limit ? (page - 1) * limit : undefined;
+    const take = limit || undefined;
 
     try {
       const whereClause: Prisma.VoucherWhereInput = {
@@ -47,10 +51,27 @@ export class VoucherController {
             },
           },
         },
+        skip,
+        take,
       });
+
+      const responseData: Record<string, unknown> = {
+        vouchers,
+      };
+
+      if (page && limit) {
+        const total = await prisma.voucher.count({ where: whereClause });
+        responseData.pagination = {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        };
+      }
+
       return ResponseHandler.success(res, {
         message: 'Vouchers retrieved successfully',
-        data: vouchers,
+        data: responseData,
       });
     } catch (error) {
       logger.error('Error getting vouchers:', error);

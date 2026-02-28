@@ -3,15 +3,29 @@ import { logger } from '../../../utils/common/logger';
 import { CreateInventoryDTO, UpdateInventoryDTO, StockStatus } from '../models/inventory';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
+import { Prisma } from '@prisma/client';
 
 export class InventoryController {
   async getAllInventories(req: Request, res: Response) {
     try {
       const { outletId, status } = req.query;
+      const page = parseInt(req.query.page as string) || null;
+      const limit = parseInt(req.query.limit as string) || null;
+      const search = (req.query.search as string)?.trim() || null;
 
-      const where: any = {};
+      const where: Prisma.InventoryWhereInput = {};
       if (outletId) where.outletId = outletId as string;
       if (status) where.status = status as StockStatus;
+
+      if (search) {
+        where.name = {
+          contains: search,
+          mode: 'insensitive',
+        };
+      }
+
+      const skip = page && limit ? (page - 1) * limit : undefined;
+      const take = limit || undefined;
 
       const inventories = await prisma.inventory.findMany({
         where,
@@ -26,11 +40,27 @@ export class InventoryController {
         orderBy: {
           createdAt: 'desc',
         },
+        skip,
+        take,
       });
+
+      const responseData: Record<string, unknown> = {
+        inventories,
+      };
+
+      if (page && limit) {
+        const total = await prisma.inventory.count({ where });
+        responseData.pagination = {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        };
+      }
 
       return ResponseHandler.success(res, {
         message: 'Inventories retrieved successfully',
-        data: inventories,
+        data: responseData,
       });
     } catch (error) {
       logger.error('Error getting inventories:', error);

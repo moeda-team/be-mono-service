@@ -5,15 +5,38 @@ import { ResponseHandler } from '../../../utils/response/responseHandler';
 
 export class OptionController {
   async findAll(req: Request, res: Response) {
+    const page = parseInt(req.query.page as string) || null;
+    const limit = parseInt(req.query.limit as string) || null;
+
+    const skip = page && limit ? (page - 1) * limit : undefined;
+    const take = limit || undefined;
+
     try {
       const options = await prisma.option.findMany({
         orderBy: {
           createdAt: 'desc',
         },
+        skip,
+        take,
       });
+
+      const responseData: Record<string, unknown> = {
+        options,
+      };
+
+      if (page && limit) {
+        const total = await prisma.option.count();
+        responseData.pagination = {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        };
+      }
+
       return ResponseHandler.success(res, {
         message: 'Options retrieved successfully',
-        data: options,
+        data: responseData,
       });
     } catch (error) {
       return ResponseHandler.error(res, {
