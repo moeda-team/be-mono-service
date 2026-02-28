@@ -29,14 +29,24 @@ export class MenuIngredientController {
 
       // Handle both single ingredient and array of ingredients
       const ingredientsArray = Array.isArray(ingredients) ? ingredients : [req.body];
+      const incomingIngredientIds = ingredientsArray.map((ing: any) => ing.ingredientId);
 
-      // Validate all ingredients exist and get their units
-      const ingredientIds = ingredientsArray.map((ing: any) => ing.ingredientId);
-      const existingIngredients = await prisma.inventory.findMany({
-        where: { id: { in: ingredientIds } },
+      // Delete existing menu-ingredients not in the incoming list
+      await prisma.menuIngredient.deleteMany({
+        where: {
+          menuId: menuId,
+          ingredientId: {
+            notIn: incomingIngredientIds,
+          },
+        },
       });
 
-      if (existingIngredients.length !== ingredientIds.length) {
+      // Validate all ingredients exist and get their units
+      const existingIngredients = await prisma.inventory.findMany({
+        where: { id: { in: incomingIngredientIds } },
+      });
+
+      if (existingIngredients.length !== incomingIngredientIds.length) {
         return ResponseHandler.error(res, {
           message: 'One or more ingredients not found',
           statusCode: 404,
