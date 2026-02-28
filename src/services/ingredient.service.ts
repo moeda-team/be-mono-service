@@ -32,7 +32,7 @@ export class IngredientService {
           continue;
         }
 
-        for (const menuIngredient of subTransaction.menu.menuIngredients) {
+        for (const [index, menuIngredient] of subTransaction.menu.menuIngredients.entries()) {
           const ingredient = menuIngredient.ingredient;
           const quantityNeeded = Number(menuIngredient.quantity) * subTransaction.quantity;
           const currentStock = Number(ingredient.currentStock);
@@ -57,13 +57,13 @@ export class IngredientService {
                 outletId: transaction.outletId,
                 type: StockTransactionType.REDUCE,
                 quantity: quantityNeeded,
-                note: `Reduced for menu "${subTransaction.menuName}" in transaction #${transaction.paymentNumber}`,
+                note: `Reduced for menu "${subTransaction.menuName}" on order #${index + 1} in transaction #${transaction.paymentNumber}`,
                 createdBy: findSystemUser?.id || '',
               },
             });
 
             logger.info(
-              `Reduced ${quantityNeeded} ${ingredient.unit} of ${ingredient.name} for transaction ${transaction.paymentNumber}`,
+              `Reduced ${quantityNeeded} ${ingredient.unit} of ${ingredient.name} for transaction ${transaction.paymentNumber} order #${index + 1}`,
             );
           } else {
             logger.warn(
