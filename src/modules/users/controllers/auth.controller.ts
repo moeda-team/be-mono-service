@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../../../config/database';
 import { comparePassword } from '../../../utils/auth/hash';
-import { signToken } from '../../../utils/auth/jwt';
+import { signToken, TokenType } from '../../../utils/auth/jwt';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { logger } from '../../../utils/common/logger';
 
@@ -29,7 +29,7 @@ export class AuthController {
           statusCode: 401,
         });
       }
-      const token = signToken({ userId: user.id, outletId: user.outletId! });
+      const token = signToken({ userId: user.id, outletId: user.outletId! }, TokenType.ACCESS);
       const expiresIn = Number(process.env.JWT_ACCESS_EXPIRES_IN);
       const expiresOn = Math.floor(Date.now() / 1000) + expiresIn;
 
