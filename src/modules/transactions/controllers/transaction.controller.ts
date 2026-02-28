@@ -507,10 +507,14 @@ export class TransactionController {
       const tax = Math.floor(taxableAmount * taxRate);
 
       let serviceCharge = 0;
+      let rounding = 0;
 
       const isFullFree = voucherData?.type === 'percent' && Number(voucherData?.discount) === 100;
 
-      if (!isFullFree) {
+      let totalBeforeRounding = taxableAmount + tax;
+
+      // Calculate service charge and rounding only if total won't be 0
+      if (!isFullFree && taxableAmount > 0) {
         const baseAmount = taxableAmount + tax;
 
         if (transactionData.paymentMethod === 'qris') {
@@ -518,12 +522,11 @@ export class TransactionController {
         } else {
           serviceCharge = 500;
         }
+
+        totalBeforeRounding = taxableAmount + tax + serviceCharge;
+        const remainder = totalBeforeRounding % 1000;
+        rounding = remainder === 0 ? 0 : 1000 - remainder;
       }
-
-      const totalBeforeRounding = taxableAmount + tax + serviceCharge;
-
-      const remainder = totalBeforeRounding % 1000;
-      const rounding = remainder === 0 ? 0 : 1000 - remainder;
 
       const total = totalBeforeRounding + rounding;
 
@@ -531,9 +534,11 @@ export class TransactionController {
         throw new Error('Invalid total calculation');
       }
 
+      const isAutoComplete = total === 0;
+
       let transactionStatus: 'pending' | 'completed' = 'pending';
 
-      if (total === 0) {
+      if (isAutoComplete) {
         transactionStatus = 'completed';
       } else if (transactionData.paymentMethod === 'cash') {
         transactionStatus = 'completed';
@@ -577,7 +582,7 @@ export class TransactionController {
             addOn: item.addOn,
             addOnPrice: item.addOnPrice,
             note: item.note,
-            status: 'preparation',
+            status: isAutoComplete ? 'completed' : 'preparation',
           })),
         });
 
