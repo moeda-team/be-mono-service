@@ -7,7 +7,12 @@ import { UserRole } from '../../../utils/auth/jwt';
 const router = Router();
 const activityController = new ActivityController();
 
-router.get('/:id', jwtAuth, requirePermission(UserRole.EMPLOYEE), activityController.getActivityById);
+router.get(
+  '/:id',
+  jwtAuth,
+  requirePermission(UserRole.EMPLOYEE),
+  activityController.getActivityById,
+);
 router.get('/', jwtAuth, requirePermission(UserRole.EMPLOYEE), activityController.getAllActivities);
 router.post(
   '/',
@@ -16,6 +21,11 @@ router.post(
   validateCreateActivity,
   activityController.createActivity,
 );
-router.delete('/:id', jwtAuth, requirePermission(UserRole.OWNER), activityController.deleteActivity);
+router.delete(
+  '/:id',
+  jwtAuth,
+  requirePermission(UserRole.OWNER),
+  activityController.deleteActivity,
+);
 
 export default router;

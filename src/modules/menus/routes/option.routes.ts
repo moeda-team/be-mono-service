@@ -7,7 +7,12 @@ import { validateUpsertOption } from '../validators/option.validator';
 const router = Router();
 const optionController = new OptionController();
 
-router.get('', jwtAuthNotRequired, requirePermission(UserRole.STORE_MANAGER), optionController.findAll);
+router.get(
+  '',
+  jwtAuthNotRequired,
+  requirePermission(UserRole.STORE_MANAGER),
+  optionController.findAll,
+);
 router.get('/:menuId', jwtAuthNotRequired, optionController.findOne);
 router.post(
   '/',
@@ -16,6 +21,11 @@ router.post(
   validateUpsertOption,
   optionController.upsert,
 );
-router.delete('/:menuId', jwtAuth, requirePermission(UserRole.STORE_MANAGER), optionController.delete);
+router.delete(
+  '/:menuId',
+  jwtAuth,
+  requirePermission(UserRole.STORE_MANAGER),
+  optionController.delete,
+);
 
 export default router;

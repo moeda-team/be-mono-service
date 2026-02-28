@@ -23,6 +23,11 @@ router.put(
   validateUpdateCategory,
   categoryController.update,
 );
-router.delete('/:id', jwtAuth, requirePermission(UserRole.STORE_MANAGER), categoryController.delete);
+router.delete(
+  '/:id',
+  jwtAuth,
+  requirePermission(UserRole.STORE_MANAGER),
+  categoryController.delete,
+);
 
 export default router;
