@@ -5,6 +5,7 @@ import {
   validateCreateTransaction,
   validateUpdateTransactionStatus,
   validateUpdateTransactionTable,
+  validateIngredientAvailability,
 } from '../validators/transaction.validator';
 import { basicAuth, jwtAuth, jwtAuthNotRequired, requirePermission } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
@@ -36,6 +37,7 @@ router.post(
   '/',
   jwtAuthNotRequired,
   validateCreateTransaction,
+  validateIngredientAvailability,
   transactionController.createTransaction,
 );
 router.patch(

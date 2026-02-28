@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { body, validationResult } from 'express-validator';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
+import prisma from '../../../config/database';
 
 export const validateCreateTransaction = [
   body('outletId').trim().notEmpty().withMessage('Outlet ID is required'),
@@ -175,3 +176,89 @@ export const validateCalculation = [
     next();
   },
 ];
+
+export const validateIngredientAvailability = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { cart } = req.body;
+
+    if (!cart || !Array.isArray(cart) || cart.length === 0) {
+      return next();
+    }
+
+    // Get all menu IDs from cart
+    const menuIds = cart.map((item: any) => item.menuId);
+
+    // Get menu ingredients for all items in cart
+    const menuIngredients = await prisma.menuIngredient.findMany({
+      where: {
+        menuId: {
+          in: menuIds,
+        },
+      },
+      include: {
+        ingredient: true,
+        menu: true,
+      },
+    });
+
+    // Check ingredient availability
+    const insufficientIngredients: Array<{
+      ingredientName: string;
+      menuName: string;
+      required: number;
+      available: number;
+      unit: string;
+    }> = [];
+
+    for (const cartItem of cart) {
+      const menuItemIngredients = menuIngredients.filter(mi => mi.menuId === cartItem.menuId);
+
+      for (const menuIngredient of menuItemIngredients) {
+        const requiredQuantity = Number(menuIngredient.quantity) * cartItem.quantity;
+        const availableQuantity = Number(menuIngredient.ingredient.currentStock);
+
+        if (availableQuantity < requiredQuantity) {
+          insufficientIngredients.push({
+            ingredientName: menuIngredient.ingredient.name,
+            menuName: menuIngredient.menu.name,
+            required: requiredQuantity,
+            available: availableQuantity,
+            unit: menuIngredient.ingredient.unit,
+          });
+        }
+      }
+    }
+
+    if (insufficientIngredients.length > 0) {
+      const errorMessage = insufficientIngredients
+        .map(
+          item =>
+            `${item.ingredientName} for ${item.menuName}: need ${item.required} ${item.unit}, only ${item.available} ${item.unit} available`,
+        )
+        .join('; ');
+
+      return ResponseHandler.error(res, {
+        message: 'Insufficient ingredients for order',
+        statusCode: 400,
+        error: {
+          code: 'INSUFFICIENT_INGREDIENTS',
+          details: {
+            message: errorMessage,
+            insufficientIngredients,
+          },
+        },
+      });
+    }
+
+    next();
+  } catch (error) {
+    return ResponseHandler.error(res, {
+      message: 'Error validating ingredient availability',
+      statusCode: 500,
+    });
+  }
+};
