@@ -106,6 +106,13 @@ export class PaymentController {
         item_details: itemDetails,
       };
 
+      if (payload.transaction_details.gross_amount === 0) {
+        return ResponseHandler.error(res, {
+          message: 'This transaction has total is zero, please check the items or total',
+          statusCode: 400,
+        });
+      }
+
       const serverKey = process.env.MIDTRANS_SERVER_KEY;
       if (!serverKey) {
         throw new Error('Midtrans server key is not configured');
