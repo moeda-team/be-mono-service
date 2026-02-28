@@ -37,7 +37,7 @@ export const jwtAuth = asyncHandler(
     }
 
     const token = authHeader.substring(7);
-    const jwtSecret = process.env.JWT_SECRET;
+    const jwtSecret = process.env.JWT_ACCESS_SECRET;
 
     if (!jwtSecret) {
       throw AppError.internal('JWT secret is not configured');
@@ -103,7 +103,7 @@ export const jwtAuthNotRequired = (
     return;
   }
   const token = authHeader.split(' ')[1];
-  const jwtSecret = process.env.JWT_SECRET;
+  const jwtSecret = process.env.JWT_ACCESS_SECRET;
 
   if (!jwtSecret) {
     next();
