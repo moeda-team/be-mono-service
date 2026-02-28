@@ -35,23 +35,23 @@ export class OutletController {
         take,
       });
 
-      const responseData: Record<string, unknown> = {
-        outlets,
-      };
-
       if (page && limit) {
         const total = await prisma.outlet.count({ where });
-        responseData.pagination = {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        };
+        return ResponseHandler.success(res, {
+          message: 'Outlets retrieved successfully',
+          data: outlets,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        });
       }
 
       return ResponseHandler.success(res, {
         message: 'Outlets retrieved successfully',
-        data: responseData,
+        data: outlets,
       });
     } catch (error) {
       logger.error('Error getting outlets:', error);

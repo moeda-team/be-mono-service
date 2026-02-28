@@ -44,23 +44,23 @@ export class InventoryController {
         take,
       });
 
-      const responseData: Record<string, unknown> = {
-        inventories,
-      };
-
       if (page && limit) {
         const total = await prisma.inventory.count({ where });
-        responseData.pagination = {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        };
+        return ResponseHandler.success(res, {
+          message: 'Inventories retrieved successfully',
+          data: inventories,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        });
       }
 
       return ResponseHandler.success(res, {
         message: 'Inventories retrieved successfully',
-        data: responseData,
+        data: inventories,
       });
     } catch (error) {
       logger.error('Error getting inventories:', error);

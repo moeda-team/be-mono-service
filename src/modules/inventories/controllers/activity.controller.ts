@@ -65,23 +65,23 @@ export class ActivityController {
         take,
       });
 
-      const responseData: Record<string, unknown> = {
-        activities,
-      };
-
       if (page && limit) {
         const total = await prisma.stockTransaction.count({ where });
-        responseData.pagination = {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        };
+        return ResponseHandler.success(res, {
+          message: 'Activities retrieved successfully',
+          data: activities,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        });
       }
 
       return ResponseHandler.success(res, {
         message: 'Activities retrieved successfully',
-        data: responseData,
+        data: activities,
       });
     } catch (error) {
       logger.error('Error getting activities:', error);

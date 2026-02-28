@@ -20,23 +20,23 @@ export class OptionController {
         take,
       });
 
-      const responseData: Record<string, unknown> = {
-        options,
-      };
-
       if (page && limit) {
         const total = await prisma.option.count();
-        responseData.pagination = {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        };
+        return ResponseHandler.success(res, {
+          message: 'Options retrieved successfully',
+          data: options,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        });
       }
 
       return ResponseHandler.success(res, {
         message: 'Options retrieved successfully',
-        data: responseData,
+        data: options,
       });
     } catch (error) {
       return ResponseHandler.error(res, {

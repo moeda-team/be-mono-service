@@ -55,23 +55,23 @@ export class VoucherController {
         take,
       });
 
-      const responseData: Record<string, unknown> = {
-        vouchers,
-      };
-
       if (page && limit) {
         const total = await prisma.voucher.count({ where: whereClause });
-        responseData.pagination = {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        };
+        return ResponseHandler.success(res, {
+          message: 'Vouchers retrieved successfully',
+          data: vouchers,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        });
       }
 
       return ResponseHandler.success(res, {
         message: 'Vouchers retrieved successfully',
-        data: responseData,
+        data: vouchers,
       });
     } catch (error) {
       logger.error('Error getting vouchers:', error);

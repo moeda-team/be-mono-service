@@ -106,23 +106,23 @@ export class BestSellerMenuController {
         },
       }));
 
-      const responseData: Record<string, unknown> = {
-        bestSellerMenus: structured,
-      };
-
       if (page && limit) {
         const total = await prisma.bestSellerMenu.count({ where });
-        responseData.pagination = {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        };
+        return ResponseHandler.success(res, {
+          message: 'Best seller menus retrieved successfully',
+          data: structured,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        });
       }
 
       return ResponseHandler.success(res, {
         message: 'Best seller menus retrieved successfully',
-        data: responseData,
+        data: structured,
       });
     } catch (error) {
       logger.error('Error getting best seller menus:', error);

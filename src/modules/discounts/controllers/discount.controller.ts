@@ -55,23 +55,23 @@ export class DiscountController {
         take,
       });
 
-      const responseData: Record<string, unknown> = {
-        discounts,
-      };
-
       if (page && limit) {
         const total = await prisma.discount.count({ where: whereClause });
-        responseData.pagination = {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        };
+        return ResponseHandler.success(res, {
+          message: 'Discounts retrieved successfully',
+          data: discounts,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        });
       }
 
       return ResponseHandler.success(res, {
         message: 'Discounts retrieved successfully',
-        data: responseData,
+        data: discounts,
       });
     } catch (error) {
       logger.error('Error getting discounts:', error);

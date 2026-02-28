@@ -9,13 +9,38 @@ export abstract class BaseController {
       message,
       data,
       statusCode = 200,
+      pagination,
+      page,
+      limit,
+      total,
     }: {
       message: string;
       data: T;
       statusCode?: number;
+      pagination?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
+      page?: number;
+      limit?: number;
+      total?: number;
     },
   ): Response<ApiSuccessResponse<T>> {
-    return ResponseHandler.success(res, { message, data, statusCode });
+    if (page && limit && total !== undefined) {
+      return this.sendSuccess(res, {
+        message,
+        data,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+    }
+    return ResponseHandler.success(res, { message, data, statusCode, pagination });
   }
 
   protected sendError(

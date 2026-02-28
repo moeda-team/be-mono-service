@@ -36,23 +36,23 @@ export class MessageController {
         take,
       });
 
-      const responseData: Record<string, unknown> = {
-        messages,
-      };
-
       if (page && limit) {
         const total = await prisma.message.count({ where });
-        responseData.pagination = {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        };
+        return ResponseHandler.success(res, {
+          message: 'Messages retrieved successfully',
+          data: messages,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        });
       }
 
       return ResponseHandler.success(res, {
         message: 'Messages retrieved successfully',
-        data: responseData,
+        data: messages,
       });
     } catch (error) {
       logger.error('Error getting messages:', error);

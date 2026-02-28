@@ -35,23 +35,23 @@ export class CategoryController {
         take,
       });
 
-      const responseData: Record<string, unknown> = {
-        categories,
-      };
-
       if (page && limit) {
         const total = await prisma.category.count({ where });
-        responseData.pagination = {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        };
+        return ResponseHandler.success(res, {
+          message: 'Categories retrieved successfully',
+          data: categories,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        });
       }
 
       return ResponseHandler.success(res, {
         message: 'Categories retrieved successfully',
-        data: responseData,
+        data: categories,
       });
     } catch (error) {
       return ResponseHandler.error(res, {

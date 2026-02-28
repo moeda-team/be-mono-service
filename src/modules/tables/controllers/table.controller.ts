@@ -35,22 +35,22 @@ export class TableController extends BaseController {
 
       const result = await tableService.getTablesByOutlet(outletId, page, limit, search);
 
-      const responseData: Record<string, unknown> = {
-        tables: result.tables,
-      };
-
       if (page && limit && result.total !== undefined) {
-        responseData.pagination = {
-          page,
-          limit,
-          total: result.total,
-          totalPages: Math.ceil(result.total / limit),
-        };
+        return this.sendSuccess(res, {
+          message: 'Tables retrieved successfully',
+          data: result.tables,
+          pagination: {
+            page,
+            limit,
+            total: result.total,
+            totalPages: Math.ceil(result.total / limit),
+          },
+        });
       }
 
       return this.sendSuccess(res, {
         message: 'Tables retrieved successfully',
-        data: responseData,
+        data: result.tables,
       });
     } catch (error) {
       logger.error('Error getting tables by outlet:', error);

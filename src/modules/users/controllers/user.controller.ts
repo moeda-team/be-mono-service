@@ -35,23 +35,23 @@ export class UserController {
         take,
       });
 
-      const responseData: Record<string, unknown> = {
-        users,
-      };
-
       if (page && limit) {
         const total = await prisma.user.count({ where });
-        responseData.pagination = {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        };
+        return ResponseHandler.success(res, {
+          message: 'Users retrieved successfully',
+          data: users,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        });
       }
 
       return ResponseHandler.success(res, {
         message: 'Users retrieved successfully',
-        data: responseData,
+        data: users,
       });
     } catch (error) {
       logger.error('Error getting users:', error);

@@ -158,23 +158,23 @@ export class MenuController {
         isAvailable: menu.menuIngredients.every(mi => mi.ingredient.currentStock >= mi.quantity),
       }));
 
-      const responseData: Record<string, unknown> = {
-        menus: structuredMenus,
-      };
-
       if (page && limit) {
         const total = await prisma.menu.count({ where: whereClause });
-        responseData.pagination = {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        };
+        return ResponseHandler.success(res, {
+          message: 'Menus retrieved successfully',
+          data: structuredMenus,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        });
       }
 
       return ResponseHandler.success(res, {
         message: 'Menus retrieved successfully',
-        data: responseData,
+        data: structuredMenus,
       });
     } catch (error) {
       logger.error('Error getting menus:', error);

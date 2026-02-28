@@ -8,16 +8,24 @@ export class ResponseHandler {
       message,
       data,
       statusCode = 200,
+      pagination,
     }: {
       message: string;
       data: T;
       statusCode?: number;
+      pagination?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+      };
     },
   ): Response<ApiSuccessResponse<T>> {
     const response: ApiSuccessResponse<T> = {
       status: 'success',
       message,
       data,
+      ...(pagination && { pagination }),
     };
 
     return res.status(statusCode).json(response);

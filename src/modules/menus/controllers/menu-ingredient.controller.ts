@@ -152,23 +152,23 @@ export class MenuIngredientController {
         take,
       });
 
-      const responseData: Record<string, unknown> = {
-        menuIngredients,
-      };
-
       if (page && limit) {
         const total = await prisma.menuIngredient.count({ where: { menuId } });
-        responseData.pagination = {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        };
+        return ResponseHandler.success(res, {
+          message: 'Menu ingredients retrieved successfully',
+          data: menuIngredients,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        });
       }
 
       return ResponseHandler.success(res, {
         message: 'Menu ingredients retrieved successfully',
-        data: responseData,
+        data: menuIngredients,
       });
     } catch (error) {
       logger.error('Error getting menu ingredients:', error);
