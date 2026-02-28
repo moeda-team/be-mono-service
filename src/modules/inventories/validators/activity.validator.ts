@@ -18,7 +18,7 @@ export const validateCreateActivity = [
       }
       return true;
     }),
-  body('notes').optional().trim(),
+  body('notes').default('-').optional().trim(),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -52,7 +52,7 @@ export const validateUpdateActivity = [
       }
       return true;
     }),
-  body('notes').optional().trim(),
+  body('notes').default('-').optional().trim(),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
