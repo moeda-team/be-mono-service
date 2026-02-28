@@ -39,10 +39,16 @@ export class MenuController {
         });
       }
 
+      // Check if menu has sufficient ingredients
+      const isAvailable = menu.menuIngredients.every(
+        mi => mi.ingredient.currentStock >= mi.quantity,
+      );
+
       return ResponseHandler.success(res, {
         message: 'Menu retrieved successfully',
         data: {
           ...menu,
+          isAvailable,
         },
       });
     } catch (error) {
@@ -56,11 +62,10 @@ export class MenuController {
 
   getAllMenus = async (req: Request, res: Response) => {
     const outletId = req.headers.outletid as string;
-    const { search, category, includeIngredients } = req.query;
+    const { search, category } = req.query;
 
     const searchStr = typeof search === 'string' ? search : undefined;
     const categoryStr = typeof category === 'string' ? category : undefined;
-    const shouldIncludeIngredients = includeIngredients === 'true';
 
     try {
       const whereClause: Prisma.MenuWhereInput = {
@@ -124,27 +129,26 @@ export class MenuController {
               },
             },
           },
-          ...(shouldIncludeIngredients && {
-            menuIngredients: {
-              include: {
-                ingredient: {
-                  select: {
-                    id: true,
-                    name: true,
-                    unit: true,
-                    currentStock: true,
-                    minimumStock: true,
-                    status: true,
-                  },
+          menuIngredients: {
+            include: {
+              ingredient: {
+                select: {
+                  id: true,
+                  name: true,
+                  unit: true,
+                  currentStock: true,
+                  minimumStock: true,
+                  status: true,
                 },
               },
             },
-          }),
+          },
         },
       });
 
       const structuredMenus = menus.map(menu => ({
         ...menu,
+        isAvailable: menu.menuIngredients.every(mi => mi.ingredient.currentStock >= mi.quantity),
       }));
 
       return ResponseHandler.success(res, {

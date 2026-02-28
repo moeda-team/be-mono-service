@@ -60,6 +60,20 @@ export class BestSellerMenuController {
                   },
                 },
               },
+              menuIngredients: {
+                include: {
+                  ingredient: {
+                    select: {
+                      id: true,
+                      name: true,
+                      unit: true,
+                      currentStock: true,
+                      minimumStock: true,
+                      status: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -69,6 +83,9 @@ export class BestSellerMenuController {
         ...item,
         menu: {
           ...item.menu,
+          isAvailable: item.menu.menuIngredients.every(
+            mi => mi.ingredient.currentStock >= mi.quantity,
+          ),
         },
       }));
 
@@ -95,6 +112,20 @@ export class BestSellerMenuController {
           menu: {
             include: {
               options: true,
+              menuIngredients: {
+                include: {
+                  ingredient: {
+                    select: {
+                      id: true,
+                      name: true,
+                      unit: true,
+                      currentStock: true,
+                      minimumStock: true,
+                      status: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -118,6 +149,9 @@ export class BestSellerMenuController {
         ...bestSellerMenu,
         menu: {
           ...bestSellerMenu.menu,
+          isAvailable: bestSellerMenu.menu.menuIngredients.every(
+            mi => mi.ingredient.currentStock >= mi.quantity,
+          ),
         },
       };
 
