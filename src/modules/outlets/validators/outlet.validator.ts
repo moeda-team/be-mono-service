@@ -3,13 +3,41 @@ import { body, validationResult } from 'express-validator';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 
 export const validateCreateOutlet = [
-  body('name').trim().notEmpty().withMessage('Name is required'),
-  body('outletType').trim().notEmpty().withMessage('Outlet type is required'),
-  body('address').optional(),
-  body('number').optional(),
-  body('province').optional(),
-  body('city').optional(),
-  body('postalCode').optional(),
+  body('name')
+    .trim()
+    .notEmpty()
+    .withMessage('Name is required')
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Name must be between 1 and 100 characters'),
+  body('outletType')
+    .trim()
+    .notEmpty()
+    .withMessage('Outlet type is required')
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Outlet type must be between 1 and 50 characters'),
+  body('address').optional().isString().withMessage('Address must be a string'),
+  body('number')
+    .optional()
+    .isString()
+    .isLength({ max: 20 })
+    .withMessage('Number must be at most 20 characters'),
+  body('province')
+    .optional()
+    .isString()
+    .isLength({ max: 50 })
+    .withMessage('Province must be at most 50 characters'),
+  body('city')
+    .optional()
+    .isString()
+    .isLength({ max: 50 })
+    .withMessage('City must be at most 50 characters'),
+  body('postalCode')
+    .optional()
+    .isString()
+    .isLength({ max: 5 })
+    .withMessage('Postal code must be at most 5 characters')
+    .matches(/^\d*$/)
+    .withMessage('Postal code must contain only digits'),
   body('status')
     .optional()
     .isIn(['active', 'inactive'])
@@ -31,13 +59,41 @@ export const validateCreateOutlet = [
 ];
 
 export const validateUpdateOutlet = [
-  body('name').trim().notEmpty().withMessage('Name cannot be empty'),
-  body('outletType').trim().notEmpty().withMessage('Outlet type cannot be empty'),
-  body('address').optional(),
-  body('number').optional(),
-  body('province').optional(),
-  body('city').optional(),
-  body('postalCode').optional(),
+  body('name')
+    .trim()
+    .notEmpty()
+    .withMessage('Name cannot be empty')
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Name must be between 1 and 100 characters'),
+  body('outletType')
+    .trim()
+    .notEmpty()
+    .withMessage('Outlet type cannot be empty')
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Outlet type must be between 1 and 50 characters'),
+  body('address').optional().isString().withMessage('Address must be a string'),
+  body('number')
+    .optional()
+    .isString()
+    .isLength({ max: 20 })
+    .withMessage('Number must be at most 20 characters'),
+  body('province')
+    .optional()
+    .isString()
+    .isLength({ max: 50 })
+    .withMessage('Province must be at most 50 characters'),
+  body('city')
+    .optional()
+    .isString()
+    .isLength({ max: 50 })
+    .withMessage('City must be at most 50 characters'),
+  body('postalCode')
+    .optional()
+    .isString()
+    .isLength({ max: 5 })
+    .withMessage('Postal code must be at most 5 characters')
+    .matches(/^\d*$/)
+    .withMessage('Postal code must contain only digits'),
   body('status')
     .optional()
     .trim()
