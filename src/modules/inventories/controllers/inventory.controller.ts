@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { logger } from '../../../utils/common/logger';
 import { CreateInventoryDTO, UpdateInventoryDTO, StockStatus } from '../models/inventory';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
-import prisma from '../../../lib/prisma';
+import prisma from '../../../config/database';
 
 export class InventoryController {
   async getAllInventories(req: Request, res: Response) {

@@ -3,7 +3,7 @@ import { logger } from '../../../utils/common/logger';
 import { CreateActivityDTO, UpdateActivityDTO, ActivityType } from '../models/activity';
 import { StockStatus } from '../models/inventory';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
-import prisma from '../../../lib/prisma';
+import prisma from '../../../config/database';
 import { JwtPayload } from '../../../utils/auth/jwt';
 
 interface AuthenticatedRequest extends Request {

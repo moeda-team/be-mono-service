@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { logger } from '../../../utils/common/logger';
 import { CreateDiscountMenuDTO, UpdateDiscountMenuDTO } from '../models/discount-menu';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
-import prisma from '../../../lib/prisma';
+import prisma from '../../../config/database';
 
 export class DiscountMenuController {
   async createDiscountMenu(req: Request, res: Response) {

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { MenuIngredientController } from '../controllers/menu-ingredient.controller';
 import { validateUpsertMenuIngredient } from '../validators/menu-ingredient.validator';
-import { jwtAuth, roleAuth } from '../../../middlewares';
+import { jwtAuth, requirePermission } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
 
 const router = Router();
@@ -11,7 +11,7 @@ const menuIngredientController = new MenuIngredientController();
 router.put(
   '/',
   jwtAuth,
-  roleAuth(UserRole.STORE_MANAGER),
+  requirePermission(UserRole.STORE_MANAGER),
   validateUpsertMenuIngredient,
   menuIngredientController.upsertMenuIngredient,
 );
@@ -23,7 +23,7 @@ router.get('/menu/:menuId', jwtAuth, menuIngredientController.getMenuIngredients
 router.delete(
   '/menu/:menuId/ingredient/:ingredientId',
   jwtAuth,
-  roleAuth(UserRole.STORE_MANAGER),
+  requirePermission(UserRole.STORE_MANAGER),
   menuIngredientController.removeIngredientFromMenu,
 );
 

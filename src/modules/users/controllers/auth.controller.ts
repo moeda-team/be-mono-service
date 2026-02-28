@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../../../lib/prisma';
+import prisma from '../../../config/database';
 import { comparePassword } from '../../../utils/auth/hash';
 import { signToken } from '../../../utils/auth/jwt';
 import { ResponseHandler } from '../../../utils/response/responseHandler';

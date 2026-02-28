@@ -6,22 +6,24 @@ import {
   validateUpdateTransactionStatus,
   validateUpdateTransactionTable,
 } from '../validators/transaction.validator';
-import { HealthController } from '../controllers/health.controller';
-import { basicAuth, jwtAuth, jwtAuthNotRequired, roleAuth } from '../../../middlewares';
+import { basicAuth, jwtAuth, jwtAuthNotRequired, requirePermission } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
 import { TransactionController } from '../controllers/transaction.controller';
 
 const router = Router();
 const transactionController = new TransactionController();
-const healthController = new HealthController();
 
-router.get('/health', healthController.check);
 router.get('/:id', jwtAuthNotRequired, transactionController.getTransactionById);
-router.get('/', jwtAuth, roleAuth(UserRole.EMPLOYEE), transactionController.getAllTransactions);
+router.get(
+  '/',
+  jwtAuth,
+  requirePermission(UserRole.EMPLOYEE),
+  transactionController.getAllTransactions,
+);
 router.get(
   '/all/active',
   jwtAuth,
-  roleAuth(UserRole.EMPLOYEE),
+  requirePermission(UserRole.EMPLOYEE),
   transactionController.getAllActiveTransactions,
 );
 router.post(
@@ -39,7 +41,7 @@ router.post(
 router.patch(
   '/status/:id',
   jwtAuth,
-  roleAuth(UserRole.EMPLOYEE),
+  requirePermission(UserRole.EMPLOYEE),
   validateUpdateTransactionStatus,
   transactionController.updateTransactionStatus,
 );
@@ -52,7 +54,7 @@ router.patch(
 router.delete(
   '/:id',
   jwtAuth,
-  roleAuth(UserRole.EMPLOYEE),
+  requirePermission(UserRole.EMPLOYEE),
   transactionController.deleteTransaction,
 );
 

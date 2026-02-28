@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { logger } from '../../../utils/common/logger';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
-import prisma from '../../../lib/prisma';
+import prisma from '../../../config/database';
 import { MidtransPayload, PaymentDTO, PaymentNotification } from '../models/payment';
 import { axiosPost } from '../../../utils/common/axios.custom';
 import { Decimal } from '@prisma/client/runtime/library';

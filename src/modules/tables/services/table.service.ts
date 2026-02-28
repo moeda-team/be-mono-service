@@ -1,6 +1,6 @@
 import { logger } from '../../../utils/common/logger';
 import { CreateTableDTO, UpdateTableDTO, Table } from '../models/table.model';
-import prisma from '../../../lib/prisma';
+import prisma from '../../../config/database';
 
 export class TableService {
   async createTable(data: CreateTableDTO): Promise<Table> {

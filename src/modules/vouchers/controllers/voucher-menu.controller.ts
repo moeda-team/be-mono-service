@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { logger } from '../../../utils/common/logger';
 import { CreateVoucherMenuDTO, UpdateVoucherMenuDTO } from '../models/voucher-menu';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
-import prisma from '../../../lib/prisma';
+import prisma from '../../../config/database';
 
 export class VoucherMenuController {
   async createVoucherMenu(req: Request, res: Response) {

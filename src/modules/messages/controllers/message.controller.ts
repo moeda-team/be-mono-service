@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { logger } from '../../../utils/common/logger';
 import { CreateMessageDTO } from '../models/message';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
-import prisma from '../../../lib/prisma';
+import prisma from '../../../config/database';
 
 export class MessageController {
   async getAllMessages(req: Request, res: Response) {

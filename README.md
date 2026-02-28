@@ -8,13 +8,15 @@ A robust, production-ready Node.js TypeScript REST API service for restaurant ma
 
 - **TypeScript** with strict type safety
 - **Express.js** framework with modular routing
-- **Service Layer Architecture** with separation of concerns
+- **Consolidated Architecture** with single entry points
+- **Service Layer Pattern** with separation of concerns
 - **Repository Pattern** for data access
 - **Dependency Injection** ready structure
 
 ### Security & Validation
 
 - **Enhanced Authentication** with JWT and role-based access control
+- **Consolidated Auth Middleware** for maintainability
 - **Input Validation** with express-validator
 - **Security Headers** with Helmet
 - **CORS** configuration with origin validation
@@ -23,19 +25,18 @@ A robust, production-ready Node.js TypeScript REST API service for restaurant ma
 
 ### Error Handling & Monitoring
 
-- **Custom Error System** with structured error codes
+- **Consolidated Error System** with single source of truth
 - **Centralized Error Handler** with consistent responses
 - **Comprehensive Logging** with Winston
-- **Health Check** endpoints
+- **Health Check** endpoints with database status
 - **Request Tracing** with unique request IDs
 
 ### Database & Performance
 
 - **Prisma ORM** with PostgreSQL
-- **Connection Pooling** and management
+- **Singleton DatabaseManager** with connection lifecycle
 - **Database Transactions** with rollback support
-- **Query Optimization** and N+1 prevention
-- **Graceful Shutdown** handling
+- **Graceful Shutdown** handling with proper cleanup
 
 ### Real-time Communication
 
@@ -332,9 +333,61 @@ The `/health` endpoint provides:
 - Uptime
 - Environment information
 
-## 🔧 Configuration
+## � Project Structure
 
-### Database Configuration
+```
+src/
+├── app.ts                    # Express app with middleware chain
+├── index.ts                  # Server entry point with DB initialization
+├── config/
+│   ├── index.ts              # Environment configuration
+│   └── database.ts           # Singleton DatabaseManager (Prisma)
+├── middlewares/
+│   ├── index.ts              # Centralized middleware exports
+│   ├── auth.middlewares.ts   # Consolidated auth (JWT, role, basic)
+│   └── rateLimiter.middlewares.ts
+├── modules/
+│   ├── users/
+│   ├── transactions/
+│   ├── menus/
+│   ├── outlets/
+│   ├── inventories/
+│   ├── vouchers/
+│   ├── files/
+│   ├── tables/
+│   ├── discounts/
+│   ├── messages/
+│   └── websockets/
+├── services/
+│   ├── base.service.ts       # Base service with common DB operations
+│   ├── transaction.service.ts
+│   ├── websocket.service.ts
+│   └── thermalPrinter.service.ts
+├── utils/
+│   ├── auth/
+│   │   └── jwt.ts            # JWT utilities and role hierarchy
+│   ├── common/
+│   │   └── logger.ts         # Winston logger configuration
+│   ├── errors/
+│   │   ├── custom.errors.ts  # AppError class and ErrorCode enum
+│   │   └── error.handler.ts  # Centralized error handler
+│   ├── response/
+│   │   └── responseHandler.ts
+│   ├── validation/
+│   └── generator/
+└── types/
+    └── *.types.ts            # Shared TypeScript interfaces
+```
+
+### Recent Refactoring
+
+The codebase has been refactored for improved maintainability:
+
+- **Consolidated Health Endpoint**: Single `/health` endpoint in app.ts replaces 10+ duplicate module-level health endpoints
+- **Consolidated Middleware**: All auth middleware (JWT, role-based, basic) merged into single file
+- **Simplified Database**: Single DatabaseManager with proper lifecycle management
+- **Unified Error Handling**: Single AppError class and error handler
+- **Cleaner Imports**: Removed duplicate files and standardized import patterns
 
 The application uses a singleton database manager with:
 

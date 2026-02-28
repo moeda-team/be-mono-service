@@ -1,52 +1,125 @@
-import { Pool, PoolConfig } from 'pg';
-import dotenv from 'dotenv';
+import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/common/logger';
+import { AppError, ErrorCode } from '../utils/errors/custom.errors';
 
-dotenv.config();
+class DatabaseManager {
+  private static instance: DatabaseManager;
+  private prisma: PrismaClient;
+  private isConnected = false;
 
-const defaultSchema = process.env.DB_SCHEMA || 'mono';
+  private constructor() {
+    this.prisma = new PrismaClient({
+      log: ['info', 'warn', 'error'],
+      errorFormat: 'pretty',
+    });
 
-const poolConfig: PoolConfig = {
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'cafe_db',
-  password: process.env.DB_PASSWORD || 'postgres',
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  max: parseInt(process.env.DB_POOL_MAX || '10', 10),
-  idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT_MS || '30000', 10),
-  connectionTimeoutMillis: parseInt(process.env.DB_CONN_TIMEOUT_MS || '2000', 10),
-};
+    this.setupEventListeners();
+    this.setupGracefulShutdown();
+  }
 
-const pool = new Pool(poolConfig);
-
-pool
-  .query(`CREATE SCHEMA IF NOT EXISTS ${defaultSchema}`)
-  .then(() => {
-    logger.info(`Schema '${defaultSchema}' is ready`);
-    return pool.query(`SET search_path TO ${defaultSchema}, public`);
-  })
-  .catch(err => {
-    logger.error('Error initializing database schema:', err);
-  });
-
-pool.on('connect', client => {
-  client.query(`SET search_path TO ${defaultSchema}, public`);
-});
-
-const shutdownSignals: NodeJS.Signals[] = ['SIGTERM', 'SIGINT', 'SIGQUIT'];
-shutdownSignals.forEach(signal => {
-  process.on(signal, async () => {
-    try {
-      logger.info(`Received ${signal}. Closing database pool...`);
-      await pool.end();
-      logger.info('Database pool closed. Exiting process.');
-      process.exit(0);
-    } catch (err) {
-      logger.error('Error while closing database pool', err);
-      process.exit(1);
+  public static getInstance(): DatabaseManager {
+    if (!DatabaseManager.instance) {
+      DatabaseManager.instance = new DatabaseManager();
     }
-  });
-});
+    return DatabaseManager.instance;
+  }
 
-export default pool;
-export { defaultSchema };
+  public get client(): PrismaClient {
+    return this.prisma;
+  }
+
+  public async connect(): Promise<void> {
+    try {
+      await this.prisma.$connect();
+      this.isConnected = true;
+      logger.info('Database connected successfully');
+
+      await this.prisma.$queryRaw`SELECT 1`;
+      logger.info('Database connection test passed');
+    } catch (error) {
+      this.isConnected = false;
+      logger.error('Failed to connect to database:', error);
+      throw AppError.serviceUnavailable('Database connection failed');
+    }
+  }
+
+  public async disconnect(): Promise<void> {
+    try {
+      await this.prisma.$disconnect();
+      this.isConnected = false;
+      logger.info('Database disconnected successfully');
+    } catch (error) {
+      logger.error('Error disconnecting from database:', error);
+    }
+  }
+
+  public async healthCheck(): Promise<boolean> {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      return true;
+    } catch (error) {
+      logger.error('Database health check failed:', error);
+      return false;
+    }
+  }
+
+  private setupEventListeners(): void {
+    (this.prisma as any).$on('query', (e: any) => {
+      if (process.env.NODE_ENV === 'development') {
+        logger.debug('Database query:', {
+          query: e.query,
+          params: e.params,
+          duration: `${e.duration}ms`,
+        });
+      }
+    });
+
+    (this.prisma as any).$on('error', (e: any) => {
+      logger.error('Database error:', { target: e.target, message: e.message });
+    });
+
+    (this.prisma as any).$on('warn', (e: any) => {
+      logger.warn('Database warning:', { target: e.target, message: e.message });
+    });
+
+    (this.prisma as any).$on('info', (e: any) => {
+      logger.info('Database info:', { target: e.target, message: e.message });
+    });
+  }
+
+  private setupGracefulShutdown(): void {
+    const shutdownSignals: NodeJS.Signals[] = ['SIGTERM', 'SIGINT', 'SIGQUIT'];
+
+    shutdownSignals.forEach(signal => {
+      process.on(signal, async () => {
+        logger.info(`Received ${signal}. Shutting down database connection...`);
+        try {
+          await this.disconnect();
+          process.exit(0);
+        } catch (error) {
+          logger.error('Error during database shutdown:', error);
+          process.exit(1);
+        }
+      });
+    });
+
+    process.on('uncaughtException', async error => {
+      logger.error('Uncaught exception:', error);
+      await this.disconnect();
+      process.exit(1);
+    });
+
+    process.on('unhandledRejection', async (reason, promise) => {
+      logger.error('Unhandled rejection at:', promise, 'reason:', reason);
+      await this.disconnect();
+      process.exit(1);
+    });
+  }
+}
+
+const databaseManager = DatabaseManager.getInstance();
+export { databaseManager };
+
+// Export prisma client directly for backward compatibility
+export const prisma = databaseManager.client;
+export default prisma;

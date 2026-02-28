@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { logger } from '../../../utils/common/logger';
 import { CreateBestSellerMenuDTO } from '../models/best-seller-menu';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
-import prisma from '../../../lib/prisma';
+import prisma from '../../../config/database';
 import { MenuService } from '../../../services/menu.service';
 
 const menuService = new MenuService();

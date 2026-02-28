@@ -3,9 +3,13 @@ import app from './app';
 import { config } from './config';
 import { logger } from './utils/common/logger';
 import { initializeWebSocket } from './services/websocket.service';
+import { databaseManager } from './config/database';
 
-const startServer = () => {
+const startServer = async () => {
   try {
+    // Connect to database first
+    await databaseManager.connect();
+
     // Create HTTP server
     const httpServer = createServer(app);
 

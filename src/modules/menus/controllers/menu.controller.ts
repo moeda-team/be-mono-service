@@ -4,7 +4,7 @@ import { logger } from '../../../utils/common/logger';
 import { CreateMenuDTO, UpdateMenuDTO } from '../models/menu';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { Prisma } from '@prisma/client';
-import prisma from '../../../lib/prisma';
+import prisma from '../../../config/database';
 
 export class MenuController {
   getMenuById = async (req: Request, res: Response) => {

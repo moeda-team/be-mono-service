@@ -1,4 +1,4 @@
-import prisma from '../../lib/prisma';
+import prisma from '../../config/database';
 
 export const generateOrderNumber = async (outletId: string) => {
   const countTotal = await prisma.transaction.count({

@@ -3,14 +3,13 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import timeout from 'connect-timeout';
-import bodyParser from 'body-parser';
-import { Router } from 'express';
-import { NextFunction, Request, Response } from 'express';
+import { Router, NextFunction, Request, Response } from 'express';
 
 import { config } from './config';
 import { errorHandler, notFoundHandler, rateLimiter } from './middlewares';
 import { logger } from './utils/common/logger';
 import { ResponseHandler } from './utils/response/responseHandler';
+import { databaseManager, prisma } from './config/database';
 import userRouter from './modules/users/routes';
 import messageRouter from './modules/messages/routes';
 import transactionRouter from './modules/transactions/routes';
@@ -26,6 +25,50 @@ import websocketRouter from './modules/websockets/routes';
 
 const app = express();
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
+
+// Health check endpoint
+app.get('/health', async (req: Request, res: Response) => {
+  try {
+    const dbHealthy = await databaseManager.healthCheck();
+
+    const health = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: config.nodeEnv,
+      database: dbHealthy ? 'connected' : 'disconnected',
+      memory: {
+        used: Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100,
+        total: Math.round((process.memoryUsage().heapTotal / 1024 / 1024) * 100) / 100,
+      },
+    };
+
+    if (!dbHealthy) {
+      return ResponseHandler.error(res, {
+        message: 'Service degraded - database connection issues',
+        statusCode: 503,
+        error: {
+          code: 'SERVICE_UNAVAILABLE',
+          details: health,
+        },
+      });
+    }
+
+    return ResponseHandler.success(res, {
+      message: 'Service healthy',
+      data: health,
+    });
+  } catch (error) {
+    logger.error('Health check failed:', error);
+    return ResponseHandler.error(res, {
+      message: 'Health check failed',
+      statusCode: 503,
+      error: {
+        code: 'SERVICE_UNAVAILABLE',
+      },
+    });
+  }
+});
 
 // Apply rate limiter to all routes except WebSocket
 app.use((req, res, next) => {
@@ -50,8 +93,8 @@ app.use(
 );
 
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const router = Router();
 

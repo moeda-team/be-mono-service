@@ -1,7 +1,7 @@
 import { logger } from '../utils/common/logger';
 import { AppError, ErrorCode } from '../utils/errors/custom.errors';
 import { PrismaClient } from '@prisma/client';
-import prisma from '../lib/prisma';
+import { databaseManager, prisma } from '../config/database';
 
 export abstract class BaseService {
   protected readonly prisma = prisma;

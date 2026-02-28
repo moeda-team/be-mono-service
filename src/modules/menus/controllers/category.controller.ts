@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../../../lib/prisma';
+import prisma from '../../../config/database';
 import { CreateCategoryDTO, UpdateCategoryDTO } from '../models/category';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 

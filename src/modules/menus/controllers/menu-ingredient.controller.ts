@@ -3,7 +3,7 @@ import { logger } from '../../../utils/common/logger';
 import { UpsertMenuIngredientDTO } from '../models/menu-ingredient.model';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { JwtPayload } from '../../../utils/auth/jwt';
-import prisma from '../../../lib/prisma';
+import prisma from '../../../config/database';
 
 interface AuthenticatedRequest extends Request {
   user?: JwtPayload;

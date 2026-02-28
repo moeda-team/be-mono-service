@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import prisma from '../../../lib/prisma';
+import prisma from '../../../config/database';
 import { UpsertOptionDTO } from '../models/option';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 
