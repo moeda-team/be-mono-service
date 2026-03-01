@@ -22,6 +22,7 @@ import { activityRoutes } from './modules/inventories';
 import discountRouter from './modules/discounts/routes';
 import tableRouter from './modules/tables/routes';
 import websocketRouter from './modules/websockets/routes';
+import cashBalanceRouter from './modules/cash-balance/routes/cash-balance.routes';
 
 const app = express();
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
@@ -110,6 +111,7 @@ router.use(`/v1/inventories`, inventoryRouter);
 router.use(`/v1/discounts`, discountRouter);
 router.use(`/v1/tables`, tableRouter);
 router.use(`/v1/websockets`, websocketRouter);
+router.use(`/v1/cash-balances`, cashBalanceRouter);
 
 app.use(router);
 
