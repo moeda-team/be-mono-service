@@ -22,7 +22,7 @@ import { activityRoutes } from './modules/inventories';
 import discountRouter from './modules/discounts/routes';
 import tableRouter from './modules/tables/routes';
 import websocketRouter from './modules/websockets/routes';
-import cashBalanceRouter from './modules/cash-balance/routes/cash-balance.routes';
+import cashBalanceRouter from './modules/cash-balances/routes/cash-balance.routes';
 
 const app = express();
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
