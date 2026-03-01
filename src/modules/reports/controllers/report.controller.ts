@@ -87,8 +87,8 @@ export class ReportController {
       const details = allDetails.slice(startIndex, endIndex);
       const totalCount = allDetails.length;
 
-      // Calculate summary from all transactions
-      const completedTransactions = allDetails.filter(t => t.status === 'completed');
+      // Calculate summary from transactions only (exclude log cash balances)
+      const completedTransactions = transactionDetails.filter(t => t.status === 'completed');
       const totalRevenue = completedTransactions.reduce((sum, t) => sum + t.total, 0);
       const totalTransactions = completedTransactions.length;
       const avgOrder = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
