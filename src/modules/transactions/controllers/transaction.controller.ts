@@ -583,7 +583,7 @@ export class TransactionController {
             addOn: item.addOn,
             addOnPrice: item.addOnPrice,
             note: item.note,
-            status: isAutoComplete ? 'completed' : 'preparation',
+            status: 'preparation',
           })),
         });
 
