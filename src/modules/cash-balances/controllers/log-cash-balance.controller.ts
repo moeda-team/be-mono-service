@@ -8,7 +8,6 @@ import { Decimal as DecimalClass } from '@prisma/client/runtime/library';
 export class LogCashBalanceController {
   async getAllLogCashBalances(req: Request, res: Response) {
     const user = (req as Request & { user: { outletId: string } }).user;
-    console.log(user);
 
     const { search, type } = req.query as { search: string; type: string };
     const page = parseInt(req.query.page as string) || null;

@@ -149,7 +149,6 @@ export class ActivityController {
       quantity: parseFloat(req.body.quantity),
     };
     const user = req.user;
-    console.log('User:', user);
 
     try {
       const inventory = await prisma.inventory.findUnique({

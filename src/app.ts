@@ -23,6 +23,7 @@ import discountRouter from './modules/discounts/routes';
 import tableRouter from './modules/tables/routes';
 import websocketRouter from './modules/websockets/routes';
 import cashBalanceRouter from './modules/cash-balances/routes/cash-balance.routes';
+import reportRouter from './modules/reports/routes';
 
 const app = express();
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
@@ -112,6 +113,7 @@ router.use(`/v1/discounts`, discountRouter);
 router.use(`/v1/tables`, tableRouter);
 router.use(`/v1/websockets`, websocketRouter);
 router.use(`/v1/cash-balances`, cashBalanceRouter);
+router.use(`/v1/reports`, reportRouter);
 
 app.use(router);
 
