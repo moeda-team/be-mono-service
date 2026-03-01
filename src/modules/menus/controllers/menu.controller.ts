@@ -300,6 +300,23 @@ export class MenuController {
         });
       }
 
+      // Check if menu is being used in transactions
+      const transactionCount = await prisma.subTransaction.count({
+        where: {
+          menuId: id,
+          transaction: {
+            outletId,
+          },
+        },
+      });
+
+      if (transactionCount > 0) {
+        return ResponseHandler.error(res, {
+          message: 'Cannot delete menu that is being used in transactions',
+          statusCode: 400,
+        });
+      }
+
       await prisma.menu.delete({
         where: { id, outletId },
       });
