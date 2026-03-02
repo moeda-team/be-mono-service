@@ -11,7 +11,7 @@ export class ReportController {
 
     try {
       const date = (req.query.date as string) || format(new Date(), 'yyyy-MM-dd');
-      const yesterdayDate = format(addDays(new Date(), -1), 'yyyy-MM-dd');
+      const yesterdayDate = format(addDays(new Date(date), -1), 'yyyy-MM-dd');
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
 
