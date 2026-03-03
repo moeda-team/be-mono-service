@@ -6,13 +6,9 @@ import {
 } from '../validators/attendance.validator';
 import { jwtAuth, requirePermission } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
-import multer from 'multer';
 
 const router = Router();
 const attendanceController = new AttendanceController();
-
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
 
 router.post(
   '/',
