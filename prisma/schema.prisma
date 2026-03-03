@@ -493,7 +493,6 @@ model Attendance {
   outletId  String   @db.VarChar(36)
   fileName  String   @db.VarChar(255)
   fileUrl   String   @db.Text
-  status    String   @default("pending") @db.VarChar(20)
   note      String?  @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -503,8 +502,6 @@ model Attendance {
 
   @@index([userId])
   @@index([outletId])
-  @@index([status])
-  @@index([outletId, status])
   @@index([createdAt])
   @@map("attendances")
 }

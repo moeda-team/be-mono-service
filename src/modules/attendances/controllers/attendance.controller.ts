@@ -58,7 +58,6 @@ export class AttendanceController {
           outletId: user.outletId,
           fileName: fileName,
           fileUrl: body.fileUrl,
-          status: body.status || 'pending',
           note: body.note,
         },
       });
