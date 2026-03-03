@@ -3,6 +3,7 @@ import { logger } from '../../../utils/common/logger';
 import { CreateTableDTO, UpdateTableDTO } from '../models/table.model';
 import { TableService } from '../services/table.service';
 import { BaseController } from './base.controller';
+import { AppError } from '../../../utils/errors/custom.errors';
 
 const tableService = new TableService();
 
@@ -19,6 +20,14 @@ export class TableController extends BaseController {
       });
     } catch (error) {
       logger.error('Error creating table:', error);
+
+      if (error && typeof error === 'object' && 'message' in error && 'statusCode' in error) {
+        return this.sendError(res, {
+          message: String(error.message),
+          statusCode: Number(error.statusCode),
+        });
+      }
+
       return this.sendError(res, {
         message: 'Internal server error',
         statusCode: 500,
@@ -100,6 +109,14 @@ export class TableController extends BaseController {
       });
     } catch (error) {
       logger.error('Error updating table:', error);
+
+      if (error && typeof error === 'object' && 'message' in error && 'statusCode' in error) {
+        return this.sendError(res, {
+          message: String(error.message),
+          statusCode: Number(error.statusCode),
+        });
+      }
+
       return this.sendError(res, {
         message: 'Internal server error',
         statusCode: 500,
@@ -127,6 +144,14 @@ export class TableController extends BaseController {
       });
     } catch (error) {
       logger.error('Error deleting table:', error);
+
+      if (error && typeof error === 'object' && 'message' in error && 'statusCode' in error) {
+        return this.sendError(res, {
+          message: String(error.message),
+          statusCode: Number(error.statusCode),
+        });
+      }
+
       return this.sendError(res, {
         message: 'Internal server error',
         statusCode: 500,

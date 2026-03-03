@@ -83,7 +83,7 @@ model Transaction {
 
   user    User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   outlet  Outlet?  @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  table   Tables?  @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  table   Tables?  @relation(fields: [tableId], references: [id], onDelete: Cascade)
   voucher Voucher? @relation(fields: [voucherId], references: [id], onDelete: Cascade)
 
   logVoucher      LogVoucher[]
@@ -117,7 +117,7 @@ model SubTransaction {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  menu        Menu        @relation(fields: [menuId], references: [id])
+  menu        Menu        @relation(fields: [menuId], references: [id], onDelete: Cascade)
   transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 
   @@index([transactionId])
@@ -283,7 +283,7 @@ model Menu {
   updatedAt  DateTime @updatedAt
 
   outlet         Outlet?          @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  category       Category         @relation(fields: [categoryId], references: [id])
+  category       Category         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   subTransaction SubTransaction[]
 
   voucherMenus    VoucherMenu[]
@@ -306,7 +306,7 @@ model Option {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  menu Menu @relation(fields: [menuId], references: [id])
+  menu Menu @relation(fields: [menuId], references: [id], onDelete: Cascade)
 
   @@map("options")
 }
@@ -394,7 +394,7 @@ model StockTransaction {
 
   inventory Inventory @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
   outlet    Outlet    @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  user      User?     @relation(fields: [createdBy], references: [id])
+  user      User?     @relation(fields: [createdBy], references: [id], onDelete: SetNull)
 
   @@index([ingredientId])
   @@index([outletId])
@@ -453,7 +453,7 @@ model CashBalance {
 
   outlet          Outlet?          @relation(fields: [outletId], references: [id], onDelete: Cascade)
   logCashBalances LogCashBalance[]
-  user            User?            @relation(fields: [userId], references: [id])
+  user            User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
   userId          String?          @db.VarChar(36)
 
   @@index([outletId])
