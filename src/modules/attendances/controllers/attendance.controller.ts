@@ -76,7 +76,7 @@ export class AttendanceController {
   }
 
   async checkAttendanceToday(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string; id: string } }).user;
+    const user = (req as Request & { user: { outletId: string; userId: string } }).user;
     const { userId } = req.query;
 
     try {
@@ -94,7 +94,7 @@ export class AttendanceController {
 
       const existingAttendance = await prisma.attendance.findFirst({
         where: {
-          userId: (userId as string) || user.id,
+          userId: (userId as string) || user.userId,
           createdAt: {
             gte: today,
             lt: tomorrow,
