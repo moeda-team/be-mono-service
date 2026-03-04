@@ -34,6 +34,7 @@ model User {
   cashBalances      CashBalance[]
   logCashBalances   LogCashBalance[]
   attendances       Attendance[]
+  cashBooks         CashBook[]
 
   @@index([email])
   @@index([outletId])
@@ -57,6 +58,24 @@ model Message {
   @@map("messages")
 }
 
+model CashBook {
+  id        String    @id @default(uuid()) @db.VarChar(36)
+  outletId  String?   @db.VarChar(36)
+  userId    String    @db.VarChar(36)
+  openAt    DateTime
+  closeAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  outlet       Outlet?       @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([outletId])
+  @@index([userId])
+  @@map("cash_books")
+}
+
 model Transaction {
   id                  String   @id @default(uuid()) @db.VarChar(36)
   userId              String?  @db.VarChar(36)
@@ -78,13 +97,15 @@ model Transaction {
   voucherId           String?  @db.VarChar(36)
   status              String   @default("pending") @db.VarChar(20)
   fraudStatus         String   @default("pending") @db.VarChar(20)
+  cashBookId          String?  @db.VarChar(36)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  user    User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  outlet  Outlet?  @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  table   Tables?  @relation(fields: [tableId], references: [id], onDelete: Cascade)
-  voucher Voucher? @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  user     User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outlet   Outlet?   @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  table    Tables?   @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  voucher  Voucher?  @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  cashBook CashBook? @relation(fields: [cashBookId], references: [id], onDelete: Cascade)
 
   logVoucher      LogVoucher[]
   subTransactions SubTransaction[]
@@ -155,6 +176,7 @@ model Outlet {
   cashBalances      CashBalance[]
   logCashBalances   LogCashBalance[]
   attendances       Attendance[]
+  cashBooks         CashBook[]
 
   @@index([status])
   @@map("outlets")
