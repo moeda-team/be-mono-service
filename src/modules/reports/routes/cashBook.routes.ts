@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { CashBookController } from '../controllers/cashBook.controller';
-import { jwtAuth, requirePermission } from '../../../middlewares';
+import { jwtAuth, jwtAuthNotRequired, requirePermission } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
 import { validateCashBookId, validateCashBookListQuery } from '../validators/cashBook.validator';
 
@@ -23,6 +23,9 @@ router.post(
   requirePermission(UserRole.STORE_MANAGER),
   cashBookController.createCashBook,
 );
+
+// Check if there's an open cash book
+router.get('/check', jwtAuthNotRequired, cashBookController.checkOpenCashBook);
 
 // Get specific cash book report with transactions
 router.get(

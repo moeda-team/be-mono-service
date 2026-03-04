@@ -310,6 +310,45 @@ export class CashBookController {
     }
   }
 
+  async checkOpenCashBook(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string } }).user;
+
+    try {
+      const outletId = user?.outletId || (req?.headers['Outletid'] as string);
+      if (!outletId) {
+        return ResponseHandler.error(res, {
+          message: 'Outlet ID not found',
+          statusCode: 400,
+        });
+      }
+
+      const cashBook = await prisma.cashBook.findFirst({
+        where: {
+          outletId: outletId,
+          closeAt: null,
+        },
+      });
+
+      if (!cashBook) {
+        return ResponseHandler.success(res, {
+          message: 'No open cash book found',
+          data: false,
+        });
+      }
+
+      return ResponseHandler.success(res, {
+        message: 'Open cash book found',
+        data: true,
+      });
+    } catch (error) {
+      logger.error('Error checking open cash book:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
   async closeCashBook(req: Request, res: Response) {
     const user = (req as Request & { user: { outletId: string } }).user;
 
