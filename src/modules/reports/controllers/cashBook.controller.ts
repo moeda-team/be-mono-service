@@ -3,7 +3,6 @@ import { logger } from '../../../utils/common/logger';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { CashBookSummary } from '../models/cashBook';
 import prisma from '../../../config/database';
-import { format, addDays, startOfDay } from 'date-fns';
 
 export class CashBookController {
   async getCashBookReport(req: Request, res: Response) {
@@ -33,12 +32,6 @@ export class CashBookController {
           statusCode: 404,
         });
       }
-
-      const date = format(new Date(cashBook.openAt), 'yyyy-MM-dd');
-      const yesterdayDate = format(addDays(new Date(cashBook.openAt), -1), 'yyyy-MM-dd');
-
-      const todayStart = startOfDay(new Date(cashBook.openAt));
-      const yesterdayStart = startOfDay(addDays(new Date(cashBook.openAt), -1));
 
       const whereClause = {
         cashBookId,
@@ -71,7 +64,6 @@ export class CashBookController {
         prisma.transaction.aggregate({
           where: {
             ...whereClause,
-            createdAt: { gte: todayStart },
           },
           _sum: { total: true },
           _count: { id: true },
@@ -80,10 +72,6 @@ export class CashBookController {
         prisma.transaction.aggregate({
           where: {
             ...whereClause,
-            createdAt: {
-              gte: yesterdayStart,
-              lt: todayStart,
-            },
           },
           _sum: { total: true },
           _count: { id: true },
@@ -120,9 +108,6 @@ export class CashBookController {
         closeAt: cashBook.closeAt,
         status: cashBook.closeAt ? 'closed' : 'open',
         user: cashBook.user,
-
-        date,
-        yesterdayDate,
 
         totalRevenue,
         totalTransactions,
@@ -224,48 +209,12 @@ export class CashBookController {
 
       const cashBooksWithStats: CashBookSummary[] = await Promise.all(
         cashBooks.map(async (cashBook: any) => {
-          const date = format(new Date(cashBook.openAt), 'yyyy-MM-dd');
-          const yesterdayDate = format(addDays(new Date(cashBook.openAt), -1), 'yyyy-MM-dd');
-
-          const todayStart = startOfDay(new Date(cashBook.openAt));
-          const yesterdayStart = startOfDay(addDays(new Date(cashBook.openAt), -1));
-
-          const [summaryStats, todayStats, yesterdayStats] = await Promise.all([
-            prisma.transaction.groupBy({
-              by: ['paymentMethod'],
-              where: {
-                cashBookId: cashBook.id,
-                outletId: user.outletId,
-                status: 'completed',
-              },
-              _count: {
-                id: true,
-              },
-              _sum: {
-                total: true,
-              },
-            }),
-
+          const [todayStats] = await Promise.all([
             prisma.transaction.aggregate({
               where: {
                 cashBookId: cashBook.id,
                 outletId: user.outletId,
                 status: 'completed',
-                createdAt: { gte: todayStart },
-              },
-              _sum: { total: true },
-              _count: { id: true },
-            }),
-
-            prisma.transaction.aggregate({
-              where: {
-                cashBookId: cashBook.id,
-                outletId: user.outletId,
-                status: 'completed',
-                createdAt: {
-                  gte: yesterdayStart,
-                  lt: todayStart,
-                },
               },
               _sum: { total: true },
               _count: { id: true },
@@ -275,27 +224,6 @@ export class CashBookController {
           const totalRevenue = Number(todayStats._sum.total || 0);
           const totalTransactions = todayStats._count.id || 0;
 
-          const avgOrder = totalTransactions ? totalRevenue / totalTransactions : 0;
-
-          const yesterdayRevenue = Number(yesterdayStats._sum.total || 0);
-          const yesterdayTransactions = yesterdayStats._count.id || 0;
-
-          const yesterdayAvgOrder = yesterdayTransactions
-            ? yesterdayRevenue / yesterdayTransactions
-            : 0;
-
-          const revenueGrowth = yesterdayRevenue
-            ? ((totalRevenue - yesterdayRevenue) / yesterdayRevenue) * 100
-            : 0;
-
-          const transactionGrowth = yesterdayTransactions
-            ? ((totalTransactions - yesterdayTransactions) / yesterdayTransactions) * 100
-            : 0;
-
-          const avgOrderGrowth = yesterdayAvgOrder
-            ? ((avgOrder - yesterdayAvgOrder) / yesterdayAvgOrder) * 100
-            : 0;
-
           return {
             id: cashBook.id,
             openAt: cashBook.openAt,
@@ -304,15 +232,6 @@ export class CashBookController {
             totalRevenue: Number(totalRevenue),
             status: cashBook.closeAt ? 'closed' : ('open' as 'open' | 'closed'),
             user: cashBook.user,
-
-            date,
-            yesterdayDate,
-
-            avgOrder: Math.round(avgOrder),
-
-            revenueGrowth: Math.round(revenueGrowth * 10) / 10,
-            transactionGrowth: Math.round(transactionGrowth * 10) / 10,
-            avgOrderGrowth: Math.round(avgOrderGrowth * 10) / 10,
           };
         }),
       );
