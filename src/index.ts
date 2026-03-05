@@ -14,13 +14,13 @@ const startServer = async () => {
     const httpServer = createServer(app);
 
     // Initialize WebSocket service
-    initializeWebSocket(httpServer);
+    // initializeWebSocket(httpServer);
 
     httpServer.listen(config.port, () => {
       logger.info('Starting');
       logger.info(`Server is running on port ${config.port}`);
       logger.info(`API is available at ${config.apiPrefix}`);
-      logger.info('WebSocket server is initialized');
+      // logger.info('WebSocket server is initialized');
     });
   } catch (error) {
     logger.error('Error starting server:', error);
