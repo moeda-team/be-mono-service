@@ -382,7 +382,7 @@ export class TransactionController {
         });
       }
 
-      const allowedPaymentMethods = ['cash', 'qris'] as const;
+      const allowedPaymentMethods = ['cash', 'debit', 'qris'] as const;
       if (!allowedPaymentMethods.includes(transactionData.paymentMethod as any)) {
         return ResponseHandler.error(res, {
           message: 'Invalid payment method',
@@ -541,7 +541,10 @@ export class TransactionController {
 
       if (isAutoComplete) {
         transactionStatus = 'completed';
-      } else if (transactionData.paymentMethod === 'cash') {
+      } else if (
+        transactionData.paymentMethod === 'cash' ||
+        transactionData.paymentMethod === 'debit'
+      ) {
         transactionStatus = 'completed';
       }
 
@@ -615,7 +618,11 @@ export class TransactionController {
       });
 
       // Reduce ingredients and log activity for auto-complete transactions
-      if (isAutoComplete || transactionData.paymentMethod === 'cash') {
+      if (
+        isAutoComplete ||
+        transactionData.paymentMethod === 'cash' ||
+        transactionData.paymentMethod === 'debit'
+      ) {
         await IngredientService.reduceIngredientsAndLogActivity(result);
       }
 

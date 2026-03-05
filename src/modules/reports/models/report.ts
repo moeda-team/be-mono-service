@@ -4,7 +4,7 @@ export interface DailyReportDetail {
   description?: string | null;
   qty: number;
   total: number;
-  paymentMethod: 'cash' | 'qris' | string;
+  paymentMethod: 'cash' | 'debit' | 'qris' | string;
   status: 'pending' | 'cancelled' | 'completed' | string;
   createdAt: Date;
 }

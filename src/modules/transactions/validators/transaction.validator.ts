@@ -17,7 +17,7 @@ export const validateCreateTransaction = [
     .isUUID()
     .withMessage('Table ID must be a valid UUID'),
   body('paymentMethod')
-    .isIn(['cash', 'qris'])
+    .isIn(['cash', 'debit', 'qris'])
     .trim()
     .notEmpty()
     .withMessage('Payment method is required'),
@@ -153,7 +153,7 @@ export const validateCalculation = [
     .trim()
     .notEmpty()
     .withMessage('Payment method is required')
-    .isIn(['cash', 'qris']),
+    .isIn(['cash', 'debit', 'qris']),
   body('total')
     .notEmpty()
     .withMessage('Total is required')

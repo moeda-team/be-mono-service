@@ -55,7 +55,11 @@ export class ReportController {
         description: transaction.additionalNote || `${transaction.totalSubTransaction} items`,
         qty: transaction.totalSubTransaction,
         total: Number(transaction.total),
-        paymentMethod: transaction.paymentMethod.toLowerCase() as 'cash' | 'qris' | string,
+        paymentMethod: transaction.paymentMethod.toLowerCase() as
+          | 'cash'
+          | 'debit'
+          | 'qris'
+          | string,
         status: transaction.status as 'pending' | 'cancelled' | 'completed' | string,
         createdAt: transaction.createdAt,
       }));
@@ -190,6 +194,9 @@ export class ReportController {
 
         // Count transactions by payment method
         const cashCount = transactions.filter(t => t.paymentMethod.toLowerCase() === 'cash').length;
+        const debitCount = transactions.filter(
+          t => t.paymentMethod.toLowerCase() === 'debit',
+        ).length;
         const qrisCount = transactions.filter(t => t.paymentMethod.toLowerCase() === 'qris').length;
 
         salesData.push({
@@ -197,6 +204,7 @@ export class ReportController {
           transactions_amount: salesAmount,
           transactions_count: transactions.length,
           cash_count: cashCount,
+          debitCount: debitCount,
           qris_count: qrisCount,
         });
       }

@@ -403,7 +403,7 @@ export class TransactionService extends BaseService {
       return 'completed';
     }
 
-    if (paymentMethod !== 'cash') {
+    if (paymentMethod !== 'cash' && paymentMethod !== 'debit') {
       return providedStatus || 'pending';
     }
 

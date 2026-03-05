@@ -54,7 +54,7 @@ export class TransactionController {
       body('tableId').isUUID().withMessage('Table ID must be a valid UUID'),
       body('paymentMethod')
         .isString()
-        .isIn(['cash', 'qris', 'gopay', 'shopeepay'])
+        .isIn(['cash', 'debit', 'qris'])
         .withMessage('Invalid payment method'),
       body('customerName')
         .optional()
