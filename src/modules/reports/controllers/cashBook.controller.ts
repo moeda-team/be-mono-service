@@ -314,7 +314,7 @@ export class CashBookController {
     const user = (req as Request & { user: { outletId: string } }).user;
 
     try {
-      const outletId = user?.outletId || (req?.headers['Outletid'] as string);
+      const outletId = user?.outletId || (req?.headers['outletid'] as string);
       if (!outletId) {
         return ResponseHandler.error(res, {
           message: 'Outlet ID not found',
