@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { logger } from '../../../utils/common/logger';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
-import { addDays, format } from 'date-fns';
+import { addDays, format, subDays } from 'date-fns';
 import { DailyReportDetail, DailyReportResponse } from '../models/report';
 import prisma from '../../../config/database';
 
@@ -145,6 +145,68 @@ export class ReportController {
       });
     } catch (error) {
       logger.error('Error getting daily report:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async salesAnalytics(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string } }).user;
+
+    try {
+      // Indonesian day names mapping
+      const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+
+      // Generate data for past 7 days including today
+      const salesData = [];
+      const today = new Date();
+
+      for (let i = 6; i >= 0; i--) {
+        const date = subDays(today, i);
+        const dateStr = format(date, 'yyyy-MM-dd');
+        const dayName = dayNames[date.getDay()];
+        const day = format(date, 'dd');
+        const formattedDate = `${day} ${dayName}`;
+
+        // Fetch transactions for this date
+        const transactions = await prisma.transaction.findMany({
+          where: {
+            outletId: user.outletId,
+            status: 'completed',
+            createdAt: {
+              gte: new Date(`${dateStr}T00:00:00Z`),
+              lt: new Date(`${dateStr}T23:59:59Z`),
+            },
+          },
+        });
+
+        // Calculate total sales for the day
+        const salesAmount = transactions.reduce(
+          (sum, transaction) => sum + Number(transaction.total),
+          0,
+        );
+
+        // Count transactions by payment method
+        const cashCount = transactions.filter(t => t.paymentMethod.toLowerCase() === 'cash').length;
+        const qrisCount = transactions.filter(t => t.paymentMethod.toLowerCase() === 'qris').length;
+
+        salesData.push({
+          date: formattedDate,
+          transactions_amount: salesAmount,
+          transactions_count: transactions.length,
+          cash_count: cashCount,
+          qris_count: qrisCount,
+        });
+      }
+
+      return ResponseHandler.success(res, {
+        message: 'Sales analytics retrieved successfully',
+        data: salesData,
+      });
+    } catch (error) {
+      logger.error('Error getting sales analytics:', error);
       return ResponseHandler.error(res, {
         message: 'Internal server error',
         statusCode: 500,
