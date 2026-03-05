@@ -213,4 +213,57 @@ export class ReportController {
       });
     }
   }
+
+  async topSellingMenu(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string } }).user;
+
+    try {
+      // Get date from one week ago
+      const oneWeekAgo = subDays(new Date(), 7);
+
+      // Fetch completed transactions from the past week
+      const transactions = await prisma.transaction.findMany({
+        where: {
+          outletId: user.outletId,
+          status: 'completed',
+          createdAt: {
+            gte: oneWeekAgo,
+          },
+        },
+        include: {
+          subTransactions: true,
+        },
+      });
+
+      // Aggregate menu quantities from all sub-transactions
+      const menuQuantities = new Map<string, number>();
+
+      transactions.forEach(transaction => {
+        transaction.subTransactions.forEach(subTransaction => {
+          const currentQuantity = menuQuantities.get(subTransaction.menuName) || 0;
+          menuQuantities.set(subTransaction.menuName, currentQuantity + subTransaction.quantity);
+        });
+      });
+
+      // Convert to array and sort by quantity sold (descending)
+      const topSellingData = Array.from(menuQuantities.entries())
+        .map(([menu_name, quantity_sold]) => ({
+          menu_name,
+          quantity_sold,
+        }))
+        .sort((a, b) => b.quantity_sold - a.quantity_sold)
+        .slice(0, 10);
+
+      return ResponseHandler.success(res, {
+        message: 'Top selling menu retrieved successfully',
+        data: topSellingData,
+      });
+    } catch (error) {
+      logger.error('Error getting top selling menu:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
 }

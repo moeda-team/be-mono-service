@@ -17,4 +17,12 @@ router.get(
   reportController.salesAnalytics,
 );
 
+// Top selling menu route
+router.get(
+  '/top-selling',
+  jwtAuth,
+  requirePermission(UserRole.EMPLOYEE),
+  reportController.topSellingMenu,
+);
+
 export default router;
