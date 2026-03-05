@@ -6,6 +6,7 @@ export interface DailyReportDetail {
   total: number;
   paymentMethod: 'cash' | 'debit' | 'qris' | string;
   status: 'pending' | 'cancelled' | 'completed' | string;
+  statusOrder: 'pending' | 'cancelled' | 'completed' | string;
   createdAt: Date;
 }
 

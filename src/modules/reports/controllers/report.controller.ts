@@ -47,9 +47,15 @@ export class ReportController {
           },
         }),
       ]);
+      const transactionsWithStatus = transactions.map(transaction => ({
+        ...transaction,
+        statusOrder: transaction.subTransactions.every(sub => sub.status === 'completed')
+          ? 'completed'
+          : 'pending',
+      }));
 
       // Transform transactions into DailyReportDetail format
-      const transactionDetails: DailyReportDetail[] = transactions.map(transaction => ({
+      const transactionDetails: DailyReportDetail[] = transactionsWithStatus.map(transaction => ({
         orderId: transaction.id,
         orderName: `Transaction ${transaction.number}`,
         description: transaction.additionalNote || `${transaction.totalSubTransaction} items`,
@@ -61,6 +67,7 @@ export class ReportController {
           | 'qris'
           | string,
         status: transaction.status as 'pending' | 'cancelled' | 'completed' | string,
+        statusOrder: transaction.statusOrder,
         createdAt: transaction.createdAt,
       }));
 
@@ -76,6 +83,7 @@ export class ReportController {
         total: Number(log.amount),
         paymentMethod: 'cash' as const,
         status: log.status === 'cancelled' ? 'cancelled' : 'completed',
+        statusOrder: '',
         createdAt: log.createdAt,
       }));
 
