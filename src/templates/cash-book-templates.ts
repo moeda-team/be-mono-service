@@ -105,10 +105,7 @@ export const formatCashBookSummaryData = (
       template.summary.sections.performanceMetrics.data[0].metric,
       totalRevenue.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }),
     ],
-    [
-      template.summary.sections.performanceMetrics.data[1].metric,
-      totalTransactions,
-    ],
+    [template.summary.sections.performanceMetrics.data[1].metric, totalTransactions],
     [
       template.summary.sections.performanceMetrics.data[2].metric,
       Math.round(avgOrder).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }),
