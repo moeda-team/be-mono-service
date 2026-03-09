@@ -8,6 +8,12 @@ const reportController = new ReportController();
 
 // Daily report route
 router.get('/daily', jwtAuth, requirePermission(UserRole.EMPLOYEE), reportController.dailyReport);
+router.post(
+  '/daily/download',
+  jwtAuth,
+  requirePermission(UserRole.EMPLOYEE),
+  reportController.dailyReportDownload,
+);
 
 // Sales analytics route
 router.get(

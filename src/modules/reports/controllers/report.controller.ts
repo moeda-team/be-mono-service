@@ -4,6 +4,14 @@ import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { addDays, format, subDays } from 'date-fns';
 import { DailyReportDetail, DailyReportResponse } from '../models/report';
 import prisma from '../../../config/database';
+import * as XLSX from 'xlsx';
+import * as fs from 'fs';
+import * as path from 'path';
+import {
+  dailyReportTemplate,
+  formatSummaryData,
+  formatDetailsData,
+} from '../../../templates/excel-templates';
 
 export class ReportController {
   async dailyReport(req: Request, res: Response) {
@@ -157,6 +165,193 @@ export class ReportController {
       });
     } catch (error) {
       logger.error('Error getting daily report:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async dailyReportDownload(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string } }).user;
+
+    try {
+      const date = (req.query.date as string) || format(new Date(), 'yyyy-MM-dd');
+      const yesterdayDate = format(addDays(new Date(date), -1), 'yyyy-MM-dd');
+
+      // Fetch all transactions and log cash balances from database (same as dailyReport)
+      const [transactions, logCashBalances] = await Promise.all([
+        prisma.transaction.findMany({
+          where: {
+            outletId: user.outletId,
+            createdAt: {
+              gte: new Date(`${date}T00:00:00Z`),
+              lt: new Date(`${date}T23:59:59Z`),
+            },
+          },
+          include: {
+            subTransactions: true,
+          },
+        }),
+        prisma.logCashBalance.findMany({
+          where: {
+            outletId: user.outletId,
+            createdAt: {
+              gte: new Date(`${date}T00:00:00Z`),
+              lt: new Date(`${date}T23:59:59Z`),
+            },
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        }),
+      ]);
+
+      const transactionsWithStatus = transactions.map(transaction => ({
+        ...transaction,
+        statusOrder: transaction.subTransactions.every(sub => sub.status === 'completed')
+          ? 'completed'
+          : 'pending',
+      }));
+
+      // Transform transactions into DailyReportDetail format
+      const transactionDetails: DailyReportDetail[] = transactionsWithStatus.map(transaction => ({
+        orderId: transaction.id,
+        orderName: `Transaction ${transaction.number}`,
+        description: transaction.additionalNote || `${transaction.totalSubTransaction} items`,
+        qty: transaction.totalSubTransaction,
+        total: Number(transaction.total),
+        paymentMethod: transaction.paymentMethod.toLowerCase() as
+          | 'cash'
+          | 'debit'
+          | 'qris'
+          | string,
+        status: transaction.status as 'pending' | 'cancelled' | 'completed' | string,
+        statusOrder: transaction.statusOrder,
+        createdAt: transaction.createdAt,
+      }));
+
+      // Transform log cash balances into DailyReportDetail format
+      const logCashBalanceDetails: DailyReportDetail[] = logCashBalances.map(log => ({
+        orderId: log.id,
+        orderName: `Cash Balance ${log.type}`,
+        description:
+          log.status === 'cancelled'
+            ? log.cancelNote
+            : log.description || `${log.type} transaction`,
+        qty: 1,
+        total: Number(log.amount),
+        paymentMethod: 'cash' as const,
+        status: log.status === 'cancelled' ? 'cancelled' : 'completed',
+        statusOrder: '',
+        createdAt: log.createdAt,
+      }));
+
+      // Combine and sort by date (newest first)
+      const allDetails: DailyReportDetail[] = [
+        ...transactionDetails,
+        ...logCashBalanceDetails,
+      ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      // Calculate summary from transactions only (exclude log cash balances)
+      const completedTransactions = transactionDetails.filter(t => t.status === 'completed');
+      const totalRevenue = completedTransactions.reduce((sum, t) => sum + t.total, 0);
+      const totalTransactions = completedTransactions.length;
+      const avgOrder = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
+
+      // Fetch yesterday's transactions for growth calculation
+      const yesterdayTransactions = await prisma.transaction.findMany({
+        where: {
+          outletId: user.outletId,
+          createdAt: {
+            gte: new Date(`${yesterdayDate}T00:00:00Z`),
+            lt: new Date(`${yesterdayDate}T23:59:59Z`),
+          },
+          status: 'completed',
+        },
+      });
+
+      const yesterdayRevenue = yesterdayTransactions.reduce((sum, t) => sum + Number(t.total), 0);
+      const yesterdayTransactionCount = yesterdayTransactions.length;
+      const yesterdayAvgOrder =
+        yesterdayTransactionCount > 0 ? yesterdayRevenue / yesterdayTransactionCount : 0;
+
+      const revenueGrowth =
+        yesterdayRevenue > 0 ? ((totalRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0;
+      const transactionGrowth =
+        yesterdayTransactionCount > 0
+          ? ((totalTransactions - yesterdayTransactionCount) / yesterdayTransactionCount) * 100
+          : 0;
+      const avgOrderGrowth =
+        yesterdayAvgOrder > 0 ? ((avgOrder - yesterdayAvgOrder) / yesterdayAvgOrder) * 100 : 0;
+
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+
+      // Create summary worksheet using template
+      const summaryData = formatSummaryData(
+        dailyReportTemplate,
+        date,
+        yesterdayDate,
+        totalRevenue,
+        totalTransactions,
+        avgOrder,
+        yesterdayRevenue,
+        yesterdayTransactionCount,
+        yesterdayAvgOrder,
+        revenueGrowth,
+        transactionGrowth,
+        avgOrderGrowth,
+      );
+
+      const summaryWorksheet = XLSX.utils.aoa_to_sheet(summaryData);
+
+      // Set column widths from template
+      summaryWorksheet['!cols'] = dailyReportTemplate.summary.columnWidths.map(width => ({
+        wch: width,
+      }));
+
+      XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Summary');
+
+      // Create details worksheet using template (without Order ID)
+      const detailsData = formatDetailsData(dailyReportTemplate, allDetails);
+
+      const detailsWorksheet = XLSX.utils.aoa_to_sheet(detailsData);
+
+      // Set column widths from template
+      detailsWorksheet['!cols'] = dailyReportTemplate.details.columnWidths.map(width => ({
+        wch: width,
+      }));
+
+      XLSX.utils.book_append_sheet(workbook, detailsWorksheet, 'Details');
+
+      // Generate file buffer
+      const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+      // Save file to output directory
+      const filename = `daily-report-${date}.xlsx`;
+      const outputPath = path.join(process.cwd(), 'output', filename);
+
+      // Write file to output directory
+      fs.writeFileSync(outputPath, excelBuffer);
+      logger.info(`Daily report saved to output directory: ${outputPath}`);
+
+      // Set headers for file download
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', excelBuffer.length);
+
+      return res.send(excelBuffer);
+    } catch (error) {
+      logger.error('Error generating daily report download:', error);
       return ResponseHandler.error(res, {
         message: 'Internal server error',
         statusCode: 500,
