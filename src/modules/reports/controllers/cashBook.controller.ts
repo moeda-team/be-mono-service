@@ -281,14 +281,22 @@ export class CashBookController {
       XLSX.utils.book_append_sheet(workbook, detailsWorksheet, 'Details');
 
       const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-      const base64Data = excelBuffer.toString('base64');
       const filename = `cash-book-report-${cashBookId}.xlsx`;
 
-      const outputPath = path.join(process.cwd(), 'output', filename);
-      fs.writeFileSync(outputPath, excelBuffer);
-      logger.info(`Cash book report saved to output directory: ${outputPath}`);
+      // Write file to output directory
+      // const outputPath = path.join(process.cwd(), 'output', filename);
+      // fs.writeFileSync(outputPath, excelBuffer);
+      // logger.info(`Cash book report saved to output directory: ${outputPath}`);
 
-      return res.send(base64Data);
+      // Set response headers for blob download
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', excelBuffer.length);
+
+      return res.send(excelBuffer);
     } catch (error) {
       logger.error('Error generating cash book report download:', error);
       return ResponseHandler.error(res, {

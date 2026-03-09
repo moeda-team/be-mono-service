@@ -331,7 +331,6 @@ export class ReportController {
       XLSX.utils.book_append_sheet(workbook, detailsWorksheet, 'Details');
 
       const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-      const base64Data = excelBuffer.toString('base64');
       const filename = `daily-report-${date}.xlsx`;
 
       // Write file to output directory
@@ -339,7 +338,15 @@ export class ReportController {
       // fs.writeFileSync(outputPath, excelBuffer);
       // logger.info(`Daily report saved to output directory: ${outputPath}`);
 
-      return res.send(base64Data);
+      // Set response headers for blob download
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', excelBuffer.length);
+
+      return res.send(excelBuffer);
     } catch (error) {
       logger.error('Error generating daily report download:', error);
       return ResponseHandler.error(res, {
