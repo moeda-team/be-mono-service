@@ -333,23 +333,25 @@ export class ReportController {
       // Generate file buffer
       const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
+      // Convert buffer to base64
+      const base64Data = excelBuffer.toString('base64');
+
       // Save file to output directory
       const filename = `daily-report-${date}.xlsx`;
-      const outputPath = path.join(process.cwd(), 'output', filename);
+      // const outputPath = path.join(process.cwd(), 'output', filename);
 
       // Write file to output directory
-      fs.writeFileSync(outputPath, excelBuffer);
-      logger.info(`Daily report saved to output directory: ${outputPath}`);
+      // fs.writeFileSync(outputPath, excelBuffer);
+      // logger.info(`Daily report saved to output directory: ${outputPath}`);
 
-      // Set headers for file download
-      res.setHeader(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      );
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.setHeader('Content-Length', excelBuffer.length);
-
-      return res.send(excelBuffer);
+      return ResponseHandler.success(res, {
+        message: 'Daily report generated successfully',
+        data: {
+          filename,
+          base64: base64Data,
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+      });
     } catch (error) {
       logger.error('Error generating daily report download:', error);
       return ResponseHandler.error(res, {
