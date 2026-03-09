@@ -35,7 +35,7 @@ router.get(
   validateCashBookId,
   cashBookController.getCashBookReport,
 );
-router.post(
+router.get(
   '/:cashBookId/download',
   jwtAuth,
   requirePermission(UserRole.EMPLOYEE),
