@@ -339,14 +339,7 @@ export class ReportController {
       // fs.writeFileSync(outputPath, excelBuffer);
       // logger.info(`Daily report saved to output directory: ${outputPath}`);
 
-      return ResponseHandler.success(res, {
-        message: 'Daily report generated successfully',
-        data: {
-          filename,
-          base64: base64Data,
-          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        },
-      });
+      return res.send(base64Data);
     } catch (error) {
       logger.error('Error generating daily report download:', error);
       return ResponseHandler.error(res, {
