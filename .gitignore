@@ -11,6 +11,9 @@ pnpm-lock.yaml
 .yarn-integrity
 .npm
 
+# Output
+output/
+
 # Build output
 dist/
 build/

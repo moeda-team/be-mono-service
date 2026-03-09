@@ -11,7 +11,7 @@ import {
   dailyReportTemplate,
   formatSummaryData,
   formatDetailsData,
-} from '../../../templates/excel-templates';
+} from '../../../templates/daily-templates';
 
 export class ReportController {
   async dailyReport(req: Request, res: Response) {
@@ -330,17 +330,12 @@ export class ReportController {
 
       XLSX.utils.book_append_sheet(workbook, detailsWorksheet, 'Details');
 
-      // Generate file buffer
       const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-
-      // Convert buffer to base64
       const base64Data = excelBuffer.toString('base64');
-
-      // Save file to output directory
       const filename = `daily-report-${date}.xlsx`;
-      // const outputPath = path.join(process.cwd(), 'output', filename);
 
       // Write file to output directory
+      // const outputPath = path.join(process.cwd(), 'output', filename);
       // fs.writeFileSync(outputPath, excelBuffer);
       // logger.info(`Daily report saved to output directory: ${outputPath}`);
 

@@ -35,6 +35,13 @@ router.get(
   validateCashBookId,
   cashBookController.getCashBookReport,
 );
+router.post(
+  '/:cashBookId/download',
+  jwtAuth,
+  requirePermission(UserRole.EMPLOYEE),
+  validateCashBookId,
+  cashBookController.downloadCashBookReport,
+);
 
 // Close a cash book
 router.patch(

@@ -3,6 +3,14 @@ import { logger } from '../../../utils/common/logger';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { CashBookSummary } from '../models/cashBook';
 import prisma from '../../../config/database';
+import * as XLSX from 'xlsx';
+import {
+  cashBookTemplate,
+  formatCashBookSummaryData,
+  formatCashBookDetailsData,
+} from '../../../templates/cash-book-templates';
+import path from 'path';
+import fs from 'fs';
 
 export class CashBookController {
   async getCashBookReport(req: Request, res: Response) {
@@ -148,6 +156,148 @@ export class CashBookController {
       });
     } catch (error) {
       logger.error('Error fetching cash book report:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async downloadCashBookReport(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string } }).user;
+
+    try {
+      const cashBookId = req.params.cashBookId;
+
+      const cashBook = await prisma.cashBook.findFirst({
+        where: {
+          id: cashBookId,
+          outletId: user.outletId,
+        },
+        include: {
+          user: {
+            select: { id: true, name: true },
+          },
+        },
+      });
+
+      if (!cashBook) {
+        return ResponseHandler.error(res, {
+          message: 'Cash book not found',
+          statusCode: 404,
+        });
+      }
+
+      const whereClause = {
+        cashBookId,
+        outletId: user.outletId,
+        status: 'completed',
+      };
+
+      const [transactions, totalCount, todayStats] = await Promise.all([
+        prisma.transaction.findMany({
+          where: whereClause,
+          select: {
+            id: true,
+            number: true,
+            transactionType: true,
+            paymentMethod: true,
+            customerName: true,
+            total: true,
+            status: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 100,
+        }),
+
+        prisma.transaction.count({ where: whereClause }),
+
+        prisma.transaction.aggregate({
+          where: whereClause,
+          _sum: { total: true },
+          _count: { id: true },
+        }),
+      ]);
+
+      const totalRevenue = Number(todayStats._sum.total || 0);
+      const totalTransactions = todayStats._count.id || 0;
+      const avgOrder = totalTransactions ? totalRevenue / totalTransactions : 0;
+
+      const summary = {
+        id: cashBook.id,
+        openAt: cashBook.openAt,
+        closeAt: cashBook.closeAt,
+        status: cashBook.closeAt ? 'closed' : 'open',
+        user: cashBook.user,
+        totalRevenue,
+        totalTransactions,
+        avgOrder: Math.round(avgOrder),
+      };
+
+      const formattedTransactions = transactions.map(transaction => ({
+        id: transaction.id,
+        number: transaction.number,
+        transactionType: transaction.transactionType,
+        paymentMethod: transaction.paymentMethod,
+        customerName: transaction.customerName,
+        total: Number(transaction.total),
+        status: transaction.status,
+        createdAt: transaction.createdAt,
+      }));
+
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+
+      // Create summary worksheet using cash book template
+      const summaryData = formatCashBookSummaryData(
+        cashBookTemplate,
+        summary.id,
+        summary.status,
+        summary.totalRevenue,
+        summary.totalTransactions,
+        summary.avgOrder,
+      );
+
+      const summaryWorksheet = XLSX.utils.aoa_to_sheet(summaryData);
+
+      // Set column widths from template
+      summaryWorksheet['!cols'] = cashBookTemplate.summary.columnWidths.map(width => ({
+        wch: width,
+      }));
+
+      XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Summary');
+
+      // Create details worksheet using cash book template
+      const detailsData = formatCashBookDetailsData(cashBookTemplate, formattedTransactions);
+
+      const detailsWorksheet = XLSX.utils.aoa_to_sheet(detailsData);
+
+      // Set column widths from template
+      detailsWorksheet['!cols'] = cashBookTemplate.details.columnWidths.map(width => ({
+        wch: width,
+      }));
+
+      XLSX.utils.book_append_sheet(workbook, detailsWorksheet, 'Details');
+
+      const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+      const base64Data = excelBuffer.toString('base64');
+      const filename = `cash-book-report-${cashBookId}.xlsx`;
+
+      const outputPath = path.join(process.cwd(), 'output', filename);
+      fs.writeFileSync(outputPath, excelBuffer);
+      logger.info(`Cash book report saved to output directory: ${outputPath}`);
+
+      return ResponseHandler.success(res, {
+        message: 'Cash book report generated successfully',
+        data: {
+          filename,
+          base64: base64Data,
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+      });
+    } catch (error) {
+      logger.error('Error generating cash book report download:', error);
       return ResponseHandler.error(res, {
         message: 'Internal server error',
         statusCode: 500,
