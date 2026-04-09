@@ -323,7 +323,7 @@ export class TransactionController {
       const taxableAmount = subTotal - totalDiscountAmount;
 
       const taxRate = 0.11;
-      const tax = Math.floor(taxableAmount * taxRate);
+      const tax = paymentMethod === 'qris' ? Math.floor(taxableAmount * taxRate) : 0;
 
       let serviceCharge = 0;
 
@@ -505,7 +505,8 @@ export class TransactionController {
       const taxableAmount = subTotal - totalDiscountAmount;
 
       const taxRate = 0.11;
-      const tax = Math.floor(taxableAmount * taxRate);
+      const tax =
+        transactionData.paymentMethod === 'qris' ? Math.floor(taxableAmount * taxRate) : 0;
 
       let serviceCharge = 0;
       let rounding = 0;
