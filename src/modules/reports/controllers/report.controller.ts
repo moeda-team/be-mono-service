@@ -2,11 +2,9 @@ import { Request, Response } from 'express';
 import { logger } from '../../../utils/common/logger';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { addDays, format, subDays } from 'date-fns';
-import { DailyReportDetail, DailyReportResponse } from '../models/report';
+import { DailyReportDetail, DailyReportResponse, SystemRevenueResponse } from '../models/report';
 import prisma from '../../../config/database';
 import * as XLSX from 'xlsx';
-import * as fs from 'fs';
-import * as path from 'path';
 import {
   dailyReportTemplate,
   formatSummaryData,
@@ -468,6 +466,129 @@ export class ReportController {
       });
     } catch (error) {
       logger.error('Error getting top selling menu:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
+  async systemRevenue(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string } }).user;
+
+    try {
+      const start_date = (req.query.start_date as string) || format(new Date(), 'yyyy-MM-dd');
+      const end_date = (req.query.end_date as string) || format(new Date(), 'yyyy-MM-dd');
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      // Build date range (inclusive of start and end dates)
+      const startDate = new Date(`${start_date}T00:00:00Z`);
+      const endDate = new Date(`${end_date}T23:59:59Z`);
+
+      // Get total count for pagination
+      const totalCount = await prisma.transaction.count({
+        where: {
+          outletId: user.outletId,
+          status: 'completed',
+          createdAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+      });
+
+      // Fetch completed transactions with pagination
+      const [transactions, aggregates] = await Promise.all([
+        prisma.transaction.findMany({
+          where: {
+            outletId: user.outletId,
+            status: 'completed',
+            createdAt: {
+              gte: startDate,
+              lte: endDate,
+            },
+          },
+          select: {
+            id: true,
+            paymentNumber: true,
+            total: true,
+            serviceCharge: true,
+            paymentMethod: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.transaction.aggregate({
+          where: {
+            outletId: user.outletId,
+            status: 'completed',
+            createdAt: {
+              gte: startDate,
+              lte: endDate,
+            },
+          },
+          _sum: {
+            total: true,
+            serviceCharge: true,
+            rounding: true,
+          },
+          _count: {
+            id: true,
+          },
+        }),
+      ]);
+
+      // Calculate totals
+      const totalRevenue = Number(aggregates._sum.total || 0);
+      const systemRevenue =
+        Number(aggregates._sum.serviceCharge || 0) + Number(aggregates._sum.rounding || 0);
+      const rounding = Number(aggregates._sum.rounding || 0);
+      const clientRevenue = totalRevenue - systemRevenue - rounding;
+      const totalTransactions = aggregates._count.id;
+
+      // Calculate percentages
+      const clientPercentage =
+        totalRevenue > 0 ? parseFloat(((clientRevenue / totalRevenue) * 100).toFixed(2)) : 0;
+      const systemPercentage =
+        totalRevenue > 0 ? parseFloat(((systemRevenue / totalRevenue) * 100).toFixed(2)) : 0;
+
+      // Format details
+      const details = transactions.map(transaction => ({
+        orderId: transaction.paymentNumber,
+        date: format(transaction.createdAt, 'yyyy-MM-dd'),
+        total: Number(transaction.total),
+        clientRevenue: Number(transaction.total) - Number(transaction.serviceCharge),
+        systemRevenue: Number(transaction.serviceCharge),
+        paymentMethod: transaction.paymentMethod.toLowerCase(),
+      }));
+
+      const response: SystemRevenueResponse = {
+        totalRevenue,
+        clientRevenue,
+        systemRevenue,
+        totalTransactions,
+        clientPercentage,
+        systemPercentage,
+        details,
+      };
+
+      return ResponseHandler.success(res, {
+        message: 'System revenue retrieved successfully',
+        data: response,
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+        },
+      });
+    } catch (error) {
+      logger.error('Error getting system revenue:', error);
       return ResponseHandler.error(res, {
         message: 'Internal server error',
         statusCode: 500,

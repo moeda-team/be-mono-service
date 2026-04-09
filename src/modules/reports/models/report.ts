@@ -29,3 +29,22 @@ export interface DailyReportResponse {
     totalPages: number;
   };
 }
+
+export interface SystemRevenueDetails {
+  orderId: string;
+  date: string;
+  total: number;
+  clientRevenue: number;
+  systemRevenue: number;
+  paymentMethod: 'cash' | 'debit' | 'qris' | string;
+}
+
+export interface SystemRevenueResponse {
+  totalRevenue: number;
+  clientRevenue: number;
+  systemRevenue: number;
+  totalTransactions: number;
+  clientPercentage: number;
+  systemPercentage: number;
+  details: SystemRevenueDetails[];
+}

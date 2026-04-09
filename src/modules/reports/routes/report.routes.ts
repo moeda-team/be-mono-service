@@ -31,4 +31,12 @@ router.get(
   reportController.topSellingMenu,
 );
 
+// System revenue route
+router.get(
+  '/system-revenue',
+  jwtAuth,
+  requirePermission(UserRole.ADMIN),
+  reportController.systemRevenue,
+);
+
 export default router;
