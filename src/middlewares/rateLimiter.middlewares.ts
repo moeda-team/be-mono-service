@@ -18,7 +18,7 @@ const getClientIp = (req: Request): string => {
 
 export const rateLimiter = rateLimit({
   windowMs: 60_000,
-  max: 20,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: getClientIp,
