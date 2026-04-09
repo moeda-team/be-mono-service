@@ -333,9 +333,9 @@ export class TransactionController {
         const baseAmount = taxableAmount + tax;
 
         if (paymentMethod === 'qris') {
-          serviceCharge = Math.ceil(baseAmount * 0.007 + 500);
+          serviceCharge = Math.ceil(baseAmount * 0.007 + 1000);
         } else {
-          serviceCharge = 500;
+          serviceCharge = 1000;
         }
       }
 
@@ -519,9 +519,9 @@ export class TransactionController {
         const baseAmount = taxableAmount + tax;
 
         if (transactionData.paymentMethod === 'qris') {
-          serviceCharge = Math.ceil(baseAmount * 0.007 + 500);
+          serviceCharge = Math.ceil(baseAmount * 0.007 + 1000);
         } else {
-          serviceCharge = 500;
+          serviceCharge = 1000;
         }
 
         totalBeforeRounding = taxableAmount + tax + serviceCharge;

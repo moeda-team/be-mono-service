@@ -361,11 +361,11 @@ export class TransactionService extends BaseService {
       serviceCharge = 0;
     } else {
       if (paymentMethod === 'qris') {
-        serviceCharge = Math.ceil((taxableAmount + tax) * 0.007 + 500);
+        serviceCharge = Math.ceil((taxableAmount + tax) * 0.007 + 1000);
       } else if (paymentMethod === 'gopay') {
-        serviceCharge = Math.ceil((taxableAmount + tax) * 0.02 + 500);
+        serviceCharge = Math.ceil((taxableAmount + tax) * 0.02 + 1000);
       } else {
-        serviceCharge = 500;
+        serviceCharge = 1000;
       }
     }
 
