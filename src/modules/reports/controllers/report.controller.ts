@@ -482,38 +482,34 @@ export class ReportController {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
 
-      // Build date range (inclusive of start and end dates)
+      // Build date range
       const startDate = new Date(`${start_date}T00:00:00Z`);
       const endDate = new Date(`${end_date}T23:59:59Z`);
 
-      // Get total count for pagination
-      const totalCount = await prisma.transaction.count({
-        where: {
-          outletId: user.outletId,
-          status: 'completed',
-          createdAt: {
-            gte: startDate,
-            lte: endDate,
-          },
+      const whereClause = {
+        outletId: user.outletId,
+        status: 'completed',
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
         },
+      };
+
+      // Get total count
+      const totalCount = await prisma.transaction.count({
+        where: whereClause,
       });
 
-      // Fetch completed transactions with pagination
+      // Fetch transactions + aggregates
       const [transactions, aggregates] = await Promise.all([
         prisma.transaction.findMany({
-          where: {
-            outletId: user.outletId,
-            status: 'completed',
-            createdAt: {
-              gte: startDate,
-              lte: endDate,
-            },
-          },
+          where: whereClause,
           select: {
             id: true,
             paymentNumber: true,
             total: true,
             serviceCharge: true,
+            rounding: true, // ✅ include rounding
             paymentMethod: true,
             createdAt: true,
           },
@@ -524,14 +520,7 @@ export class ReportController {
           take: limit,
         }),
         prisma.transaction.aggregate({
-          where: {
-            outletId: user.outletId,
-            status: 'completed',
-            createdAt: {
-              gte: startDate,
-              lte: endDate,
-            },
-          },
+          where: whereClause,
           _sum: {
             total: true,
             serviceCharge: true,
@@ -543,29 +532,57 @@ export class ReportController {
         }),
       ]);
 
-      // Calculate totals
-      const totalRevenue = Number(aggregates._sum.total || 0);
-      const systemRevenue =
-        Number(aggregates._sum.serviceCharge || 0) + Number(aggregates._sum.rounding || 0);
-      const rounding = Number(aggregates._sum.rounding || 0);
-      const clientRevenue = totalRevenue - systemRevenue - rounding;
+      // ===== ✅ SAFE NUMBER HELPERS =====
+      const toNumber = (val: any) => Number(val || 0);
+
+      // ===== ✅ SUMMARY CALCULATION (CONSISTENT) =====
+      const totalRevenue = toNumber(aggregates._sum.total);
+      const totalServiceCharge = toNumber(aggregates._sum.serviceCharge);
+      const totalRounding = toNumber(aggregates._sum.rounding);
+
+      // ✅ System gets BOTH serviceCharge + rounding
+      const systemRevenue = totalServiceCharge + totalRounding;
+
+      // ✅ Client gets the rest
+      const clientRevenue = totalRevenue - systemRevenue;
+
       const totalTransactions = aggregates._count.id;
 
-      // Calculate percentages
+      // ===== ✅ PERCENTAGES (GUARANTEED CONSISTENT) =====
       const clientPercentage =
         totalRevenue > 0 ? parseFloat(((clientRevenue / totalRevenue) * 100).toFixed(2)) : 0;
-      const systemPercentage =
-        totalRevenue > 0 ? parseFloat(((systemRevenue / totalRevenue) * 100).toFixed(2)) : 0;
 
-      // Format details
-      const details = transactions.map(transaction => ({
-        orderId: transaction.paymentNumber,
-        date: format(transaction.createdAt, 'yyyy-MM-dd'),
-        total: Number(transaction.total),
-        clientRevenue: Number(transaction.total) - Number(transaction.serviceCharge),
-        systemRevenue: Number(transaction.serviceCharge),
-        paymentMethod: transaction.paymentMethod.toLowerCase(),
-      }));
+      // 🔥 ensure always 100%
+      const systemPercentage =
+        totalRevenue > 0 ? parseFloat((100 - clientPercentage).toFixed(2)) : 0;
+
+      // ===== ✅ DETAILS (MATCHES SUMMARY LOGIC) =====
+      const details = transactions.map(transaction => {
+        const total = toNumber(transaction.total);
+        const serviceCharge = toNumber(transaction.serviceCharge);
+        const rounding = toNumber(transaction.rounding);
+
+        const systemRevenue = serviceCharge + rounding;
+        const clientRevenue = total - systemRevenue;
+
+        return {
+          orderId: transaction.paymentNumber,
+          date: format(transaction.createdAt, 'yyyy-MM-dd'),
+          total,
+          clientRevenue,
+          systemRevenue,
+          paymentMethod: transaction.paymentMethod.toLowerCase(),
+        };
+      });
+
+      // ===== ✅ OPTIONAL: SANITY CHECK =====
+      if (totalRevenue !== clientRevenue + systemRevenue) {
+        console.warn('⚠️ Revenue mismatch detected!', {
+          totalRevenue,
+          clientRevenue,
+          systemRevenue,
+        });
+      }
 
       const response: SystemRevenueResponse = {
         totalRevenue,
