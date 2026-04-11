@@ -1,12 +1,49 @@
 import jwt, { SignOptions, Secret, JwtPayload as BaseJwtPayload } from 'jsonwebtoken';
 import crypto from 'crypto';
 
-const JWT_ACCESS_SECRET: Secret =
-  process.env.JWT_ACCESS_SECRET || crypto.randomBytes(64).toString('hex');
-const JWT_REFRESH_SECRET: Secret =
-  process.env.JWT_REFRESH_SECRET || crypto.randomBytes(64).toString('hex');
-const JWT_ACCESS_EXPIRES_IN = process.env.JWT_ACCESS_EXPIRES_IN;
-const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN;
+const isProduction = process.env.NODE_ENV === 'production';
+
+const getJwtAccessSecret = (): Secret => {
+  const fromEnv = process.env.JWT_ACCESS_SECRET;
+  if (fromEnv) return fromEnv;
+  if (isProduction) {
+    throw new JwtError('JWT_ACCESS_SECRET is required');
+  }
+  return crypto.randomBytes(64).toString('hex');
+};
+
+const getJwtRefreshSecret = (): Secret => {
+  const fromEnv = process.env.JWT_REFRESH_SECRET;
+  if (fromEnv) return fromEnv;
+  if (isProduction) {
+    throw new JwtError('JWT_REFRESH_SECRET is required');
+  }
+  return crypto.randomBytes(64).toString('hex');
+};
+
+const getJwtExpiresIn = (type: TokenType): number => {
+  const raw =
+    type === TokenType.ACCESS
+      ? process.env.JWT_ACCESS_EXPIRES_IN
+      : process.env.JWT_REFRESH_EXPIRES_IN;
+  if (raw) {
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      throw new JwtError(
+        `Invalid ${type === TokenType.ACCESS ? 'JWT_ACCESS_EXPIRES_IN' : 'JWT_REFRESH_EXPIRES_IN'}`,
+      );
+    }
+    return parsed;
+  }
+
+  if (isProduction) {
+    throw new JwtError(
+      `${type === TokenType.ACCESS ? 'JWT_ACCESS_EXPIRES_IN' : 'JWT_REFRESH_EXPIRES_IN'} is required`,
+    );
+  }
+
+  return type === TokenType.ACCESS ? 3600 : 60 * 60 * 24 * 30;
+};
 
 export enum TokenType {
   ACCESS = 'access',
@@ -57,8 +94,8 @@ export function signToken(
   payload: Partial<JwtPayload>,
   type: TokenType = TokenType.ACCESS,
 ): string {
-  const secret = type === TokenType.ACCESS ? JWT_ACCESS_SECRET : JWT_REFRESH_SECRET;
-  const expiresIn = type === TokenType.ACCESS ? JWT_ACCESS_EXPIRES_IN : JWT_REFRESH_EXPIRES_IN;
+  const secret = type === TokenType.ACCESS ? getJwtAccessSecret() : getJwtRefreshSecret();
+  const expiresIn = getJwtExpiresIn(type);
 
   const tokenPayload: JwtPayload = {
     ...payload,
@@ -71,7 +108,7 @@ export function signToken(
   };
 
   const options: SignOptions = {
-    expiresIn: Number(expiresIn),
+    expiresIn,
   };
 
   return jwt.sign(tokenPayload, secret, options);
@@ -79,7 +116,7 @@ export function signToken(
 
 export function verifyToken(token: string, type: TokenType = TokenType.ACCESS): JwtPayload {
   try {
-    const secret = type === TokenType.ACCESS ? JWT_ACCESS_SECRET : JWT_REFRESH_SECRET;
+    const secret = type === TokenType.ACCESS ? getJwtAccessSecret() : getJwtRefreshSecret();
     return jwt.verify(token, secret) as JwtPayload;
   } catch (error) {
     throw new JwtError('Invalid or expired token');

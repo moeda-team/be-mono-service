@@ -27,7 +27,16 @@ import reportRouter from './modules/reports/routes';
 import attendanceRouter from './modules/attendances/routes/attendance.routes';
 
 const app = express();
+app.set('trust proxy', config.trustProxy);
 const allowedOrigins = config.corsOrigin.split(',').map(origin => origin.trim());
+
+const isCorsAllowAll = allowedOrigins.length === 1 && allowedOrigins[0] === '*';
+
+const haltOnTimedout = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.timedout) {
+    next();
+  }
+};
 
 // Health check endpoint
 app.get('/health', async (req: Request, res: Response) => {
@@ -81,11 +90,14 @@ app.use((req, res, next) => {
   return rateLimiter(req, res, next);
 });
 app.use(timeout('10s'));
+app.use(haltOnTimedout);
 app.use(helmet());
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (isCorsAllowAll) {
+        callback(null, true);
+      } else if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
@@ -97,7 +109,9 @@ app.use(
 
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
 app.use(express.json());
+app.use(haltOnTimedout);
 app.use(express.urlencoded({ extended: true }));
+app.use(haltOnTimedout);
 
 const router = Router();
 
@@ -119,9 +133,6 @@ router.use(`/v1/attendances`, attendanceRouter);
 
 app.use(router);
 
-app.use(notFoundHandler);
-app.use(errorHandler);
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   if (err.timeout && req.timedout) {
@@ -132,5 +143,8 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   }
   next(err);
 });
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 export default app;
