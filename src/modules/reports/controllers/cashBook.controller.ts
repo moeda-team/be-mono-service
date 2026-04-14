@@ -216,6 +216,11 @@ export class CashBookController {
         select: {
           id: true,
           paymentMethod: true,
+          subTotal: true,
+          discount: true,
+          tax: true,
+          serviceCharge: true,
+          rounding: true,
           total: true,
         },
       });
@@ -224,16 +229,29 @@ export class CashBookController {
       const paymentBreakdown: Record<string, number> = {};
       let cashTotal = 0;
       let transferTotal = 0;
+      let totalTax = 0;
+      let totalServiceCharge = 0;
+      let totalRounding = 0;
 
       for (const transaction of completedTransactions) {
         const method = transaction.paymentMethod.toLowerCase();
-        const amount = Number(transaction.total);
+        // Calculate actual amount received: subTotal - discount + tax + serviceCharge + rounding
+        const amount =
+          Number(transaction.subTotal) -
+          Number(transaction.discount) +
+          Number(transaction.tax) +
+          Number(transaction.serviceCharge) +
+          Number(transaction.rounding);
+
+        totalTax += Number(transaction.tax);
+        totalServiceCharge += Number(transaction.serviceCharge);
+        totalRounding += Number(transaction.rounding);
 
         if (method === 'cash') {
           cashTotal += amount;
         } else if (
           method.includes('transfer') ||
-          method.includes('bca') ||
+          method.includes('debit') ||
           method.includes('bank')
         ) {
           transferTotal += amount;
@@ -323,6 +341,11 @@ export class CashBookController {
           transactionCounts: {
             completed: completedCount,
             unpaid: pendingCount,
+          },
+          adjustments: {
+            totalTax,
+            totalServiceCharge,
+            totalRounding,
           },
         },
         menuSalesReport: {
