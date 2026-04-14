@@ -43,6 +43,15 @@ router.get(
   cashBookController.downloadCashBookReport,
 );
 
+// Get closing report (matches receipt structure)
+router.get(
+  '/:cashBookId/closing',
+  jwtAuth,
+  requirePermission(UserRole.EMPLOYEE),
+  validateCashBookId,
+  cashBookController.getClosingReport,
+);
+
 // Close a cash book
 router.patch(
   '/close',

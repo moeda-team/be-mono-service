@@ -163,6 +163,189 @@ export class CashBookController {
     }
   }
 
+  async getClosingReport(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string } }).user;
+
+    try {
+      const cashBookId = req.params.cashBookId;
+
+      const cashBook = await prisma.cashBook.findFirst({
+        where: {
+          id: cashBookId,
+          outletId: user.outletId,
+        },
+        include: {
+          user: {
+            select: { id: true, name: true },
+          },
+          outlet: {
+            select: { id: true, name: true, address: true },
+          },
+        },
+      });
+
+      if (!cashBook) {
+        return ResponseHandler.error(res, {
+          message: 'Cash book not found',
+          statusCode: 404,
+        });
+      }
+
+      // Get initial capital from the first logCashBalance entry (opening balance)
+      const openingBalance = await prisma.logCashBalance.findFirst({
+        where: {
+          outletId: user.outletId,
+          type: 'open',
+          createdAt: {
+            gte: cashBook.openAt,
+            lte: cashBook.closeAt || new Date(),
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      const initialCapital = Number(openingBalance?.amount || 0);
+
+      // Get all completed transactions for this cash book
+      const completedTransactions = await prisma.transaction.findMany({
+        where: {
+          cashBookId,
+          outletId: user.outletId,
+          status: 'completed',
+        },
+        select: {
+          id: true,
+          paymentMethod: true,
+          total: true,
+        },
+      });
+
+      // Calculate payment breakdown
+      const paymentBreakdown: Record<string, number> = {};
+      let cashTotal = 0;
+      let transferTotal = 0;
+
+      for (const transaction of completedTransactions) {
+        const method = transaction.paymentMethod.toLowerCase();
+        const amount = Number(transaction.total);
+
+        if (method === 'cash') {
+          cashTotal += amount;
+        } else if (
+          method.includes('transfer') ||
+          method.includes('bca') ||
+          method.includes('bank')
+        ) {
+          transferTotal += amount;
+          // Track specific transfer methods
+          const bankName = method
+            .replace('transfer_', '')
+            .replace('transfer', 'transfer')
+            .toUpperCase();
+          paymentBreakdown[bankName] = (paymentBreakdown[bankName] || 0) + amount;
+        } else {
+          paymentBreakdown[method] = (paymentBreakdown[method] || 0) + amount;
+        }
+      }
+
+      const totalRevenue =
+        cashTotal + transferTotal + Object.values(paymentBreakdown).reduce((a, b) => a + b, 0);
+
+      // Count completed and pending transactions
+      const completedCount = await prisma.transaction.count({
+        where: {
+          cashBookId,
+          outletId: user.outletId,
+          status: 'completed',
+        },
+      });
+
+      const pendingCount = await prisma.transaction.count({
+        where: {
+          cashBookId,
+          outletId: user.outletId,
+          status: 'pending',
+        },
+      });
+
+      // Calculate final balance (initial capital + total revenue)
+      const finalBalance = initialCapital + totalRevenue;
+
+      // Get menu sales data
+      const menuSales = await prisma.subTransaction.groupBy({
+        by: ['menuName'],
+        where: {
+          transaction: {
+            cashBookId,
+            outletId: user.outletId,
+            status: 'completed',
+          },
+        },
+        _sum: {
+          quantity: true,
+          subTotal: true,
+        },
+        orderBy: {
+          _sum: {
+            quantity: 'desc',
+          },
+        },
+      });
+
+      const formattedMenuSales = menuSales.map(item => ({
+        menuName: item.menuName,
+        quantity: item._sum.quantity || 0,
+        totalAmount: Number(item._sum.subTotal || 0),
+      }));
+
+      // Build response matching receipt structure
+      const response = {
+        storeInfo: {
+          name: cashBook.outlet?.name || 'Moeda Coffee',
+          address: cashBook.outlet?.address || 'Jl. Raya Bekasi No 27, Kota Bekasi',
+        },
+        reportInfo: {
+          title: 'LAPORAN TUTUP KASIR',
+          cashierName: cashBook.user?.name || 'Unknown',
+          openAt: cashBook.openAt,
+          closeAt: cashBook.closeAt,
+        },
+        salesTransactionReport: {
+          title: 'TRANSAKSI PENJUALAN',
+          initialCapital,
+          paymentMethods: {
+            cash: cashTotal,
+            transfer: transferTotal,
+            transferDetails: paymentBreakdown,
+          },
+          totalRevenue,
+          finalBalance,
+          transactionCounts: {
+            completed: completedCount,
+            unpaid: pendingCount,
+          },
+        },
+        menuSalesReport: {
+          title: 'PENJUALAN MENU',
+          items: formattedMenuSales,
+          totalItemsSold: formattedMenuSales.reduce((sum, item) => sum + item.quantity, 0),
+          totalMenuRevenue: formattedMenuSales.reduce((sum, item) => sum + item.totalAmount, 0),
+        },
+      };
+
+      return ResponseHandler.success(res, {
+        message: 'Closing report retrieved successfully',
+        data: response,
+      });
+    } catch (error) {
+      logger.error('Error fetching closing report:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
   async downloadCashBookReport(req: Request, res: Response) {
     const user = (req as Request & { user: { outletId: string } }).user;
 
