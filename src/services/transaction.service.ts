@@ -361,24 +361,24 @@ export class TransactionService extends BaseService {
       serviceCharge = 0;
     } else {
       if (paymentMethod === 'qris') {
-        serviceCharge = Math.ceil((taxableAmount + tax) * 0.007 + 1000);
+        serviceCharge = Math.ceil((taxableAmount + tax) * 0.007 + 0);
       } else if (paymentMethod === 'gopay') {
-        serviceCharge = Math.ceil((taxableAmount + tax) * 0.02 + 1000);
+        serviceCharge = Math.ceil((taxableAmount + tax) * 0.02 + 0);
       } else {
-        serviceCharge = 1000;
+        serviceCharge = 0;
       }
     }
 
     const totalBeforeRounding = taxableAmount + tax + serviceCharge;
     let rounding = 0;
-    const remainder = totalBeforeRounding % 1000;
+    const remainder = totalBeforeRounding % 0;
 
     if (remainder === 0) {
       rounding = 0;
     } else if (remainder <= 500) {
       rounding = 500 - remainder;
     } else {
-      rounding = 1000 - remainder;
+      rounding = 0 - remainder;
     }
 
     const total = totalBeforeRounding + rounding;

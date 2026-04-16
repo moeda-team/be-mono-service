@@ -333,17 +333,17 @@ export class TransactionController {
         const baseAmount = taxableAmount + tax;
 
         if (paymentMethod === 'qris') {
-          serviceCharge = Math.ceil(baseAmount * 0.007 + 1000);
+          serviceCharge = Math.ceil(baseAmount * 0.007 + 0);
         } else {
-          serviceCharge = 1000;
+          serviceCharge = 0;
         }
       }
 
       const totalBeforeRounding = taxableAmount + tax + serviceCharge;
 
       // 🔥 Samakan rounding dengan createTransaction
-      const remainder = totalBeforeRounding % 1000;
-      const rounding = remainder === 0 ? 0 : 1000 - remainder;
+      const remainder = totalBeforeRounding % 0;
+      const rounding = remainder === 0 ? 0 : 0 - remainder;
 
       const finalTotal = totalBeforeRounding + rounding;
 
@@ -520,14 +520,14 @@ export class TransactionController {
         const baseAmount = taxableAmount + tax;
 
         if (transactionData.paymentMethod === 'qris') {
-          serviceCharge = Math.ceil(baseAmount * 0.007 + 1000);
+          serviceCharge = Math.ceil(baseAmount * 0.007 + 0);
         } else {
-          serviceCharge = 1000;
+          serviceCharge = 0;
         }
 
         totalBeforeRounding = taxableAmount + tax + serviceCharge;
-        const remainder = totalBeforeRounding % 1000;
-        rounding = remainder === 0 ? 0 : 1000 - remainder;
+        const remainder = totalBeforeRounding % 0;
+        rounding = remainder === 0 ? 0 : 0 - remainder;
       }
 
       const total = totalBeforeRounding + rounding;
