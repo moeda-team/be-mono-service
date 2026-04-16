@@ -325,27 +325,10 @@ export class TransactionController {
       const taxRate = 0.11;
       const tax = paymentMethod === 'qris' ? Math.floor(taxableAmount * taxRate) : 0;
 
-      let serviceCharge = 0;
+      const serviceCharge = 0;
+      const rounding = 0;
 
-      const isFullFree = taxableAmount === 0;
-
-      if (!isFullFree) {
-        const baseAmount = taxableAmount + tax;
-
-        if (paymentMethod === 'qris') {
-          serviceCharge = Math.ceil(baseAmount * 0.007 + 0);
-        } else {
-          serviceCharge = 0;
-        }
-      }
-
-      const totalBeforeRounding = taxableAmount + tax + serviceCharge;
-
-      // 🔥 Samakan rounding dengan createTransaction
-      const remainder = totalBeforeRounding % 0;
-      const rounding = remainder === 0 ? 0 : 0 - remainder;
-
-      const finalTotal = totalBeforeRounding + rounding;
+      const finalTotal = taxableAmount + tax + serviceCharge + rounding;
 
       return ResponseHandler.success(res, {
         message: 'Transaction calculated successfully',
@@ -508,29 +491,10 @@ export class TransactionController {
       const tax =
         transactionData.paymentMethod === 'qris' ? Math.floor(taxableAmount * taxRate) : 0;
 
-      let serviceCharge = 0;
-      let rounding = 0;
+      const serviceCharge = 0;
+      const rounding = 0;
 
-      const isFullFree = voucherData?.type === 'percent' && Number(voucherData?.discount) === 100;
-
-      let totalBeforeRounding = taxableAmount + tax;
-
-      // Calculate service charge and rounding only if total won't be 0
-      if (!isFullFree && taxableAmount > 0) {
-        const baseAmount = taxableAmount + tax;
-
-        if (transactionData.paymentMethod === 'qris') {
-          serviceCharge = Math.ceil(baseAmount * 0.007 + 0);
-        } else {
-          serviceCharge = 0;
-        }
-
-        totalBeforeRounding = taxableAmount + tax + serviceCharge;
-        const remainder = totalBeforeRounding % 0;
-        rounding = remainder === 0 ? 0 : 0 - remainder;
-      }
-
-      const total = totalBeforeRounding + rounding;
+      const total = taxableAmount + tax + serviceCharge + rounding;
 
       if (total < 0) {
         throw new Error('Invalid total calculation');

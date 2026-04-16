@@ -356,32 +356,10 @@ export class TransactionService extends BaseService {
     const taxableAmount = subTotal - discountAmount;
     const tax = taxableAmount * taxRate;
 
-    let serviceCharge = 0;
-    if (voucherData?.type === 'percent' && Number(voucherData?.discount) === 100) {
-      serviceCharge = 0;
-    } else {
-      if (paymentMethod === 'qris') {
-        serviceCharge = Math.ceil((taxableAmount + tax) * 0.007 + 0);
-      } else if (paymentMethod === 'gopay') {
-        serviceCharge = Math.ceil((taxableAmount + tax) * 0.02 + 0);
-      } else {
-        serviceCharge = 0;
-      }
-    }
+    const serviceCharge = 0;
+    const rounding = 0;
 
-    const totalBeforeRounding = taxableAmount + tax + serviceCharge;
-    let rounding = 0;
-    const remainder = totalBeforeRounding % 0;
-
-    if (remainder === 0) {
-      rounding = 0;
-    } else if (remainder <= 500) {
-      rounding = 500 - remainder;
-    } else {
-      rounding = 0 - remainder;
-    }
-
-    const total = totalBeforeRounding + rounding;
+    const total = taxableAmount + tax + serviceCharge + rounding;
 
     return {
       subTotal,
