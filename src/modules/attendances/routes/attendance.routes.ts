@@ -22,7 +22,7 @@ router.post(
 router.post(
   '/manual',
   jwtAuth,
-  requirePermission(UserRole.STORE_MANAGER),
+  requirePermission(UserRole.EMPLOYEE),
   validateCreateAttendanceManual,
   attendanceController.createAttendanceManual,
 );
