@@ -266,8 +266,7 @@ export class CashBookController {
         }
       }
 
-      const totalRevenue =
-        cashTotal + transferTotal + Object.values(paymentBreakdown).reduce((a, b) => a + b, 0);
+      const totalRevenue = cashTotal + transferTotal;
 
       // Count completed and pending transactions
       const completedCount = await prisma.transaction.count({
