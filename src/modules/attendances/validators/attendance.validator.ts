@@ -2,6 +2,42 @@ import { Request, Response, NextFunction } from 'express';
 import { body, param, validationResult } from 'express-validator';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 
+export const validateCreateAttendanceManual = [
+  body('status')
+    .optional()
+    .default('pending')
+    .trim()
+    .isIn(['pending', 'approved', 'rejected'])
+    .withMessage('Status must be pending, approved, or rejected'),
+  body('userId')
+    .notEmpty()
+    .withMessage('User ID is required')
+    .isUUID()
+    .withMessage('User ID must be a valid UUID'),
+  body('note')
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Note must not exceed 500 characters'),
+  body('fileUrl').optional().isString().withMessage('File must be a string'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const allErrors = [...errors.array()];
+      return ResponseHandler.error(res, {
+        message: 'Validation failed',
+        statusCode: 400,
+        error: {
+          code: 'VALIDATION_FAILED',
+          details: allErrors,
+        },
+      });
+    }
+
+    next();
+  },
+];
+
 export const validateCreateAttendance = [
   body('status')
     .optional()

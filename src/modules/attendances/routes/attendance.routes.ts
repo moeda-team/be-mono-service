@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { AttendanceController } from '../controllers/attendance.controller';
 import {
   validateCreateAttendance,
+  validateCreateAttendanceManual,
   validateGetAttendances,
 } from '../validators/attendance.validator';
 import { jwtAuth, requirePermission } from '../../../middlewares';
@@ -16,6 +17,14 @@ router.post(
   requirePermission(UserRole.EMPLOYEE),
   validateCreateAttendance,
   attendanceController.createAttendance,
+);
+
+router.post(
+  '/manual',
+  jwtAuth,
+  requirePermission(UserRole.STORE_MANAGER),
+  validateCreateAttendanceManual,
+  attendanceController.createAttendanceManual,
 );
 
 router.get(

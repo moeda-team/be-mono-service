@@ -75,6 +75,84 @@ export class AttendanceController {
     }
   }
 
+  async createAttendanceManual(req: Request, res: Response) {
+    const user = (req as Request & { user: { outletId: string; userId: string } }).user;
+    const body = req.body;
+
+    try {
+      if (!user.outletId) {
+        return ResponseHandler.error(res, {
+          message: 'Outlet not found',
+          statusCode: 404,
+        });
+      }
+
+      if (!body.fileUrl) {
+        return ResponseHandler.error(res, {
+          message: 'File is required',
+          statusCode: 400,
+        });
+      }
+
+      // Check if user already has attendance for today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const targetUser = await prisma.user.findUnique({
+        where: {
+          id: body.userId,
+        },
+      });
+      if (!targetUser) {
+        return ResponseHandler.error(res, {
+          message: 'User not found',
+          statusCode: 404,
+        });
+      }
+
+      const existingAttendance = await prisma.attendance.findFirst({
+        where: {
+          userId: body.userId,
+          createdAt: {
+            gte: today,
+            lt: tomorrow,
+          },
+        },
+      });
+      if (existingAttendance) {
+        return ResponseHandler.error(res, {
+          message: 'User has already created attendance for today',
+          statusCode: 400,
+        });
+      }
+
+      const fileNameWithExtension = body.fileUrl;
+      const fileName = fileNameWithExtension.substring(fileNameWithExtension.lastIndexOf('/') + 1);
+      const attendance = await prisma.attendance.create({
+        data: {
+          userId: body.userId,
+          outletId: user.outletId,
+          fileName: fileName,
+          fileUrl: body.fileUrl,
+          note: body.note,
+        },
+      });
+
+      return ResponseHandler.success(res, {
+        message: 'Attendance created successfully',
+        data: attendance,
+      });
+    } catch (error) {
+      logger.error('Error creating attendance:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
+
   async checkAttendanceToday(req: Request, res: Response) {
     const user = (req as Request & { user: { outletId: string; userId: string } }).user;
     const { userId } = req.query;
