@@ -91,60 +91,60 @@ export const createCashBookReportWorkbook = async (
   totalRevenue: number,
   totalTransactions: number,
   avgOrder: number,
-  transactions: any[]
+  transactions: any[],
 ): Promise<ExcelJS.Workbook> => {
   const workbook = new ExcelJS.Workbook();
-  
+
   // Create Summary worksheet
   const summarySheet = workbook.addWorksheet('Summary');
-  
+
   // Set column widths
   cashBookTemplate.summary.columnWidths.forEach((width, index) => {
     summarySheet.getColumn(index + 1).width = width;
   });
-  
+
   // Add title
   summarySheet.addRow([cashBookTemplate.summary.title, '']);
   summarySheet.addRow(['', '']);
-  
+
   // Add cash book information
   summarySheet.addRow([cashBookTemplate.summary.sections.reportInfo.title, '']);
   summarySheet.addRow([cashBookTemplate.summary.sections.reportInfo.fields.reportDate, cashBookId]);
   summarySheet.addRow([cashBookTemplate.summary.sections.reportInfo.fields.previousDate, status]);
   summarySheet.addRow(['', '']);
-  
+
   // Add performance metrics
   summarySheet.addRow([cashBookTemplate.summary.sections.performanceMetrics.title, '']);
   summarySheet.addRow(['Metric', 'Value']);
-  
+
   // Add metrics data
   summarySheet.addRow([
     'Total Revenue',
     totalRevenue.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }),
   ]);
-  
+
   summarySheet.addRow(['Total Transactions', totalTransactions]);
-  
+
   summarySheet.addRow([
     'Average Order Value',
     Math.round(avgOrder).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }),
   ]);
-  
+
   // Create Details worksheet
   const detailsSheet = workbook.addWorksheet('Details');
-  
+
   // Set column widths
   cashBookTemplate.details.columnWidths.forEach((width, index) => {
     detailsSheet.getColumn(index + 1).width = width;
   });
-  
+
   // Add title
   detailsSheet.addRow([cashBookTemplate.details.title, '', '', '', '', '', '']);
   detailsSheet.addRow(['', '', '', '', '', '', '']);
-  
+
   // Add headers
   detailsSheet.addRow(cashBookTemplate.details.headers);
-  
+
   // Add transaction data
   transactions.forEach(transaction => {
     detailsSheet.addRow([
@@ -157,6 +157,6 @@ export const createCashBookReportWorkbook = async (
       format(new Date(transaction.createdAt), 'dd MMM yyyy HH:mm:ss'),
     ]);
   });
-  
+
   return workbook;
 };
