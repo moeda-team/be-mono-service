@@ -11,7 +11,7 @@ jobs:
     name: Lint, Type Check, and Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: github.ref != 'refs/heads/moeda'
+    if: github.ref != 'refs/heads/moeda' && github.ref != 'refs/heads/development'
 
     steps:
       - name: Checkout repository
