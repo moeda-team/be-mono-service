@@ -3,12 +3,7 @@ import { logger } from '../../../utils/common/logger';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { CashBookSummary } from '../models/cashBook';
 import prisma from '../../../config/database';
-import * as XLSX from 'xlsx';
-import {
-  cashBookTemplate,
-  formatCashBookSummaryData,
-  formatCashBookDetailsData,
-} from '../../../templates/cash-book-templates';
+import { createCashBookReportWorkbook } from '../../../templates/exceljs-cash-book-templates';
 import path from 'path';
 import fs from 'fs';
 
@@ -451,41 +446,17 @@ export class CashBookController {
         createdAt: transaction.createdAt,
       }));
 
-      // Create workbook
-      const workbook = XLSX.utils.book_new();
-
-      // Create summary worksheet using cash book template
-      const summaryData = formatCashBookSummaryData(
-        cashBookTemplate,
-        summary.id,
-        summary.status,
-        summary.totalRevenue,
-        summary.totalTransactions,
-        summary.avgOrder,
+      // Create workbook using ExcelJS
+      const workbook = await createCashBookReportWorkbook(
+        cashBookId,
+        cashBook.closeAt ? 'Closed' : 'Open',
+        totalRevenue,
+        totalTransactions,
+        avgOrder,
+        formattedTransactions,
       );
 
-      const summaryWorksheet = XLSX.utils.aoa_to_sheet(summaryData);
-
-      // Set column widths from template
-      summaryWorksheet['!cols'] = cashBookTemplate.summary.columnWidths.map(width => ({
-        wch: width,
-      }));
-
-      XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Summary');
-
-      // Create details worksheet using cash book template
-      const detailsData = formatCashBookDetailsData(cashBookTemplate, formattedTransactions);
-
-      const detailsWorksheet = XLSX.utils.aoa_to_sheet(detailsData);
-
-      // Set column widths from template
-      detailsWorksheet['!cols'] = cashBookTemplate.details.columnWidths.map(width => ({
-        wch: width,
-      }));
-
-      XLSX.utils.book_append_sheet(workbook, detailsWorksheet, 'Details');
-
-      const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+      const excelBuffer = await workbook.xlsx.writeBuffer();
       const filename = `cash-book-report-${cashBookId}.xlsx`;
 
       // Write file to output directory
@@ -499,7 +470,7 @@ export class CashBookController {
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       );
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.setHeader('Content-Length', excelBuffer.length);
+      res.setHeader('Content-Length', (excelBuffer as any).length);
 
       return res.send(excelBuffer);
     } catch (error) {
