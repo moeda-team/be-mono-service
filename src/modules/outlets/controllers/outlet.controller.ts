@@ -108,6 +108,8 @@ export class OutletController {
       const outlet = await prisma.outlet.create({
         data: {
           name: outletData.name,
+          img: outletData.img,
+          color: outletData.color,
           outletType: outletData.outletType,
           address: outletData.address,
           number: outletData.number,
@@ -162,6 +164,8 @@ export class OutletController {
         where: { id },
         data: {
           name: outletData.name,
+          img: outletData.img,
+          color: outletData.color,
           outletType: outletData.outletType,
           address: outletData.address,
           number: outletData.number,

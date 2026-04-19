@@ -150,6 +150,8 @@ model SubTransaction {
 
 model Outlet {
   id         String   @id @default(uuid()) @db.VarChar(36)
+  img        String?  @default("https://moeda-space.s3.ap-southeast-1.amazonaws.com/default.png")
+  color      String?  @default("#FE770A")
   outletType String   @db.VarChar(50)
   name       String   @db.VarChar(100)
   address    String?
@@ -186,7 +188,7 @@ model Category {
   id        String   @id @default(uuid()) @db.VarChar(36)
   outletId  String?  @db.VarChar(36)
   name      String   @db.VarChar(100)
-  icon      String   @default("https://moeda-space.s3.ap-southeast-1.amazonaws.com/icon/default.png")
+  icon      String   @default("https://moeda-space.s3.ap-southeast-1.amazonaws.com/default.png")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -296,7 +298,7 @@ model Menu {
   outletId   String?  @db.VarChar(36)
   name       String   @db.VarChar(100)
   desc       String   @db.Text
-  img        String   @default("https://moeda-space.s3.ap-southeast-1.amazonaws.com/default.png")
+  img        String?  @default("https://moeda-space.s3.ap-southeast-1.amazonaws.com/default.png")
   price      Decimal  @db.Decimal(15, 2)
   pdf        String?  @db.VarChar(255)
   categoryId String   @db.VarChar(36)
