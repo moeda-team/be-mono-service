@@ -4,12 +4,7 @@ import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { addDays, format, subDays } from 'date-fns';
 import { DailyReportDetail, DailyReportResponse, SystemRevenueResponse } from '../models/report';
 import prisma from '../../../config/database';
-import * as XLSX from 'xlsx';
-import {
-  dailyReportTemplate,
-  formatSummaryData,
-  formatDetailsData,
-} from '../../../templates/daily-templates';
+import { createDailyReportWorkbook } from '../../../templates/exceljs-daily-templates';
 
 export class ReportController {
   async dailyReport(req: Request, res: Response) {
@@ -288,12 +283,8 @@ export class ReportController {
       const avgOrderGrowth =
         yesterdayAvgOrder > 0 ? ((avgOrder - yesterdayAvgOrder) / yesterdayAvgOrder) * 100 : 0;
 
-      // Create workbook
-      const workbook = XLSX.utils.book_new();
-
-      // Create summary worksheet using template
-      const summaryData = formatSummaryData(
-        dailyReportTemplate,
+      // Create workbook using ExcelJS
+      const workbook = await createDailyReportWorkbook(
         date,
         yesterdayDate,
         totalRevenue,
@@ -305,30 +296,10 @@ export class ReportController {
         revenueGrowth,
         transactionGrowth,
         avgOrderGrowth,
+        allDetails,
       );
 
-      const summaryWorksheet = XLSX.utils.aoa_to_sheet(summaryData);
-
-      // Set column widths from template
-      summaryWorksheet['!cols'] = dailyReportTemplate.summary.columnWidths.map(width => ({
-        wch: width,
-      }));
-
-      XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Summary');
-
-      // Create details worksheet using template (without Order ID)
-      const detailsData = formatDetailsData(dailyReportTemplate, allDetails);
-
-      const detailsWorksheet = XLSX.utils.aoa_to_sheet(detailsData);
-
-      // Set column widths from template
-      detailsWorksheet['!cols'] = dailyReportTemplate.details.columnWidths.map(width => ({
-        wch: width,
-      }));
-
-      XLSX.utils.book_append_sheet(workbook, detailsWorksheet, 'Details');
-
-      const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+      const excelBuffer = await workbook.xlsx.writeBuffer();
       const filename = `daily-report-${date}.xlsx`;
 
       // Write file to output directory
@@ -342,7 +313,7 @@ export class ReportController {
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       );
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.setHeader('Content-Length', excelBuffer.length);
+      res.setHeader('Content-Length', (excelBuffer as any).length);
 
       return res.send(excelBuffer);
     } catch (error) {
