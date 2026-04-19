@@ -98,32 +98,42 @@ export const createDailyReportWorkbook = async (
   revenueGrowth: number,
   transactionGrowth: number,
   avgOrderGrowth: number,
-  allDetails: any[]
+  allDetails: any[],
 ): Promise<ExcelJS.Workbook> => {
   const workbook = new ExcelJS.Workbook();
-  
+
   // Create Summary worksheet
   const summarySheet = workbook.addWorksheet('Summary');
-  
+
   // Set column widths
   dailyReportTemplate.summary.columnWidths.forEach((width, index) => {
     summarySheet.getColumn(index + 1).width = width;
   });
-  
+
   // Add title
   summarySheet.addRow([dailyReportTemplate.summary.title, '', '', '']);
   summarySheet.addRow(['', '', '', '']);
-  
+
   // Add report information
   summarySheet.addRow([dailyReportTemplate.summary.sections.reportInfo.title, '', '', '']);
-  summarySheet.addRow([dailyReportTemplate.summary.sections.reportInfo.fields.reportDate, date, '', '']);
-  summarySheet.addRow([dailyReportTemplate.summary.sections.reportInfo.fields.previousDate, yesterdayDate, '', '']);
+  summarySheet.addRow([
+    dailyReportTemplate.summary.sections.reportInfo.fields.reportDate,
+    date,
+    '',
+    '',
+  ]);
+  summarySheet.addRow([
+    dailyReportTemplate.summary.sections.reportInfo.fields.previousDate,
+    yesterdayDate,
+    '',
+    '',
+  ]);
   summarySheet.addRow(['', '', '', '']);
-  
+
   // Add performance metrics
   summarySheet.addRow([dailyReportTemplate.summary.sections.performanceMetrics.title, '', '', '']);
   summarySheet.addRow(dailyReportTemplate.summary.sections.performanceMetrics.headers);
-  
+
   // Add metrics data
   summarySheet.addRow([
     'Total Revenue',
@@ -131,36 +141,36 @@ export const createDailyReportWorkbook = async (
     yesterdayRevenue.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }),
     `${Math.round(revenueGrowth * 10) / 10}%`,
   ]);
-  
+
   summarySheet.addRow([
     'Total Transactions',
     totalTransactions,
     yesterdayTransactionCount,
     `${Math.round(transactionGrowth * 10) / 10}%`,
   ]);
-  
+
   summarySheet.addRow([
     'Average Order Value',
     Math.round(avgOrder).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }),
     Math.round(yesterdayAvgOrder).toLocaleString('id-ID', { style: 'currency', currency: 'IDR' }),
     `${Math.round(avgOrderGrowth * 10) / 10}%`,
   ]);
-  
+
   // Create Details worksheet
   const detailsSheet = workbook.addWorksheet('Details');
-  
+
   // Set column widths
   dailyReportTemplate.details.columnWidths.forEach((width, index) => {
     detailsSheet.getColumn(index + 1).width = width;
   });
-  
+
   // Add title
   detailsSheet.addRow([dailyReportTemplate.details.title, '', '', '', '', '', '', '']);
   detailsSheet.addRow(['', '', '', '', '', '', '', '']);
-  
+
   // Add headers
   detailsSheet.addRow(dailyReportTemplate.details.headers);
-  
+
   // Add details data
   allDetails.forEach(detail => {
     detailsSheet.addRow([
@@ -174,6 +184,6 @@ export const createDailyReportWorkbook = async (
       format(new Date(detail.createdAt), 'dd MMM yyyy HH:mm:ss'),
     ]);
   });
-  
+
   return workbook;
 };
