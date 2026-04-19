@@ -119,6 +119,20 @@ export class OutletController {
           status: outletData.status,
         },
       });
+
+      const cashBalance = await prisma.cashBalance.create({
+        data: {
+          outletId: outlet.id,
+          amount: 0,
+        },
+      });
+      if (!cashBalance) {
+        return ResponseHandler.error(res, {
+          message: 'Failed to create cash balance',
+          statusCode: 500,
+        });
+      }
+
       return ResponseHandler.success(res, {
         message: 'Outlet created successfully',
         data: outlet,
