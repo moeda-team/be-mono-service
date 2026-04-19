@@ -8,13 +8,15 @@ import { Prisma } from '@prisma/client';
 export class InventoryController {
   async getAllInventories(req: Request, res: Response) {
     try {
-      const { outletId, status } = req.query;
+      const { user } = req as Request & { user?: { outletId?: string } };
+      const outletId = user?.outletId;
+      const { status } = req.query;
       const page = parseInt(req.query.page as string) || null;
       const limit = parseInt(req.query.limit as string) || null;
       const search = (req.query.search as string)?.trim() || null;
 
       const where: Prisma.InventoryWhereInput = {};
-      if (outletId) where.outletId = outletId as string;
+      if (outletId) where.outletId = outletId;
       if (status) where.status = status as StockStatus;
 
       if (search) {
@@ -73,25 +75,45 @@ export class InventoryController {
 
   async getInventoryById(req: Request, res: Response) {
     const { id } = req.params;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
 
     try {
-      const inventory = await prisma.inventory.findUnique({
-        where: { id },
-        include: {
-          outlet: {
-            select: {
-              id: true,
-              name: true,
+      const inventory = await (outletId
+        ? prisma.inventory.findFirst({
+            where: { id, outletId },
+            include: {
+              outlet: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              stockTransactions: {
+                orderBy: {
+                  createdAt: 'desc',
+                },
+                take: 10,
+              },
             },
-          },
-          stockTransactions: {
-            orderBy: {
-              createdAt: 'desc',
+          })
+        : prisma.inventory.findUnique({
+            where: { id },
+            include: {
+              outlet: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              stockTransactions: {
+                orderBy: {
+                  createdAt: 'desc',
+                },
+                take: 10,
+              },
             },
-            take: 10,
-          },
-        },
-      });
+          }));
 
       if (!inventory) {
         return ResponseHandler.error(res, {
@@ -304,7 +326,8 @@ export class InventoryController {
 
   async countByStatus(req: Request, res: Response) {
     try {
-      const { outletId } = req.query;
+      const { user } = req as Request & { user?: { outletId?: string } };
+      const outletId = user?.outletId;
 
       const where: any = {};
       if (outletId) where.outletId = outletId as string;

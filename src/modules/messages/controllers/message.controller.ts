@@ -68,7 +68,7 @@ export class MessageController {
     const { id } = req.params;
 
     try {
-      const message = await prisma.message.findUnique({
+      const message = await prisma.message.findFirst({
         where: { id, outletId: user.outletId },
       });
       if (!message) {

@@ -8,6 +8,8 @@ import { Prisma } from '@prisma/client';
 
 export class UserController {
   async getAllUsers(req: Request, res: Response) {
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
     const page = parseInt(req.query.page as string) || null;
     const limit = parseInt(req.query.limit as string) || null;
     const search = (req.query.search as string)?.trim() || null;
@@ -17,6 +19,10 @@ export class UserController {
 
     try {
       const where: Prisma.UserWhereInput = {};
+
+      if (outletId) {
+        where.outletId = outletId;
+      }
 
       if (search) {
         where.OR = [
@@ -64,12 +70,18 @@ export class UserController {
 
   async getUserById(req: Request, res: Response) {
     const { id } = req.params;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
 
     try {
-      const user = await prisma.user.findUnique({
-        where: { id },
-      });
-      if (!user) {
+      const targetUser = await (outletId
+        ? prisma.user.findFirst({
+            where: { id, outletId },
+          })
+        : prisma.user.findUnique({
+            where: { id },
+          }));
+      if (!targetUser) {
         return ResponseHandler.error(res, {
           message: 'User not found',
           statusCode: 404,
@@ -78,7 +90,7 @@ export class UserController {
 
       return ResponseHandler.success(res, {
         message: 'User retrieved successfully',
-        data: user,
+        data: targetUser,
       });
     } catch (error) {
       logger.error('Error getting user:', error);
@@ -137,11 +149,17 @@ export class UserController {
   async updateUser(req: Request, res: Response) {
     const { id } = req.params;
     const userData: UpdateUserDTO = req.body;
+    const { user: currentUser } = req as Request & { user?: { outletId?: string } };
+    const outletId = currentUser?.outletId;
 
     try {
-      const user = await prisma.user.findUnique({
-        where: { id },
-      });
+      const user = await (outletId
+        ? prisma.user.findFirst({
+            where: { id, outletId },
+          })
+        : prisma.user.findUnique({
+            where: { id },
+          }));
       if (!user) {
         return ResponseHandler.error(res, {
           message: 'User not found',
@@ -191,11 +209,17 @@ export class UserController {
 
   async deleteUser(req: Request, res: Response) {
     const { id } = req.params;
+    const { user: currentUser } = req as Request & { user?: { outletId?: string } };
+    const outletId = currentUser?.outletId;
 
     try {
-      const user = await prisma.user.findUnique({
-        where: { id },
-      });
+      const user = await (outletId
+        ? prisma.user.findFirst({
+            where: { id, outletId },
+          })
+        : prisma.user.findUnique({
+            where: { id },
+          }));
       if (!user) {
         return ResponseHandler.error(res, {
           message: 'User not found',

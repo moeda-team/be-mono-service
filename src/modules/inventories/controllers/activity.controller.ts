@@ -15,6 +15,7 @@ export class ActivityController {
   async getAllActivities(req: AuthenticatedRequest, res: Response) {
     try {
       const { inventoryId, type } = req.query;
+      const outletId = req.user?.outletId;
       const page = parseInt(req.query.page as string) || null;
       const limit = parseInt(req.query.limit as string) || null;
       const search = (req.query.search as string)?.trim() || null;
@@ -22,6 +23,7 @@ export class ActivityController {
       const where: Prisma.StockTransactionWhereInput = {};
       if (inventoryId) where.ingredientId = inventoryId as string;
       if (type) where.type = type as ActivityType;
+      if (outletId) where.outletId = outletId;
 
       if (search) {
         where.note = {
@@ -94,34 +96,63 @@ export class ActivityController {
 
   async getActivityById(req: Request, res: Response) {
     const { id } = req.params;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
 
     try {
-      const activity = await prisma.stockTransaction.findUnique({
-        where: { id },
-        include: {
-          inventory: {
+      const activity = await (outletId
+        ? prisma.stockTransaction.findFirst({
+            where: { id, outletId },
             include: {
+              inventory: {
+                include: {
+                  outlet: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
               outlet: {
                 select: {
                   id: true,
                   name: true,
                 },
               },
+              user: {
+                select: {
+                  name: true,
+                },
+              },
             },
-          },
-          outlet: {
-            select: {
-              id: true,
-              name: true,
+          })
+        : prisma.stockTransaction.findUnique({
+            where: { id },
+            include: {
+              inventory: {
+                include: {
+                  outlet: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
+              outlet: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              user: {
+                select: {
+                  name: true,
+                },
+              },
             },
-          },
-          user: {
-            select: {
-              name: true,
-            },
-          },
-        },
-      });
+          }));
 
       if (!activity) {
         return ResponseHandler.error(res, {
@@ -149,11 +180,16 @@ export class ActivityController {
       quantity: parseFloat(req.body.quantity),
     };
     const user = req.user;
+    const outletId = user?.outletId;
 
     try {
-      const inventory = await prisma.inventory.findUnique({
-        where: { id: activityData.inventoryId },
-      });
+      const inventory = await (outletId
+        ? prisma.inventory.findFirst({
+            where: { id: activityData.inventoryId, outletId },
+          })
+        : prisma.inventory.findUnique({
+            where: { id: activityData.inventoryId },
+          }));
 
       if (!inventory) {
         return ResponseHandler.error(res, {
@@ -257,14 +293,23 @@ export class ActivityController {
 
   async deleteActivity(req: Request, res: Response) {
     const { id } = req.params;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
 
     try {
-      const activity = await prisma.stockTransaction.findUnique({
-        where: { id },
-        include: {
-          inventory: true,
-        },
-      });
+      const activity = await (outletId
+        ? prisma.stockTransaction.findFirst({
+            where: { id, outletId },
+            include: {
+              inventory: true,
+            },
+          })
+        : prisma.stockTransaction.findUnique({
+            where: { id },
+            include: {
+              inventory: true,
+            },
+          }));
 
       if (!activity) {
         return ResponseHandler.error(res, {

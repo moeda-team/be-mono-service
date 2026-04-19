@@ -18,11 +18,11 @@ export class DiscountMenuController {
       }
 
       // Check if discount exists and belongs to user's outlet
-      const discount = await prisma.discount.findUnique({
-        where: { id: discountMenuData.discountId },
+      const discount = await prisma.discount.findFirst({
+        where: { id: discountMenuData.discountId, outletId: user.outletId },
       });
 
-      if (!discount || discount.outletId !== user.outletId) {
+      if (!discount) {
         return ResponseHandler.error(res, {
           message: 'Discount not found or access denied',
           statusCode: 404,
@@ -199,11 +199,11 @@ export class DiscountMenuController {
 
       // Validate new discountId if provided
       if (discountMenuData.discountId) {
-        const newDiscount = await prisma.discount.findUnique({
-          where: { id: discountMenuData.discountId },
+        const newDiscount = await prisma.discount.findFirst({
+          where: { id: discountMenuData.discountId, outletId: user.outletId },
         });
 
-        if (!newDiscount || newDiscount.outletId !== user.outletId) {
+        if (!newDiscount) {
           return ResponseHandler.error(res, {
             message: 'New discount not found or access denied',
             statusCode: 404,

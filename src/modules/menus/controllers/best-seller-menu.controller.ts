@@ -6,7 +6,9 @@ import prisma from '../../../config/database';
 
 export class BestSellerMenuController {
   getAllBestSellerMenus = async (req: Request, res: Response) => {
-    const outletId = req.headers.outletid as string;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId =
+      user?.outletId || (req.headers.outletid as string) || (req.headers.Outletid as string);
     const page = parseInt(req.query.page as string) || null;
     const limit = parseInt(req.query.limit as string) || null;
     const search = (req.query.search as string)?.trim() || null;
@@ -134,33 +136,65 @@ export class BestSellerMenuController {
   };
   getBestSellerMenuById = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const outletId = req.headers.outletid as string;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId =
+      user?.outletId || (req.headers.outletid as string) || (req.headers.Outletid as string);
 
     try {
-      const bestSellerMenu = await prisma.bestSellerMenu.findUnique({
-        where: { id },
-        include: {
-          menu: {
+      const bestSellerMenu = await (user?.outletId
+        ? prisma.bestSellerMenu.findFirst({
+            where: {
+              id,
+              menu: {
+                outletId: user.outletId,
+              },
+            },
             include: {
-              options: true,
-              menuIngredients: {
+              menu: {
                 include: {
-                  ingredient: {
-                    select: {
-                      id: true,
-                      name: true,
-                      unit: true,
-                      currentStock: true,
-                      minimumStock: true,
-                      status: true,
+                  options: true,
+                  menuIngredients: {
+                    include: {
+                      ingredient: {
+                        select: {
+                          id: true,
+                          name: true,
+                          unit: true,
+                          currentStock: true,
+                          minimumStock: true,
+                          status: true,
+                        },
+                      },
                     },
                   },
                 },
               },
             },
-          },
-        },
-      });
+          })
+        : prisma.bestSellerMenu.findUnique({
+            where: { id },
+            include: {
+              menu: {
+                include: {
+                  options: true,
+                  menuIngredients: {
+                    include: {
+                      ingredient: {
+                        select: {
+                          id: true,
+                          name: true,
+                          unit: true,
+                          currentStock: true,
+                          minimumStock: true,
+                          status: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          }));
 
       if (!bestSellerMenu) {
         return ResponseHandler.error(res, {
@@ -201,7 +235,8 @@ export class BestSellerMenuController {
 
   async createBestSellerMenu(req: Request, res: Response) {
     const bestSellerMenuData: CreateBestSellerMenuDTO = req.body;
-    const outletId = req.headers.Outletid as string;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
 
     try {
       const menu = await prisma.menu.findUnique({
@@ -276,15 +311,28 @@ export class BestSellerMenuController {
 
   async deleteBestSellerMenu(req: Request, res: Response) {
     const { id } = req.params;
-    const outletId = (req.headers.Outletid as string) || (req.headers.outletid as string);
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
 
     try {
-      const bestSellerMenu = await prisma.bestSellerMenu.findUnique({
-        where: { id },
-        include: {
-          menu: true,
-        },
-      });
+      const bestSellerMenu = await (outletId
+        ? prisma.bestSellerMenu.findFirst({
+            where: {
+              id,
+              menu: {
+                outletId,
+              },
+            },
+            include: {
+              menu: true,
+            },
+          })
+        : prisma.bestSellerMenu.findUnique({
+            where: { id },
+            include: {
+              menu: true,
+            },
+          }));
 
       if (!bestSellerMenu) {
         return ResponseHandler.error(res, {
@@ -293,7 +341,7 @@ export class BestSellerMenuController {
         });
       }
 
-      if (bestSellerMenu.menu.outletId !== outletId) {
+      if (outletId && bestSellerMenu.menu.outletId !== outletId) {
         return ResponseHandler.error(res, {
           message: 'Best seller menu not found',
           statusCode: 404,

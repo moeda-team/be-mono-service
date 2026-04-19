@@ -18,11 +18,11 @@ export class VoucherMenuController {
       }
 
       // Check if voucher exists and belongs to user's outlet
-      const voucher = await prisma.voucher.findUnique({
-        where: { id: voucherMenuData.voucherId },
+      const voucher = await prisma.voucher.findFirst({
+        where: { id: voucherMenuData.voucherId, outletId: user.outletId },
       });
 
-      if (!voucher || voucher.outletId !== user.outletId) {
+      if (!voucher) {
         return ResponseHandler.error(res, {
           message: 'Voucher not found or access denied',
           statusCode: 404,

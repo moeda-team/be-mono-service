@@ -112,9 +112,17 @@ export class AttendanceController {
         });
       }
 
+      if (targetUser.outletId !== user.outletId) {
+        return ResponseHandler.error(res, {
+          message: 'User not found',
+          statusCode: 404,
+        });
+      }
+
       const existingAttendance = await prisma.attendance.findFirst({
         where: {
           userId: body.userId,
+          outletId: user.outletId,
           createdAt: {
             gte: today,
             lt: tomorrow,
@@ -173,6 +181,7 @@ export class AttendanceController {
       const existingAttendance = await prisma.attendance.findFirst({
         where: {
           userId: (userId as string) || user.userId,
+          outletId: user.outletId,
           createdAt: {
             gte: today,
             lt: tomorrow,
@@ -261,10 +270,11 @@ export class AttendanceController {
 
   async getAttendanceById(req: Request, res: Response) {
     const { id } = req.params;
+    const user = (req as Request & { user: { outletId: string } }).user;
 
     try {
-      const attendance = await prisma.attendance.findUnique({
-        where: { id },
+      const attendance = await prisma.attendance.findFirst({
+        where: { id, outletId: user.outletId },
         include: { user: { select: { id: true, name: true, email: true } } },
       });
 

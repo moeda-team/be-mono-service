@@ -194,28 +194,51 @@ export class TransactionController {
 
   async getTransactionById(req: Request, res: Response) {
     const { id } = req.params;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
 
     try {
-      const transaction = await prisma.transaction.findUnique({
-        where: { id },
-        include: {
-          logTableMove: {
-            orderBy: {
-              createdAt: 'asc',
-            },
-          },
-          table: true,
-          subTransactions: {
+      const transaction = await (outletId
+        ? prisma.transaction.findFirst({
+            where: { id, outletId },
             include: {
-              menu: true,
+              logTableMove: {
+                orderBy: {
+                  createdAt: 'asc',
+                },
+              },
+              table: true,
+              subTransactions: {
+                include: {
+                  menu: true,
+                },
+                orderBy: {
+                  status: 'desc',
+                },
+              },
+              voucher: true,
             },
-            orderBy: {
-              status: 'desc',
+          })
+        : prisma.transaction.findUnique({
+            where: { id },
+            include: {
+              logTableMove: {
+                orderBy: {
+                  createdAt: 'asc',
+                },
+              },
+              table: true,
+              subTransactions: {
+                include: {
+                  menu: true,
+                },
+                orderBy: {
+                  status: 'desc',
+                },
+              },
+              voucher: true,
             },
-          },
-          voucher: true,
-        },
-      });
+          }));
       if (!transaction) {
         return ResponseHandler.error(res, {
           message: 'Transaction not found',
@@ -357,6 +380,10 @@ export class TransactionController {
     try {
       const reqWithUser = req as Request & { user?: JwtPayload };
       const user = reqWithUser.user;
+
+      if (user && 'outletId' in user && user.outletId) {
+        transactionData.outletId = String(user.outletId);
+      }
 
       if (!transactionData.cart?.length) {
         return ResponseHandler.error(res, {
@@ -607,11 +634,17 @@ export class TransactionController {
 
   async deleteTransaction(req: Request, res: Response) {
     const { id } = req.params;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
 
     try {
-      const transaction = await prisma.transaction.findUnique({
-        where: { id },
-      });
+      const transaction = await (outletId
+        ? prisma.transaction.findFirst({
+            where: { id, outletId },
+          })
+        : prisma.transaction.findUnique({
+            where: { id },
+          }));
       if (!transaction) {
         return ResponseHandler.error(res, {
           message: 'Transaction not found',
@@ -620,7 +653,7 @@ export class TransactionController {
       }
 
       await prisma.transaction.update({
-        where: { id },
+        where: { id: transaction.id },
         data: {
           status: 'cancelled',
         },
@@ -659,11 +692,22 @@ export class TransactionController {
   async updateTransactionStatus(req: Request, res: Response) {
     const { id } = req.params;
     const { status } = req.body;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
 
     try {
-      const transaction = await prisma.subTransaction.findUnique({
-        where: { id },
-      });
+      const transaction = await (outletId
+        ? prisma.subTransaction.findFirst({
+            where: {
+              id,
+              transaction: {
+                outletId,
+              },
+            },
+          })
+        : prisma.subTransaction.findUnique({
+            where: { id },
+          }));
 
       if (!transaction) {
         return ResponseHandler.error(res, {
@@ -748,11 +792,17 @@ export class TransactionController {
   async updateTransactionTable(req: Request, res: Response) {
     const { id } = req.params;
     const { tableId, note } = req.body;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
 
     try {
-      const transaction = await prisma.transaction.findUnique({
-        where: { id },
-      });
+      const transaction = await (outletId
+        ? prisma.transaction.findFirst({
+            where: { id, outletId },
+          })
+        : prisma.transaction.findUnique({
+            where: { id },
+          }));
 
       if (!transaction) {
         return ResponseHandler.error(res, {

@@ -7,12 +7,7 @@ import { validateUpsertOption } from '../validators/option.validator';
 const router = Router();
 const optionController = new OptionController();
 
-router.get(
-  '',
-  jwtAuthNotRequired,
-  requirePermission(UserRole.STORE_MANAGER),
-  optionController.findAll,
-);
+router.get('', jwtAuth, requirePermission(UserRole.STORE_MANAGER), optionController.findAll);
 router.get('/:menuId', jwtAuthNotRequired, optionController.findOne);
 router.post(
   '/',
