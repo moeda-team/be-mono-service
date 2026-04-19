@@ -1,5 +1,7 @@
 export interface Outlet {
   id: string;
+  img: string | null;
+  color: string | null;
   name: string;
   outletType: string;
   address: string;
@@ -14,6 +16,8 @@ export interface Outlet {
 
 export interface CreateOutletDTO {
   name: string;
+  img?: string;
+  color?: string;
   outletType: string;
   address: string;
   number: string;

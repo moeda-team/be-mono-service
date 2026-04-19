@@ -42,6 +42,13 @@ export const validateCreateOutlet = [
     .optional()
     .isIn(['active', 'inactive'])
     .withMessage('Status must be active or inactive'),
+  body('img').optional().isString().withMessage('Image URL must be a string'),
+  body('color')
+    .optional()
+    .isString()
+    .withMessage('Color must be a string')
+    .matches(/^#[0-9A-Fa-f]{6}$/)
+    .withMessage('Color must be a valid hex color code (e.g., #FE770A)'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -100,6 +107,13 @@ export const validateUpdateOutlet = [
     .notEmpty()
     .isIn(['active', 'inactive'])
     .withMessage('Status must be active or inactive'),
+  body('img').optional().isString().withMessage('Image URL must be a string'),
+  body('color')
+    .optional()
+    .isString()
+    .withMessage('Color must be a string')
+    .matches(/^#[0-9A-Fa-f]{6}$/)
+    .withMessage('Color must be a valid hex color code (e.g., #FE770A)'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

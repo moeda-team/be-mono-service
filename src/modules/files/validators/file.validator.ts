@@ -6,7 +6,7 @@ export const validateCreateFile = [
   body('category')
     .trim()
     .notEmpty()
-    .isIn(['icon', 'menu', 'attendance'])
+    .isIn(['icon', 'menu', 'attendance', 'logo'])
     .withMessage('Category not allowed'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
