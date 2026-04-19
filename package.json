@@ -77,5 +77,8 @@
   },
   "optionalDependencies": {
     "ajv": "^8.18.0"
+  },
+  "overrides": {
+    "tar": "^7.5.13"
   }
 }
