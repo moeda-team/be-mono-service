@@ -9,28 +9,51 @@ import prisma from '../../../config/database';
 export class MenuController {
   getMenuById = async (req: Request, res: Response) => {
     const { id } = req.params;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
 
     try {
-      const menu = await prisma.menu.findUnique({
-        where: { id },
-        include: {
-          options: true,
-          menuIngredients: {
+      const menu = await (outletId
+        ? prisma.menu.findFirst({
+            where: { id, outletId },
             include: {
-              ingredient: {
-                select: {
-                  id: true,
-                  name: true,
-                  unit: true,
-                  currentStock: true,
-                  minimumStock: true,
-                  status: true,
+              options: true,
+              menuIngredients: {
+                include: {
+                  ingredient: {
+                    select: {
+                      id: true,
+                      name: true,
+                      unit: true,
+                      currentStock: true,
+                      minimumStock: true,
+                      status: true,
+                    },
+                  },
                 },
               },
             },
-          },
-        },
-      });
+          })
+        : prisma.menu.findUnique({
+            where: { id },
+            include: {
+              options: true,
+              menuIngredients: {
+                include: {
+                  ingredient: {
+                    select: {
+                      id: true,
+                      name: true,
+                      unit: true,
+                      currentStock: true,
+                      minimumStock: true,
+                      status: true,
+                    },
+                  },
+                },
+              },
+            },
+          }));
 
       if (!menu) {
         return ResponseHandler.error(res, {
@@ -61,7 +84,8 @@ export class MenuController {
   };
 
   getAllMenus = async (req: Request, res: Response) => {
-    const outletId = req.headers.outletid as string;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId || (req.headers.outletid as string);
     const { search, category } = req.query;
     const page = parseInt(req.query.page as string) || null;
     const limit = parseInt(req.query.limit as string) || null;

@@ -84,10 +84,12 @@ export class VoucherController {
 
   async getVoucherByName(req: Request, res: Response) {
     const { code } = req.params;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
 
     try {
       const voucher = await prisma.voucher.findFirst({
-        where: { name: code },
+        where: { name: code, ...(outletId ? { outletId } : {}) },
       });
       if (!voucher) {
         return ResponseHandler.error(res, {

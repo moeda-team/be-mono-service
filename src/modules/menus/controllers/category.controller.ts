@@ -6,7 +6,8 @@ import { Prisma } from '@prisma/client';
 
 export class CategoryController {
   async findAll(req: Request, res: Response) {
-    const outletId = req.headers.Outletid as string;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId || (req.headers.Outletid as string);
     const page = parseInt(req.query.page as string) || null;
     const limit = parseInt(req.query.limit as string) || null;
     const search = (req.query.search as string)?.trim() || null;
@@ -63,7 +64,8 @@ export class CategoryController {
 
   async findOne(req: Request, res: Response) {
     const { id } = req.params;
-    const outletId = req.headers.Outletid as string;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId || (req.headers.Outletid as string);
 
     try {
       const category = await prisma.category.findUnique({

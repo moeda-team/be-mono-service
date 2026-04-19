@@ -13,11 +13,12 @@ export class MenuIngredientController {
   upsertMenuIngredient = async (req: AuthenticatedRequest, res: Response) => {
     const { menuId } = req.body;
     const ingredients = req.body.ingredients || [req.body];
+    const outletId = req.user?.outletId;
 
     try {
       // Check if menu exists
       const menu = await prisma.menu.findUnique({
-        where: { id: menuId },
+        where: { id: menuId, ...(outletId ? { outletId } : {}) },
       });
 
       if (!menu) {
@@ -43,7 +44,7 @@ export class MenuIngredientController {
 
       // Validate all ingredients exist and get their units
       const existingIngredients = await prisma.inventory.findMany({
-        where: { id: { in: incomingIngredientIds } },
+        where: { id: { in: incomingIngredientIds }, ...(outletId ? { outletId } : {}) },
       });
 
       if (existingIngredients.length !== incomingIngredientIds.length) {
@@ -125,13 +126,14 @@ export class MenuIngredientController {
     const { menuId } = req.params;
     const page = parseInt(req.query.page as string) || null;
     const limit = parseInt(req.query.limit as string) || null;
+    const outletId = req.user?.outletId;
 
     const skip = page && limit ? (page - 1) * limit : undefined;
     const take = limit || undefined;
 
     try {
       const menu = await prisma.menu.findUnique({
-        where: { id: menuId },
+        where: { id: menuId, ...(outletId ? { outletId } : {}) },
       });
 
       if (!menu) {
@@ -142,7 +144,7 @@ export class MenuIngredientController {
       }
 
       const menuIngredients = await prisma.menuIngredient.findMany({
-        where: { menuId },
+        where: { menuId, ...(outletId ? { menu: { outletId } } : {}) },
         include: {
           ingredient: {
             select: {
@@ -163,7 +165,9 @@ export class MenuIngredientController {
       });
 
       if (page && limit) {
-        const total = await prisma.menuIngredient.count({ where: { menuId } });
+        const total = await prisma.menuIngredient.count({
+          where: { menuId, ...(outletId ? { menu: { outletId } } : {}) },
+        });
         return ResponseHandler.success(res, {
           message: 'Menu ingredients retrieved successfully',
           data: menuIngredients,
@@ -191,12 +195,14 @@ export class MenuIngredientController {
 
   removeIngredientFromMenu = async (req: AuthenticatedRequest, res: Response) => {
     const { menuId, ingredientId } = req.params;
+    const outletId = req.user?.outletId;
 
     try {
       const menuIngredient = await prisma.menuIngredient.findFirst({
         where: {
           menuId,
           ingredientId,
+          ...(outletId ? { menu: { outletId } } : {}),
         },
       });
 

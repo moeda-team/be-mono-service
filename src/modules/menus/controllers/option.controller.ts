@@ -5,6 +5,8 @@ import { ResponseHandler } from '../../../utils/response/responseHandler';
 
 export class OptionController {
   async findAll(req: Request, res: Response) {
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
     const page = parseInt(req.query.page as string) || null;
     const limit = parseInt(req.query.limit as string) || null;
 
@@ -13,6 +15,15 @@ export class OptionController {
 
     try {
       const options = await prisma.option.findMany({
+        ...(outletId
+          ? {
+              where: {
+                menu: {
+                  outletId,
+                },
+              },
+            }
+          : {}),
         orderBy: {
           createdAt: 'desc',
         },
@@ -21,7 +32,17 @@ export class OptionController {
       });
 
       if (page && limit) {
-        const total = await prisma.option.count();
+        const total = await prisma.option.count(
+          outletId
+            ? {
+                where: {
+                  menu: {
+                    outletId,
+                  },
+                },
+              }
+            : undefined,
+        );
         return ResponseHandler.success(res, {
           message: 'Options retrieved successfully',
           data: options,
@@ -48,11 +69,22 @@ export class OptionController {
 
   async findOne(req: Request, res: Response) {
     const { menuId } = req.params;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
 
     try {
-      const option = await prisma.option.findUnique({
-        where: { menuId },
-      });
+      const option = await (outletId
+        ? prisma.option.findFirst({
+            where: {
+              menuId,
+              menu: {
+                outletId,
+              },
+            },
+          })
+        : prisma.option.findUnique({
+            where: { menuId },
+          }));
       if (!option) {
         return ResponseHandler.error(res, {
           message: 'Option not found',

@@ -16,7 +16,12 @@ router.get(
   requirePermission(UserRole.EMPLOYEE),
   inventoryController.countByStatus,
 );
-router.get('/:id', inventoryController.getInventoryById);
+router.get(
+  '/:id',
+  jwtAuth,
+  requirePermission(UserRole.EMPLOYEE),
+  inventoryController.getInventoryById,
+);
 router.get(
   '/',
   jwtAuth,

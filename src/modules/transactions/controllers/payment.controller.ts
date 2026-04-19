@@ -9,11 +9,14 @@ import { IngredientService } from '../../../services/ingredient.service';
 export class PaymentController {
   async paymentTransaction(req: Request, res: Response) {
     const transactionData: PaymentDTO = req.body;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
 
     try {
       const findTransaction = await prisma.transaction.findFirst({
         where: {
           paymentNumber: transactionData.transactionDetails.orderId,
+          ...(outletId ? { outletId } : {}),
         },
         include: {
           subTransactions: true,
@@ -237,11 +240,14 @@ export class PaymentController {
 
   async getPaymentStatus(req: Request, res: Response) {
     const { paymentNumber } = req.params;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
 
     try {
       const transaction = await prisma.transaction.findFirst({
         where: {
           paymentNumber,
+          ...(outletId ? { outletId } : {}),
         },
         include: {
           subTransactions: true,

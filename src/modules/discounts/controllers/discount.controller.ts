@@ -84,10 +84,12 @@ export class DiscountController {
 
   async getDiscountByName(req: Request, res: Response) {
     const { code } = req.params;
+    const { user } = req as Request & { user?: { outletId?: string } };
+    const outletId = user?.outletId;
 
     try {
       const discount = await prisma.discount.findFirst({
-        where: { name: code },
+        where: { name: code, ...(outletId ? { outletId } : {}) },
       });
       if (!discount) {
         return ResponseHandler.error(res, {
