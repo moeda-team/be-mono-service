@@ -29,7 +29,22 @@ export class AuthController {
           statusCode: 401,
         });
       }
-      const token = signToken({ userId: user.id, outletId: user.outletId! }, TokenType.ACCESS);
+
+      let outlet = null;
+      if (user.outletId) {
+        outlet = await prisma.outlet.findFirst({ where: { id: user.outletId } });
+        if (!outlet) {
+          return ResponseHandler.error(res, {
+            message: 'Outlet not found',
+            statusCode: 401,
+          });
+        }
+      }
+
+      const token = signToken(
+        { userId: user.id, outletId: user.outletId || undefined },
+        TokenType.ACCESS,
+      );
       const expiresIn = Number(process.env.JWT_ACCESS_EXPIRES_IN);
       const expiresOn = Math.floor(Date.now() / 1000) + expiresIn;
 
@@ -44,6 +59,7 @@ export class AuthController {
           ext_expires_in: expiresIn,
           access_token: token,
           expires_on: expiresOn.toString(),
+          outlet,
         },
       });
     } catch (error) {
