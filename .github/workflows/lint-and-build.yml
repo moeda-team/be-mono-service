@@ -3,8 +3,6 @@ name: Lint, Type Check, and Build
 on:
   push:
     branches: [ "**" ]
-  pull_request:
-    branches: [ "**" ]
 
 jobs:
   lint-test-build:
