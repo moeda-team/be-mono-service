@@ -3,8 +3,6 @@ name: Deploy to VPS
 on:
   push:
     branches: [ moeda ]
-  pull_request:
-    branches: [ moeda ]
 
 jobs:
   lint-test-build:
