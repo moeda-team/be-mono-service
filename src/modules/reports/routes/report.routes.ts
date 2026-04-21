@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { ReportController } from '../controllers/report.controller';
+import { validateSalesAnalyticsQuery } from '../validators/report.validator';
 import { jwtAuth, requirePermission } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
 
@@ -20,6 +21,7 @@ router.get(
   '/sales',
   jwtAuth,
   requirePermission(UserRole.EMPLOYEE),
+  validateSalesAnalyticsQuery,
   reportController.salesAnalytics,
 );
 

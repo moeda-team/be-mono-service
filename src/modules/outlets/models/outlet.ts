@@ -10,6 +10,8 @@ export interface Outlet {
   city: string;
   postalCode: string;
   status: string;
+  wifiName: string | null;
+  wifiPassword: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,6 +27,8 @@ export interface CreateOutletDTO {
   city: string;
   postalCode: string;
   status: string;
+  wifiName?: string;
+  wifiPassword?: string;
 }
 
 export interface UpdateOutletDTO extends Partial<CreateOutletDTO> {}

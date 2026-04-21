@@ -117,6 +117,8 @@ export class OutletController {
           city: outletData.city,
           postalCode: outletData.postalCode,
           status: outletData.status,
+          wifiName: outletData.wifiName,
+          wifiPassword: outletData.wifiPassword,
         },
       });
 
@@ -187,6 +189,8 @@ export class OutletController {
           city: outletData.city,
           postalCode: outletData.postalCode,
           status: outletData.status,
+          wifiName: outletData.wifiName,
+          wifiPassword: outletData.wifiPassword,
         },
       });
 
