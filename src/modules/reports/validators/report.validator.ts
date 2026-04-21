@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { body, validationResult } from 'express-validator';
+import { body, query, validationResult } from 'express-validator';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 
 export const validateCreateCashBalance = [
@@ -24,6 +24,28 @@ export const validateCreateCashBalance = [
 
 export const validateUpdateLogCashBalance = [
   body('cancelNote').optional().isString().withMessage('Cancel note must be a string'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return ResponseHandler.error(res, {
+        message: 'Validation failed',
+        statusCode: 400,
+        error: {
+          code: 'VALIDATION_FAILED',
+          details: errors.array(),
+        },
+      });
+    }
+    next();
+  },
+];
+
+export const validateSalesAnalyticsQuery = [
+  query('startDate')
+    .optional()
+    .isISO8601()
+    .withMessage('startDate must be a valid date (YYYY-MM-DD)'),
+  query('endDate').optional().isISO8601().withMessage('endDate must be a valid date (YYYY-MM-DD)'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

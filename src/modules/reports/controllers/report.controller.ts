@@ -329,54 +329,82 @@ export class ReportController {
     const user = (req as Request & { user: { outletId: string } }).user;
 
     try {
-      // Indonesian day names mapping
+      const startDateParam = req.query.startDate as string;
+      const endDateParam = req.query.endDate as string;
+
       const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
-      // Generate data for past 7 days including today
-      const salesData = [];
-      const today = new Date();
+      let startDate: Date;
+      let endDate: Date;
+      let daysDiff: number;
 
-      for (let i = 6; i >= 0; i--) {
-        const date = subDays(today, i);
-        const dateStr = format(date, 'yyyy-MM-dd');
-        const dayName = dayNames[date.getDay()];
-        const day = format(date, 'dd');
-        const formattedDate = `${day} ${dayName}`;
+      if (startDateParam && endDateParam) {
+        startDate = new Date(`${startDateParam}T00:00:00Z`);
+        endDate = new Date(`${endDateParam}T00:00:00Z`);
+        // FIX 1: +1 to include both start and end day
+        daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      } else {
+        endDate = new Date();
+        startDate = subDays(endDate, 6);
+        startDate.setHours(0, 0, 0, 0);
+        daysDiff = 7;
+      }
 
-        // Fetch transactions for this date
-        const transactions = await prisma.transaction.findMany({
-          where: {
-            outletId: user.outletId,
-            status: 'completed',
-            createdAt: {
-              gte: new Date(`${dateStr}T00:00:00Z`),
-              lt: new Date(`${dateStr}T23:59:59Z`),
-            },
+      // FIX 2: Single query instead of N queries in a loop
+      const queryEnd = addDays(endDate, startDateParam ? 1 : 0);
+      queryEnd.setHours(0, 0, 0, 0);
+
+      const allTransactions = await prisma.transaction.findMany({
+        where: {
+          outletId: user.outletId,
+          status: 'completed',
+          createdAt: {
+            gte: startDate,
+            lt: queryEnd,
           },
-        });
+        },
+      });
 
-        // Calculate total sales for the day
+      // Group transactions by date string (yyyy-MM-dd UTC)
+      const grouped = allTransactions.reduce(
+        (acc, transaction) => {
+          const dateKey = format(transaction.createdAt, 'yyyy-MM-dd');
+          if (!acc[dateKey]) acc[dateKey] = [];
+          acc[dateKey].push(transaction);
+          return acc;
+        },
+        {} as Record<string, typeof allTransactions>,
+      );
+
+      // FIX 3: Use addDays() instead of setDate() to avoid local time mutation
+      const salesData = Array.from({ length: daysDiff }, (_, i) => {
+        const currentDate = addDays(startDate, i);
+        const dateStr = format(currentDate, 'yyyy-MM-dd');
+        const dayName = dayNames[currentDate.getDay()];
+        const formattedDate = `${format(currentDate, 'dd')} ${dayName}`;
+
+        const transactions = grouped[dateStr] ?? [];
+
         const salesAmount = transactions.reduce(
           (sum, transaction) => sum + Number(transaction.total),
           0,
         );
 
-        // Count transactions by payment method
         const cashCount = transactions.filter(t => t.paymentMethod.toLowerCase() === 'cash').length;
         const debitCount = transactions.filter(
           t => t.paymentMethod.toLowerCase() === 'debit',
         ).length;
         const qrisCount = transactions.filter(t => t.paymentMethod.toLowerCase() === 'qris').length;
 
-        salesData.push({
+        return {
           date: formattedDate,
           transactions_amount: salesAmount,
           transactions_count: transactions.length,
           cash_count: cashCount,
-          debitCount: debitCount,
+          debit_count: debitCount, // FIX 4: was `debitCount`, now consistent snake_case
           qris_count: qrisCount,
-        });
-      }
+        };
+      });
 
       return ResponseHandler.success(res, {
         message: 'Sales analytics retrieved successfully',
