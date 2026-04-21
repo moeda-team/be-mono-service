@@ -49,6 +49,18 @@ export const validateCreateOutlet = [
     .withMessage('Color must be a string')
     .matches(/^#[0-9A-Fa-f]{6}$/)
     .withMessage('Color must be a valid hex color code (e.g., #FE770A)'),
+  body('wifiName')
+    .optional()
+    .isString()
+    .withMessage('WiFi name must be a string')
+    .isLength({ max: 50 })
+    .withMessage('WiFi name must be at most 50 characters'),
+  body('wifiPassword')
+    .optional()
+    .isString()
+    .withMessage('WiFi password must be a string')
+    .isLength({ max: 50 })
+    .withMessage('WiFi password must be at most 50 characters'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -114,6 +126,18 @@ export const validateUpdateOutlet = [
     .withMessage('Color must be a string')
     .matches(/^#[0-9A-Fa-f]{6}$/)
     .withMessage('Color must be a valid hex color code (e.g., #FE770A)'),
+  body('wifiName')
+    .optional()
+    .isString()
+    .withMessage('WiFi name must be a string')
+    .isLength({ max: 50 })
+    .withMessage('WiFi name must be at most 50 characters'),
+  body('wifiPassword')
+    .optional()
+    .isString()
+    .withMessage('WiFi password must be a string')
+    .isLength({ max: 50 })
+    .withMessage('WiFi password must be at most 50 characters'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

@@ -149,19 +149,21 @@ model SubTransaction {
 }
 
 model Outlet {
-  id         String   @id @default(uuid()) @db.VarChar(36)
-  img        String?  @default("https://moeda-space.s3.ap-southeast-1.amazonaws.com/default.png")
-  color      String?  @default("#FE770A")
-  outletType String   @db.VarChar(50)
-  name       String   @db.VarChar(100)
-  address    String?
-  number     String?  @db.VarChar(20)
-  province   String?  @db.VarChar(50)
-  city       String?  @db.VarChar(50)
-  postalCode String?  @db.VarChar(5)
-  status     String   @default("active") @db.VarChar(20)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String   @id @default(uuid()) @db.VarChar(36)
+  img          String?  @default("https://moeda-space.s3.ap-southeast-1.amazonaws.com/default.png")
+  color        String?  @default("#FE770A")
+  outletType   String   @db.VarChar(50)
+  name         String   @db.VarChar(100)
+  address      String?
+  number       String?  @db.VarChar(20)
+  province     String?  @db.VarChar(50)
+  city         String?  @db.VarChar(50)
+  postalCode   String?  @db.VarChar(5)
+  wifiName     String?  @db.VarChar(50)
+  wifiPassword String?  @db.VarChar(50)
+  status       String   @default("active") @db.VarChar(20)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   transactions      Transaction[]
   messages          Message[]
