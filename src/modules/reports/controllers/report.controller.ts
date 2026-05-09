@@ -351,7 +351,7 @@ export class ReportController {
       }
 
       // FIX 2: Single query instead of N queries in a loop
-      const queryEnd = addDays(endDate, startDateParam ? 1 : 0);
+      const queryEnd = addDays(endDate, 1);
       queryEnd.setHours(0, 0, 0, 0);
 
       const allTransactions = await prisma.transaction.findMany({
