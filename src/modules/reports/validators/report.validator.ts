@@ -58,6 +58,37 @@ export const validateDailyReportQuery = [
   },
 ];
 
+export const validateSystemRevenueQuery = [
+  query('start_date')
+    .optional()
+    .isISO8601()
+    .withMessage('start_date must be a valid date (YYYY-MM-DD)'),
+  query('end_date')
+    .optional()
+    .isISO8601()
+    .withMessage('end_date must be a valid date (YYYY-MM-DD)'),
+  query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+  query('search').optional().isString().withMessage('Search must be a string'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return ResponseHandler.error(res, {
+        message: 'Validation failed',
+        statusCode: 400,
+        error: {
+          code: 'VALIDATION_FAILED',
+          details: errors.array(),
+        },
+      });
+    }
+    next();
+  },
+];
+
 export const validateSalesAnalyticsQuery = [
   query('startDate')
     .optional()

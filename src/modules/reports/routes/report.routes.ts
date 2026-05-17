@@ -3,6 +3,7 @@ import { ReportController } from '../controllers/report.controller';
 import {
   validateDailyReportQuery,
   validateSalesAnalyticsQuery,
+  validateSystemRevenueQuery,
 } from '../validators/report.validator';
 import { jwtAuth, requirePermission } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
@@ -47,6 +48,7 @@ router.get(
   '/system-revenue',
   jwtAuth,
   requirePermission(UserRole.ADMIN),
+  validateSystemRevenueQuery,
   reportController.systemRevenue,
 );
 

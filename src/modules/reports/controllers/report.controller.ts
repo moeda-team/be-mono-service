@@ -489,18 +489,25 @@ export class ReportController {
       const end_date = (req.query.end_date as string) || format(new Date(), 'yyyy-MM-dd');
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
+      const search = (req.query.search as string)?.toLowerCase();
 
       // Build date range
       const startDate = new Date(`${start_date}T00:00:00Z`);
       const endDate = new Date(`${end_date}T23:59:59Z`);
 
-      const whereClause = {
+      const whereClause: any = {
         outletId: user.outletId,
         status: 'completed',
         createdAt: {
           gte: startDate,
           lte: endDate,
         },
+        ...(search && {
+          OR: [
+            { paymentMethod: { contains: search, mode: 'insensitive' } },
+            { paymentNumber: { contains: search, mode: 'insensitive' } },
+          ],
+        }),
       };
 
       // Get total count
