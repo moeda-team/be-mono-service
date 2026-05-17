@@ -489,6 +489,7 @@ export class CashBookController {
       const page = parseInt(req.query.page as string);
       const limit = parseInt(req.query.limit as string);
       const status = req.query.status as string;
+      const search = req.query.search as string;
       const usePagination = !isNaN(page) && !isNaN(limit) && page > 0 && limit > 0;
 
       const whereClause: any = {
@@ -499,6 +500,12 @@ export class CashBookController {
         whereClause.closeAt = null;
       } else if (status === 'closed') {
         whereClause.closeAt = { not: null };
+      }
+
+      if (search) {
+        whereClause.user = {
+          name: { contains: search, mode: 'insensitive' },
+        };
       }
 
       const [cashBooks, totalCount] = await Promise.all([
