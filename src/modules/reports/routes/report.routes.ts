@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { ReportController } from '../controllers/report.controller';
-import { validateSalesAnalyticsQuery } from '../validators/report.validator';
+import {
+  validateDailyReportQuery,
+  validateSalesAnalyticsQuery,
+} from '../validators/report.validator';
 import { jwtAuth, requirePermission } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
 
@@ -8,7 +11,13 @@ const router = Router();
 const reportController = new ReportController();
 
 // Daily report route
-router.get('/daily', jwtAuth, requirePermission(UserRole.EMPLOYEE), reportController.dailyReport);
+router.get(
+  '/daily',
+  jwtAuth,
+  requirePermission(UserRole.EMPLOYEE),
+  validateDailyReportQuery,
+  reportController.dailyReport,
+);
 router.get(
   '/daily/download',
   jwtAuth,

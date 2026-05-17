@@ -56,6 +56,7 @@ export const validateCashBookListQuery = [
     .optional()
     .isIn(['open', 'closed'])
     .withMessage('Status must be either "open" or "closed"'),
+  query('search').optional().isString().withMessage('Search must be a string'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

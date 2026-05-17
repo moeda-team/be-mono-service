@@ -40,6 +40,24 @@ export const validateUpdateLogCashBalance = [
   },
 ];
 
+export const validateDailyReportQuery = [
+  query('search').optional().isString().withMessage('Search must be a string'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return ResponseHandler.error(res, {
+        message: 'Validation failed',
+        statusCode: 400,
+        error: {
+          code: 'VALIDATION_FAILED',
+          details: errors.array(),
+        },
+      });
+    }
+    next();
+  },
+];
+
 export const validateSalesAnalyticsQuery = [
   query('startDate')
     .optional()

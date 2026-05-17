@@ -15,6 +15,7 @@ export class ReportController {
       const yesterdayDate = format(addDays(new Date(date), -1), 'yyyy-MM-dd');
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
+      const search = (req.query.search as string)?.toLowerCase();
 
       // Fetch all transactions and log cash balances from database
       const [transactions, logCashBalances] = await Promise.all([
@@ -89,10 +90,18 @@ export class ReportController {
       }));
 
       // Combine and sort by date (newest first)
-      const allDetails: DailyReportDetail[] = [
-        ...transactionDetails,
-        ...logCashBalanceDetails,
-      ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      let allDetails: DailyReportDetail[] = [...transactionDetails, ...logCashBalanceDetails].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+
+      if (search) {
+        allDetails = allDetails.filter(
+          d =>
+            d.paymentMethod?.toLowerCase().includes(search) ||
+            d.status?.toLowerCase().includes(search) ||
+            d.description?.toLowerCase().includes(search),
+        );
+      }
 
       // Apply pagination to details
       const startIndex = (page - 1) * limit;
