@@ -363,4 +363,40 @@ export class MenuController {
       });
     }
   }
+
+  async updateMenuStatus(req: Request, res: Response) {
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    const user = (req as Request & { user?: { outletId: string } }).user;
+    const outletId = user?.outletId;
+
+    try {
+      const menu = await prisma.menu.findUnique({
+        where: { id, outletId },
+      });
+      if (!menu) {
+        return ResponseHandler.error(res, {
+          message: 'Menu not found',
+          statusCode: 404,
+        });
+      }
+
+      const updatedMenu = await prisma.menu.update({
+        where: { id, outletId },
+        data: { isActive },
+      });
+
+      return ResponseHandler.success(res, {
+        message: 'Menu status updated successfully',
+        data: updatedMenu,
+      });
+    } catch (error) {
+      logger.error('Error updating menu status:', error);
+      return ResponseHandler.error(res, {
+        message: 'Internal server error',
+        statusCode: 500,
+      });
+    }
+  }
 }

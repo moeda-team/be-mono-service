@@ -53,6 +53,29 @@ export const validateUpdateMenu = [
     .custom(value => value >= 0)
     .withMessage('Price must be non-negative'),
   body('pdf').optional().isURL().withMessage('Invalid PDF URL'),
+  body('isActive').optional().isBoolean().withMessage('isActive must be a boolean').default(true),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return ResponseHandler.error(res, {
+        message: 'Validation failed',
+        statusCode: 400,
+        error: {
+          code: 'VALIDATION_FAILED',
+          details: errors.array(),
+        },
+      });
+    }
+    next();
+  },
+];
+
+export const validateUpdateMenuStatus = [
+  body('isActive')
+    .notEmpty()
+    .withMessage('isActive is required')
+    .isBoolean()
+    .withMessage('isActive must be a boolean'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

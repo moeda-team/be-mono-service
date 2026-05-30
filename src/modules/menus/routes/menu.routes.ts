@@ -1,6 +1,10 @@
 import { Router } from 'express';
 import { MenuController } from '../controllers/menu.controller';
-import { validateCreateMenu, validateUpdateMenu } from '../validators/menu.validator';
+import {
+  validateCreateMenu,
+  validateUpdateMenu,
+  validateUpdateMenuStatus,
+} from '../validators/menu.validator';
 import { jwtAuth, jwtAuthNotRequired, requirePermission } from '../../../middlewares';
 import { UserRole } from '../../../utils/auth/jwt';
 import menuIngredientRoutes from './menu-ingredient.routes';
@@ -32,6 +36,13 @@ router.delete(
   jwtAuth,
   requirePermission(UserRole.STORE_MANAGER),
   menuController.deleteMenu,
+);
+router.patch(
+  '/:id/status',
+  jwtAuth,
+  requirePermission(UserRole.STORE_MANAGER),
+  validateUpdateMenuStatus,
+  menuController.updateMenuStatus,
 );
 
 export default router;
