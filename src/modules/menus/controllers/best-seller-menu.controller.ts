@@ -3,12 +3,17 @@ import { logger } from '../../../utils/common/logger';
 import { CreateBestSellerMenuDTO } from '../models/best-seller-menu';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
+import { resolveOutletFilter, resolveOutletForWrite } from '../../../utils/auth/outletAccess';
 
 export class BestSellerMenuController {
   getAllBestSellerMenus = async (req: Request, res: Response) => {
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId =
-      user?.outletId || (req.headers.outletid as string) || (req.headers.Outletid as string);
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(
+      user,
+      (req.query.outletId as string) ||
+        (req.headers.outletid as string) ||
+        (req.headers.Outletid as string),
+    );
     const page = parseInt(req.query.page as string) || null;
     const limit = parseInt(req.query.limit as string) || null;
     const search = (req.query.search as string)?.trim() || null;
@@ -136,17 +141,21 @@ export class BestSellerMenuController {
   };
   getBestSellerMenuById = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId =
-      user?.outletId || (req.headers.outletid as string) || (req.headers.Outletid as string);
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(
+      user,
+      (req.query.outletId as string) ||
+        (req.headers.outletid as string) ||
+        (req.headers.Outletid as string),
+    );
 
     try {
-      const bestSellerMenu = await (user?.outletId
+      const bestSellerMenu = await (outletId
         ? prisma.bestSellerMenu.findFirst({
             where: {
               id,
               menu: {
-                outletId: user.outletId,
+                outletId,
               },
             },
             include: {
@@ -235,8 +244,8 @@ export class BestSellerMenuController {
 
   async createBestSellerMenu(req: Request, res: Response) {
     const bestSellerMenuData: CreateBestSellerMenuDTO = req.body;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
 
     try {
       const menu = await prisma.menu.findUnique({
@@ -311,8 +320,8 @@ export class BestSellerMenuController {
 
   async deleteBestSellerMenu(req: Request, res: Response) {
     const { id } = req.params;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
 
     try {
       const bestSellerMenu = await (outletId

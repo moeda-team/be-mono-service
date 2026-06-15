@@ -3,14 +3,16 @@ import { logger } from '../../../utils/common/logger';
 import { CreateDiscountMenuDTO, UpdateDiscountMenuDTO } from '../models/discount-menu';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
+import { resolveOutletForWrite } from '../../../utils/auth/outletAccess';
 
 export class DiscountMenuController {
   async createDiscountMenu(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
     const discountMenuData: CreateDiscountMenuDTO = req.body;
 
     try {
-      if (!user.outletId) {
+      if (!outletId) {
         return ResponseHandler.error(res, {
           message: 'Outlet not found',
           statusCode: 404,
@@ -19,7 +21,7 @@ export class DiscountMenuController {
 
       // Check if discount exists and belongs to user's outlet
       const discount = await prisma.discount.findFirst({
-        where: { id: discountMenuData.discountId, outletId: user.outletId },
+        where: { id: discountMenuData.discountId, outletId },
       });
 
       if (!discount) {
@@ -33,7 +35,7 @@ export class DiscountMenuController {
       const menus = await prisma.menu.findMany({
         where: {
           id: { in: discountMenuData.menuId },
-          outletId: user.outletId,
+          outletId,
         },
       });
 
@@ -158,12 +160,13 @@ export class DiscountMenuController {
   }
 
   async updateDiscountMenu(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
     const { discountId, menuId } = req.params;
     const discountMenuData: UpdateDiscountMenuDTO = req.body;
 
     try {
-      if (!user.outletId) {
+      if (!outletId) {
         return ResponseHandler.error(res, {
           message: 'Outlet not found',
           statusCode: 404,
@@ -190,7 +193,7 @@ export class DiscountMenuController {
         });
       }
 
-      if (existingDiscountMenu.discount?.outletId !== user.outletId) {
+      if (existingDiscountMenu.discount?.outletId !== outletId) {
         return ResponseHandler.error(res, {
           message: 'Access denied',
           statusCode: 403,
@@ -200,7 +203,7 @@ export class DiscountMenuController {
       // Validate new discountId if provided
       if (discountMenuData.discountId) {
         const newDiscount = await prisma.discount.findFirst({
-          where: { id: discountMenuData.discountId, outletId: user.outletId },
+          where: { id: discountMenuData.discountId, outletId },
         });
 
         if (!newDiscount) {
@@ -216,7 +219,7 @@ export class DiscountMenuController {
         const menus = await prisma.menu.findMany({
           where: {
             id: { in: discountMenuData.menuId },
-            outletId: user.outletId,
+            outletId,
           },
         });
 
@@ -299,11 +302,12 @@ export class DiscountMenuController {
   }
 
   async deleteDiscountMenu(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
     const { discountId, menuId } = req.params;
 
     try {
-      if (!user.outletId) {
+      if (!outletId) {
         return ResponseHandler.error(res, {
           message: 'Outlet not found',
           statusCode: 404,
@@ -329,7 +333,7 @@ export class DiscountMenuController {
         });
       }
 
-      if (discountMenu.discount?.outletId !== user.outletId) {
+      if (discountMenu.discount?.outletId !== outletId) {
         return ResponseHandler.error(res, {
           message: 'Access denied',
           statusCode: 403,

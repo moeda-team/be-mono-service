@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { logger } from '../../../utils/common/logger';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { CreateAttendanceDTO } from '../models/attendance';
+import { resolveOutletFilter, isAllOutletRole } from '../../../utils/auth/outletAccess';
 
 const prisma = new PrismaClient();
 
@@ -207,11 +208,12 @@ export class AttendanceController {
   }
 
   async getAttendances(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
     const { status, userId, date, page, limit } = req.query;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
-      if (!user.outletId) {
+      if (!outletId && !isAllOutletRole(user?.role)) {
         return ResponseHandler.error(res, {
           message: 'Outlet not found',
           statusCode: 404,
@@ -222,7 +224,7 @@ export class AttendanceController {
       const limitNum = limit ? parseInt(limit as string, 10) : null;
       const skip = pageNum && limitNum ? (pageNum - 1) * limitNum : 0;
 
-      const where: any = { outletId: user.outletId };
+      const where: any = { outletId };
       if (status) where.status = status;
       if (userId) where.userId = userId;
       if (date) {
@@ -270,11 +272,12 @@ export class AttendanceController {
 
   async getAttendanceById(req: Request, res: Response) {
     const { id } = req.params;
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const attendance = await prisma.attendance.findFirst({
-        where: { id, outletId: user.outletId },
+        where: { id, outletId },
         include: { user: { select: { id: true, name: true, email: true } } },
       });
 

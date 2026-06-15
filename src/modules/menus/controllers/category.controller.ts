@@ -3,11 +3,15 @@ import prisma from '../../../config/database';
 import { CreateCategoryDTO, UpdateCategoryDTO } from '../models/category';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { Prisma } from '@prisma/client';
+import { resolveOutletFilter, resolveOutletForWrite } from '../../../utils/auth/outletAccess';
 
 export class CategoryController {
   async findAll(req: Request, res: Response) {
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId || (req.headers.Outletid as string);
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(
+      user,
+      (req.query.outletId as string) || (req.headers.Outletid as string),
+    );
     const page = parseInt(req.query.page as string) || null;
     const limit = parseInt(req.query.limit as string) || null;
     const search = (req.query.search as string)?.trim() || null;
@@ -64,8 +68,11 @@ export class CategoryController {
 
   async findOne(req: Request, res: Response) {
     const { id } = req.params;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId || (req.headers.Outletid as string);
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(
+      user,
+      (req.query.outletId as string) || (req.headers.Outletid as string),
+    );
 
     try {
       const category = await prisma.category.findUnique({
@@ -93,8 +100,8 @@ export class CategoryController {
     req: Request<Record<string, never>, Record<string, never>, CreateCategoryDTO>,
     res: Response,
   ) {
-    const { user } = req as Request & { user?: { outletId: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
 
     try {
       const existingCategory = await prisma.category.findFirst({
@@ -132,8 +139,8 @@ export class CategoryController {
     req: Request<{ id: string }, Record<string, never>, UpdateCategoryDTO>,
     res: Response,
   ) {
-    const { user } = req as Request & { user?: { outletId: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
 
     try {
       const category = await prisma.category.findFirst({
@@ -170,8 +177,8 @@ export class CategoryController {
   }
 
   async delete(req: Request<{ id: string }>, res: Response) {
-    const { user } = req as Request & { user?: { outletId: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
 
     try {
       const category = await prisma.category.findFirst({

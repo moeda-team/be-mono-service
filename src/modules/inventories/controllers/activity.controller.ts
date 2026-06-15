@@ -6,6 +6,7 @@ import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
 import { JwtPayload } from '../../../utils/auth/jwt';
 import { Prisma } from '@prisma/client';
+import { resolveOutletFilter, resolveOutletForWrite } from '../../../utils/auth/outletAccess';
 
 interface AuthenticatedRequest extends Request {
   user?: JwtPayload;
@@ -15,7 +16,7 @@ export class ActivityController {
   async getAllActivities(req: AuthenticatedRequest, res: Response) {
     try {
       const { inventoryId, type } = req.query;
-      const outletId = req.user?.outletId;
+      const outletId = resolveOutletFilter(req.user, req.query.outletId as string | undefined);
       const page = parseInt(req.query.page as string) || null;
       const limit = parseInt(req.query.limit as string) || null;
       const search = (req.query.search as string)?.trim() || null;
@@ -96,8 +97,8 @@ export class ActivityController {
 
   async getActivityById(req: Request, res: Response) {
     const { id } = req.params;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const activity = await (outletId
@@ -180,7 +181,10 @@ export class ActivityController {
       quantity: parseFloat(req.body.quantity),
     };
     const user = req.user;
-    const outletId = user?.outletId;
+    const outletId = resolveOutletForWrite(
+      user as { outletId?: string; role?: string } | undefined,
+      req.query.outletId as string | undefined,
+    );
 
     try {
       const inventory = await (outletId
@@ -293,8 +297,8 @@ export class ActivityController {
 
   async deleteActivity(req: Request, res: Response) {
     const { id } = req.params;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
 
     try {
       const activity = await (outletId

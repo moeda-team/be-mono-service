@@ -3,14 +3,16 @@ import { logger } from '../../../utils/common/logger';
 import { CreateVoucherMenuDTO, UpdateVoucherMenuDTO } from '../models/voucher-menu';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
+import { resolveOutletForWrite } from '../../../utils/auth/outletAccess';
 
 export class VoucherMenuController {
   async createVoucherMenu(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
     const voucherMenuData: CreateVoucherMenuDTO = req.body;
 
     try {
-      if (!user.outletId) {
+      if (!outletId) {
         return ResponseHandler.error(res, {
           message: 'Outlet not found',
           statusCode: 404,
@@ -19,7 +21,7 @@ export class VoucherMenuController {
 
       // Check if voucher exists and belongs to user's outlet
       const voucher = await prisma.voucher.findFirst({
-        where: { id: voucherMenuData.voucherId, outletId: user.outletId },
+        where: { id: voucherMenuData.voucherId, outletId },
       });
 
       if (!voucher) {
@@ -33,7 +35,7 @@ export class VoucherMenuController {
       const menus = await prisma.menu.findMany({
         where: {
           id: { in: voucherMenuData.menuId },
-          outletId: user.outletId,
+          outletId,
         },
       });
 
@@ -112,11 +114,12 @@ export class VoucherMenuController {
   }
 
   async deleteVoucherMenu(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
     const { voucherId, menuId } = req.params;
 
     try {
-      if (!user.outletId) {
+      if (!outletId) {
         return ResponseHandler.error(res, {
           message: 'Outlet not found',
           statusCode: 404,
@@ -142,7 +145,7 @@ export class VoucherMenuController {
         });
       }
 
-      if (voucherMenu.voucher?.outletId !== user.outletId) {
+      if (voucherMenu.voucher?.outletId !== outletId) {
         return ResponseHandler.error(res, {
           message: 'Access denied',
           statusCode: 403,

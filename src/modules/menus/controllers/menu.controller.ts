@@ -5,12 +5,13 @@ import { CreateMenuDTO, UpdateMenuDTO } from '../models/menu';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { Prisma } from '@prisma/client';
 import prisma from '../../../config/database';
+import { resolveOutletFilter, resolveOutletForWrite } from '../../../utils/auth/outletAccess';
 
 export class MenuController {
   getMenuById = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const menu = await (outletId
@@ -84,8 +85,11 @@ export class MenuController {
   };
 
   getAllMenus = async (req: Request, res: Response) => {
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId || (req.headers.outletid as string);
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(
+      user,
+      (req.query.outletId as string) || (req.headers.outletid as string),
+    );
     const { search, category } = req.query;
     const page = parseInt(req.query.page as string) || null;
     const limit = parseInt(req.query.limit as string) || null;
@@ -212,8 +216,11 @@ export class MenuController {
   async createMenu(req: Request, res: Response) {
     const menuData: CreateMenuDTO = req.body;
 
-    const user = (req as Request & { user?: { outletId: string } }).user;
-    const outletId = user?.outletId || menuData.outletId;
+    const user = (req as Request & { user?: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletForWrite(
+      user,
+      (req.query.outletId as string) || menuData.outletId,
+    );
 
     try {
       const category = await prisma.category.findUnique({
@@ -255,8 +262,8 @@ export class MenuController {
     const { id } = req.params;
     const menuData: UpdateMenuDTO = req.body;
 
-    const user = (req as Request & { user?: { outletId: string } }).user;
-    const outletId = user?.outletId;
+    const user = (req as Request & { user?: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
 
     try {
       const menu = await prisma.menu.findUnique({
@@ -310,8 +317,8 @@ export class MenuController {
   async deleteMenu(req: Request, res: Response) {
     const { id } = req.params;
 
-    const user = (req as Request & { user?: { outletId: string } }).user;
-    const outletId = user?.outletId;
+    const user = (req as Request & { user?: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
 
     try {
       const menu = await prisma.menu.findUnique({
@@ -368,8 +375,8 @@ export class MenuController {
     const { id } = req.params;
     const { isActive } = req.body;
 
-    const user = (req as Request & { user?: { outletId: string } }).user;
-    const outletId = user?.outletId;
+    const user = (req as Request & { user?: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
 
     try {
       const menu = await prisma.menu.findUnique({

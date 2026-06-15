@@ -5,11 +5,12 @@ import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
 import { hashPassword } from '../../../utils/auth/hash';
 import { Prisma } from '@prisma/client';
+import { resolveOutletFilter } from '../../../utils/auth/outletAccess';
 
 export class UserController {
   async getAllUsers(req: Request, res: Response) {
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
     const page = parseInt(req.query.page as string) || null;
     const limit = parseInt(req.query.limit as string) || null;
     const search = (req.query.search as string)?.trim() || null;
@@ -70,8 +71,8 @@ export class UserController {
 
   async getUserById(req: Request, res: Response) {
     const { id } = req.params;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const targetUser = await (outletId
