@@ -25,6 +25,8 @@ import websocketRouter from './modules/websockets/routes';
 import cashBalanceRouter from './modules/cash-balances/routes/cash-balance.routes';
 import reportRouter from './modules/reports/routes';
 import attendanceRouter from './modules/attendances/routes/attendance.routes';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
 
 const app = express();
 app.set('trust proxy', config.trustProxy);
@@ -112,6 +114,19 @@ app.use(express.json());
 app.use(haltOnTimedout);
 app.use(express.urlencoded({ extended: true }));
 app.use(haltOnTimedout);
+
+// API documentation (Swagger UI + raw OpenAPI spec)
+app.get('/docs.json', (req: Request, res: Response) => {
+  res.json(swaggerSpec);
+});
+app.use(
+  '/docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    explorer: true,
+    customSiteTitle: 'Moeda POS API Docs',
+  }),
+);
 
 const router = Router();
 

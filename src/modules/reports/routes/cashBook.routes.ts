@@ -4,6 +4,96 @@ import { jwtAuth, jwtAuthNotRequired, requirePermission } from '../../../middlew
 import { UserRole } from '../../../utils/auth/jwt';
 import { validateCashBookId, validateCashBookListQuery } from '../validators/cashBook.validator';
 
+/**
+ * @openapi
+ * /reports/cash-books:
+ *   get:
+ *     tags: [Cash Books]
+ *     summary: List cash books (min role EMPLOYEE)
+ *     parameters:
+ *       - $ref: '#/components/parameters/OutletIdQuery'
+ *       - $ref: '#/components/parameters/PageQuery'
+ *       - $ref: '#/components/parameters/LimitQuery'
+ *     responses:
+ *       '200': { description: OK }
+ *       '401': { $ref: '#/components/responses/Unauthorized' }
+ *   post:
+ *     tags: [Cash Books]
+ *     summary: Open a new cash book (min role STORE_MANAGER)
+ *     parameters:
+ *       - $ref: '#/components/parameters/OutletIdQuery'
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema: { type: object, additionalProperties: true }
+ *     responses:
+ *       '200': { description: Created }
+ *       '403': { $ref: '#/components/responses/Forbidden' }
+ *
+ * /reports/cash-books/check:
+ *   get:
+ *     tags: [Cash Books]
+ *     summary: Check whether an open cash book exists
+ *     security: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/OutletIdQuery'
+ *     responses:
+ *       '200': { description: OK }
+ *
+ * /reports/cash-books/close:
+ *   patch:
+ *     tags: [Cash Books]
+ *     summary: Close the open cash book (min role STORE_MANAGER)
+ *     parameters:
+ *       - $ref: '#/components/parameters/OutletIdQuery'
+ *     responses:
+ *       '200': { description: Closed }
+ *       '403': { $ref: '#/components/responses/Forbidden' }
+ *
+ * /reports/cash-books/{cashBookId}:
+ *   get:
+ *     tags: [Cash Books]
+ *     summary: Get a cash book report with transactions (min role EMPLOYEE)
+ *     parameters:
+ *       - name: cashBookId
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       '200': { description: OK }
+ *       '404': { $ref: '#/components/responses/NotFound' }
+ *
+ * /reports/cash-books/{cashBookId}/download:
+ *   get:
+ *     tags: [Cash Books]
+ *     summary: Download a cash book report (min role EMPLOYEE)
+ *     parameters:
+ *       - name: cashBookId
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       '200':
+ *         description: Binary file
+ *         content:
+ *           application/octet-stream:
+ *             schema: { type: string, format: binary }
+ *       '404': { $ref: '#/components/responses/NotFound' }
+ *
+ * /reports/cash-books/{cashBookId}/closing:
+ *   get:
+ *     tags: [Cash Books]
+ *     summary: Get the closing report (receipt structure) (min role EMPLOYEE)
+ *     parameters:
+ *       - name: cashBookId
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       '200': { description: OK }
+ *       '404': { $ref: '#/components/responses/NotFound' }
+ */
 const router = Router();
 const cashBookController = new CashBookController();
 
