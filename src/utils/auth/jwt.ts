@@ -67,6 +67,8 @@ const roleHierarchy: Record<UserRole, UserRole[]> = {
 export interface JwtPayload extends Omit<BaseJwtPayload, 'aud'> {
   userId: string;
   outletId?: string;
+  role?: string;
+  email?: string;
   tokenType: TokenType;
   deviceId?: string;
   tokenId?: string;
