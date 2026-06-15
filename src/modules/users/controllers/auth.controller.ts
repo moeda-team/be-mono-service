@@ -42,7 +42,7 @@ export class AuthController {
       }
 
       const token = signToken(
-        { userId: user.id, outletId: user.outletId || undefined },
+        { userId: user.id, outletId: user.outletId || undefined, role: user.role },
         TokenType.ACCESS,
       );
       const expiresIn = Number(process.env.JWT_ACCESS_EXPIRES_IN);
