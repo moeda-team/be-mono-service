@@ -3,6 +3,35 @@ import { basicAuth, jwtAuth } from '../../../middlewares';
 import { getWebSocketService } from '../../../services/websocket.service';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 
+/**
+ * @openapi
+ * /websockets/stats:
+ *   get:
+ *     tags: [WebSockets]
+ *     summary: WebSocket connection statistics
+ *     description: Requires both HTTP Basic auth and a JWT bearer token.
+ *     security:
+ *       - basicAuth: []
+ *         bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/SuccessResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: object
+ *                       properties:
+ *                         connectedOutlets: { type: integer }
+ *                         outletConnections: { type: object, additionalProperties: { type: integer } }
+ *                         totalConnections: { type: integer }
+ *       '401': { $ref: '#/components/responses/Unauthorized' }
+ *       '500': { $ref: '#/components/responses/ServerError' }
+ */
 const router = Router();
 
 // Get WebSocket connection statistics
