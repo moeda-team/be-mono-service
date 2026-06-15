@@ -4,12 +4,14 @@ import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { CashBookSummary } from '../models/cashBook';
 import prisma from '../../../config/database';
 import { createCashBookReportWorkbook } from '../../../templates/exceljs-cash-book-templates';
+import { resolveOutletFilter, resolveOutletForWrite } from '../../../utils/auth/outletAccess';
 import path from 'path';
 import fs from 'fs';
 
 export class CashBookController {
   async getCashBookReport(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const cashBookId = req.params.cashBookId;
@@ -20,7 +22,7 @@ export class CashBookController {
       const cashBook = await prisma.cashBook.findFirst({
         where: {
           id: cashBookId,
-          outletId: user.outletId,
+          outletId,
         },
         include: {
           user: {
@@ -38,7 +40,7 @@ export class CashBookController {
 
       const whereClause = {
         cashBookId,
-        outletId: user.outletId,
+        outletId,
         status: 'completed',
       };
 
@@ -159,7 +161,8 @@ export class CashBookController {
   }
 
   async getClosingReport(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const cashBookId = req.params.cashBookId;
@@ -167,7 +170,7 @@ export class CashBookController {
       const cashBook = await prisma.cashBook.findFirst({
         where: {
           id: cashBookId,
-          outletId: user.outletId,
+          outletId,
         },
         include: {
           user: {
@@ -189,7 +192,7 @@ export class CashBookController {
       // Get initial capital from the first logCashBalance entry (opening balance)
       const openingBalance = await prisma.logCashBalance.findFirst({
         where: {
-          outletId: user.outletId,
+          outletId,
           type: 'open',
           createdAt: {
             gte: cashBook.openAt,
@@ -205,7 +208,7 @@ export class CashBookController {
       const completedTransactions = await prisma.transaction.findMany({
         where: {
           cashBookId,
-          outletId: user.outletId,
+          outletId,
           status: 'completed',
         },
         select: {
@@ -267,7 +270,7 @@ export class CashBookController {
       const completedCount = await prisma.transaction.count({
         where: {
           cashBookId,
-          outletId: user.outletId,
+          outletId,
           status: 'completed',
         },
       });
@@ -275,7 +278,7 @@ export class CashBookController {
       const pendingCount = await prisma.transaction.count({
         where: {
           cashBookId,
-          outletId: user.outletId,
+          outletId,
           status: 'pending',
         },
       });
@@ -289,7 +292,7 @@ export class CashBookController {
         where: {
           transaction: {
             cashBookId,
-            outletId: user.outletId,
+            outletId,
             status: 'completed',
           },
         },
@@ -364,7 +367,8 @@ export class CashBookController {
   }
 
   async downloadCashBookReport(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const cashBookId = req.params.cashBookId;
@@ -372,7 +376,7 @@ export class CashBookController {
       const cashBook = await prisma.cashBook.findFirst({
         where: {
           id: cashBookId,
-          outletId: user.outletId,
+          outletId,
         },
         include: {
           user: {
@@ -390,7 +394,7 @@ export class CashBookController {
 
       const whereClause = {
         cashBookId,
-        outletId: user.outletId,
+        outletId,
         status: 'completed',
       };
 
@@ -483,7 +487,8 @@ export class CashBookController {
   }
 
   async getCashBooks(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const page = parseInt(req.query.page as string);
@@ -493,7 +498,7 @@ export class CashBookController {
       const usePagination = !isNaN(page) && !isNaN(limit) && page > 0 && limit > 0;
 
       const whereClause: any = {
-        outletId: user.outletId,
+        outletId,
       };
 
       if (status === 'open') {
@@ -547,7 +552,7 @@ export class CashBookController {
             prisma.transaction.aggregate({
               where: {
                 cashBookId: cashBook.id,
-                outletId: user.outletId,
+                outletId,
                 status: 'completed',
               },
               _sum: { total: true },
@@ -597,13 +602,15 @@ export class CashBookController {
   }
 
   async createCashBook(req: Request, res: Response) {
-    const user = (req as Request & { user: { userId: string; outletId: string } }).user;
+    const user = (req as Request & { user: { userId: string; outletId?: string; role?: string } })
+      .user;
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
 
     try {
       // Check if there's already an open cash book for this outlet
       const existingOpenCashBook = await prisma.cashBook.findFirst({
         where: {
-          outletId: user.outletId,
+          outletId,
           closeAt: null,
         },
       });
@@ -617,7 +624,7 @@ export class CashBookController {
 
       const cashBook = await prisma.cashBook.create({
         data: {
-          outletId: user.outletId,
+          outletId,
           userId: user.userId,
           openAt: new Date(),
         },
@@ -645,10 +652,13 @@ export class CashBookController {
   }
 
   async checkOpenCashBook(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
 
     try {
-      const outletId = user?.outletId || (req?.headers['outletid'] as string);
+      const outletId = resolveOutletFilter(
+        user,
+        (req.query.outletId as string) || (req.headers['outletid'] as string),
+      );
       if (!outletId) {
         return ResponseHandler.error(res, {
           message: 'Outlet ID not found',
@@ -684,12 +694,13 @@ export class CashBookController {
   }
 
   async closeCashBook(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const cashBook = await prisma.cashBook.findFirst({
         where: {
-          outletId: user.outletId,
+          outletId,
           closeAt: null,
         },
       });
@@ -721,7 +732,7 @@ export class CashBookController {
       await prisma.transaction.updateMany({
         where: {
           cashBookId: null,
-          outletId: user.outletId,
+          outletId,
         },
         data: {
           cashBookId: cashBook.id,

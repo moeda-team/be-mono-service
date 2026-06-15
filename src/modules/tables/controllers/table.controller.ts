@@ -5,6 +5,7 @@ import { TableService } from '../services/table.service';
 import { BaseController } from './base.controller';
 import { AppError } from '../../../utils/errors/custom.errors';
 import prisma from '../../../config/database';
+import { resolveOutletFilter } from '../../../utils/auth/outletAccess';
 
 const tableService = new TableService();
 
@@ -38,12 +39,14 @@ export class TableController extends BaseController {
 
   getTablesByOutlet = async (req: Request, res: Response) => {
     try {
-      const { user } = req as Request & { user?: { outletId?: string } };
-      const outletId =
-        user?.outletId ||
-        (req.params.outletId as string) ||
-        (req.headers.outletid as string) ||
-        (req.headers.Outletid as string);
+      const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+      const outletId = resolveOutletFilter(
+        user,
+        (req.query.outletId as string) ||
+          (req.params.outletId as string) ||
+          (req.headers.outletid as string) ||
+          (req.headers.Outletid as string),
+      );
       const page = parseInt(req.query.page as string) || null;
       const limit = parseInt(req.query.limit as string) || null;
       const search = (req.query.search as string)?.trim() || null;
@@ -80,8 +83,8 @@ export class TableController extends BaseController {
     try {
       const { id } = req.params;
 
-      const { user } = req as Request & { user?: { outletId?: string } };
-      const outletId = user?.outletId;
+      const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+      const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
       const table = await (outletId
         ? prisma.tables.findFirst({
@@ -178,8 +181,8 @@ export class TableController extends BaseController {
   getTablesByStatus = async (req: Request, res: Response) => {
     try {
       const { outletId: outletIdParam, status } = req.params;
-      const { user } = req as Request & { user?: { outletId?: string } };
-      const outletId = user?.outletId || outletIdParam;
+      const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+      const outletId = resolveOutletFilter(user, (req.query.outletId as string) || outletIdParam);
 
       const tables = await tableService.getTablesByStatus(outletId, status);
 

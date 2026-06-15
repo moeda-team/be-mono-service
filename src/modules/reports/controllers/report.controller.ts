@@ -5,10 +5,12 @@ import { addDays, format, subDays } from 'date-fns';
 import { DailyReportDetail, DailyReportResponse, SystemRevenueResponse } from '../models/report';
 import prisma from '../../../config/database';
 import { createDailyReportWorkbook } from '../../../templates/exceljs-daily-templates';
+import { resolveOutletFilter } from '../../../utils/auth/outletAccess';
 
 export class ReportController {
   async dailyReport(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const date = (req.query.date as string) || format(new Date(), 'yyyy-MM-dd');
@@ -21,7 +23,7 @@ export class ReportController {
       const [transactions, logCashBalances] = await Promise.all([
         prisma.transaction.findMany({
           where: {
-            outletId: user.outletId,
+            outletId,
             createdAt: {
               gte: new Date(`${date}T00:00:00Z`),
               lt: new Date(`${date}T23:59:59Z`),
@@ -33,7 +35,7 @@ export class ReportController {
         }),
         prisma.logCashBalance.findMany({
           where: {
-            outletId: user.outletId,
+            outletId,
             createdAt: {
               gte: new Date(`${date}T00:00:00Z`),
               lt: new Date(`${date}T23:59:59Z`),
@@ -118,7 +120,7 @@ export class ReportController {
       // Fetch yesterday's transactions for growth calculation
       const yesterdayTransactions = await prisma.transaction.findMany({
         where: {
-          outletId: user.outletId,
+          outletId,
           createdAt: {
             gte: new Date(`${yesterdayDate}T00:00:00Z`),
             lt: new Date(`${yesterdayDate}T23:59:59Z`),
@@ -175,7 +177,8 @@ export class ReportController {
   }
 
   async dailyReportDownload(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const date = (req.query.date as string) || format(new Date(), 'yyyy-MM-dd');
@@ -185,7 +188,7 @@ export class ReportController {
       const [transactions, logCashBalances] = await Promise.all([
         prisma.transaction.findMany({
           where: {
-            outletId: user.outletId,
+            outletId,
             createdAt: {
               gte: new Date(`${date}T00:00:00Z`),
               lt: new Date(`${date}T23:59:59Z`),
@@ -197,7 +200,7 @@ export class ReportController {
         }),
         prisma.logCashBalance.findMany({
           where: {
-            outletId: user.outletId,
+            outletId,
             createdAt: {
               gte: new Date(`${date}T00:00:00Z`),
               lt: new Date(`${date}T23:59:59Z`),
@@ -269,7 +272,7 @@ export class ReportController {
       // Fetch yesterday's transactions for growth calculation
       const yesterdayTransactions = await prisma.transaction.findMany({
         where: {
-          outletId: user.outletId,
+          outletId,
           createdAt: {
             gte: new Date(`${yesterdayDate}T00:00:00Z`),
             lt: new Date(`${yesterdayDate}T23:59:59Z`),
@@ -335,7 +338,8 @@ export class ReportController {
   }
 
   async salesAnalytics(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const startDateParam = req.query.startDate as string;
@@ -365,7 +369,7 @@ export class ReportController {
 
       const allTransactions = await prisma.transaction.findMany({
         where: {
-          outletId: user.outletId,
+          outletId,
           status: 'completed',
           createdAt: {
             gte: startDate,
@@ -429,7 +433,8 @@ export class ReportController {
   }
 
   async topSellingMenu(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       // Get date from one week ago
@@ -438,7 +443,7 @@ export class ReportController {
       // Fetch completed transactions from the past week
       const transactions = await prisma.transaction.findMany({
         where: {
-          outletId: user.outletId,
+          outletId,
           status: 'completed',
           createdAt: {
             gte: oneWeekAgo,
@@ -482,7 +487,8 @@ export class ReportController {
   }
 
   async systemRevenue(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const start_date = (req.query.start_date as string) || format(new Date(), 'yyyy-MM-dd');
@@ -496,7 +502,7 @@ export class ReportController {
       const endDate = new Date(`${end_date}T23:59:59Z`);
 
       const whereClause: any = {
-        outletId: user.outletId,
+        outletId,
         status: 'completed',
         createdAt: {
           gte: startDate,

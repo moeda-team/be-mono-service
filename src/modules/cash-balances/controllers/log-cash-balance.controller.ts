@@ -4,10 +4,12 @@ import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
 import { Prisma } from '@prisma/client';
 import { Decimal as DecimalClass } from '@prisma/client/runtime/library';
+import { resolveOutletFilter } from '../../../utils/auth/outletAccess';
 
 export class LogCashBalanceController {
   async getAllLogCashBalances(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     const { search, type } = req.query as { search: string; type: string };
     const page = parseInt(req.query.page as string) || null;
@@ -18,7 +20,7 @@ export class LogCashBalanceController {
 
     try {
       const whereClause: Prisma.LogCashBalanceWhereInput = {
-        outletId: user.outletId,
+        outletId,
       };
 
       if (type) {
@@ -81,12 +83,13 @@ export class LogCashBalanceController {
   }
 
   async getLogCashBalanceById(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
     const { id } = req.params;
 
     try {
       const log = await prisma.logCashBalance.findFirst({
-        where: { id, outletId: user.outletId },
+        where: { id, outletId },
         include: {
           user: {
             select: {

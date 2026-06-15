@@ -11,11 +11,12 @@ import { JwtPayload } from 'jsonwebtoken';
 import { Prisma } from '@prisma/client';
 import { getWebSocketService } from '../../../services/websocket.service';
 import { IngredientService } from '../../../services/ingredient.service';
+import { resolveOutletFilter, resolveOutletForWrite } from '../../../utils/auth/outletAccess';
 
 export class TransactionController {
   async getAllTransactions(req: Request, res: Response) {
-    const { user } = req as Request & { user?: { outletId: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     const page = parseInt(req.query.page as string) || null;
     const limit = parseInt(req.query.limit as string) || null;
@@ -132,8 +133,8 @@ export class TransactionController {
   }
 
   async getAllActiveTransactions(req: Request, res: Response) {
-    const { user } = req as Request & { user?: { outletId: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const search = (req.query.search as string)?.trim() || null;
@@ -194,8 +195,8 @@ export class TransactionController {
 
   async getTransactionById(req: Request, res: Response) {
     const { id } = req.params;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const transaction = await (outletId
@@ -381,8 +382,12 @@ export class TransactionController {
       const reqWithUser = req as Request & { user?: JwtPayload };
       const user = reqWithUser.user;
 
-      if (user && 'outletId' in user && user.outletId) {
-        transactionData.outletId = String(user.outletId);
+      const resolvedOutletId = resolveOutletForWrite(
+        user as { outletId?: string; role?: string } | undefined,
+        transactionData.outletId,
+      );
+      if (resolvedOutletId) {
+        transactionData.outletId = resolvedOutletId;
       }
 
       if (!transactionData.cart?.length) {
@@ -634,8 +639,8 @@ export class TransactionController {
 
   async deleteTransaction(req: Request, res: Response) {
     const { id } = req.params;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const transaction = await (outletId
@@ -692,8 +697,8 @@ export class TransactionController {
   async updateTransactionStatus(req: Request, res: Response) {
     const { id } = req.params;
     const { status } = req.body;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const transaction = await (outletId
@@ -792,8 +797,8 @@ export class TransactionController {
   async updateTransactionTable(req: Request, res: Response) {
     const { id } = req.params;
     const { tableId, note } = req.body;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const transaction = await (outletId

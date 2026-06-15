@@ -149,7 +149,7 @@ export const requireOutletAccess = (
     throw AppError.unauthorized('Authentication required', ErrorCode.UNAUTHORIZED);
   }
 
-  if (req.user.role === 'ADMIN') {
+  if (req.user.role === 'ADMIN' || req.user.role === 'OWNER') {
     return next();
   }
 

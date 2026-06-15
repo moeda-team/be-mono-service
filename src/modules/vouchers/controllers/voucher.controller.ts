@@ -4,10 +4,12 @@ import { CreateVoucherDTO } from '../models/voucher';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
 import { Prisma } from '@prisma/client';
+import { resolveOutletFilter, resolveOutletForWrite } from '../../../utils/auth/outletAccess';
 
 export class VoucherController {
   async getAllVouchers(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     const { search } = req.query as { search: string };
     const page = parseInt(req.query.page as string) || null;
@@ -19,7 +21,7 @@ export class VoucherController {
 
     try {
       const whereClause: Prisma.VoucherWhereInput = {
-        outletId: user.outletId,
+        outletId,
       };
 
       if (searchStr) {
@@ -84,8 +86,8 @@ export class VoucherController {
 
   async getVoucherByName(req: Request, res: Response) {
     const { code } = req.params;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const voucher = await prisma.voucher.findFirst({
@@ -112,11 +114,12 @@ export class VoucherController {
   }
 
   async createVoucher(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
     const voucherData: CreateVoucherDTO = req.body;
 
     try {
-      if (!user.outletId) {
+      if (!outletId) {
         return ResponseHandler.error(res, {
           message: 'Outlet not found',
           statusCode: 404,
@@ -124,7 +127,7 @@ export class VoucherController {
       }
 
       const findVoucher = await prisma.voucher.findFirst({
-        where: { name: voucherData.name, outletId: user.outletId },
+        where: { name: voucherData.name, outletId },
       });
       if (findVoucher) {
         return ResponseHandler.error(res, {
@@ -135,7 +138,7 @@ export class VoucherController {
 
       const voucher = await prisma.voucher.create({
         data: {
-          outletId: user.outletId,
+          outletId,
           name: voucherData.name,
           description: voucherData.description,
           type: voucherData.type,
@@ -161,12 +164,13 @@ export class VoucherController {
   }
 
   async updateVoucher(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
     const { id } = req.params;
     const voucherData: CreateVoucherDTO = req.body;
 
     try {
-      if (!user.outletId) {
+      if (!outletId) {
         return ResponseHandler.error(res, {
           message: 'Outlet not found',
           statusCode: 404,
@@ -174,7 +178,7 @@ export class VoucherController {
       }
 
       const findVoucher = await prisma.voucher.findUnique({
-        where: { id, outletId: user.outletId },
+        where: { id, outletId },
       });
       if (!findVoucher) {
         return ResponseHandler.error(res, {
@@ -184,7 +188,7 @@ export class VoucherController {
       }
 
       const voucher = await prisma.voucher.update({
-        where: { id, outletId: user.outletId },
+        where: { id, outletId },
         data: {
           name: voucherData.name,
           type: voucherData.type,
@@ -209,11 +213,12 @@ export class VoucherController {
   }
 
   async deleteVoucher(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
     const { id } = req.params;
 
     try {
-      if (!user.outletId) {
+      if (!outletId) {
         return ResponseHandler.error(res, {
           message: 'Outlet not found',
           statusCode: 404,
@@ -221,7 +226,7 @@ export class VoucherController {
       }
 
       const findVoucher = await prisma.voucher.findUnique({
-        where: { id, outletId: user.outletId },
+        where: { id, outletId },
       });
       if (!findVoucher) {
         return ResponseHandler.error(res, {
@@ -231,7 +236,7 @@ export class VoucherController {
       }
 
       const voucher = await prisma.voucher.delete({
-        where: { id, outletId: user.outletId },
+        where: { id, outletId },
       });
 
       return ResponseHandler.success(res, {

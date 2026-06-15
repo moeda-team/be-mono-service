@@ -2,11 +2,12 @@ import { Request, Response } from 'express';
 import prisma from '../../../config/database';
 import { UpsertOptionDTO } from '../models/option';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
+import { resolveOutletFilter } from '../../../utils/auth/outletAccess';
 
 export class OptionController {
   async findAll(req: Request, res: Response) {
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
     const page = parseInt(req.query.page as string) || null;
     const limit = parseInt(req.query.limit as string) || null;
 
@@ -69,8 +70,8 @@ export class OptionController {
 
   async findOne(req: Request, res: Response) {
     const { menuId } = req.params;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const option = await (outletId

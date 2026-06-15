@@ -3,10 +3,12 @@ import { logger } from '../../../utils/common/logger';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
 import { Prisma } from '@prisma/client';
+import { resolveOutletFilter } from '../../../utils/auth/outletAccess';
 
 export class CashBalanceController {
   async getAllCashBalances(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     const { search } = req.query as { search: string };
     const page = parseInt(req.query.page as string) || null;
@@ -18,7 +20,7 @@ export class CashBalanceController {
 
     try {
       const whereClause: Prisma.CashBalanceWhereInput = {
-        outletId: user.outletId,
+        outletId,
       };
 
       const cashBalances = await prisma.cashBalance.findMany({
@@ -65,11 +67,12 @@ export class CashBalanceController {
   }
 
   async getCashBalanceCurrent(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const cashBalance = await prisma.cashBalance.findFirst({
-        where: { outletId: user.outletId },
+        where: { outletId },
         include: {
           logCashBalances: {
             orderBy: {

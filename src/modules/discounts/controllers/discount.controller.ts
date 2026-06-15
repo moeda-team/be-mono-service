@@ -4,10 +4,12 @@ import { CreateDiscountDTO, UpdateDiscountDTO } from '../models/discount';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
 import { Prisma } from '@prisma/client';
+import { resolveOutletFilter, resolveOutletForWrite } from '../../../utils/auth/outletAccess';
 
 export class DiscountController {
   async getAllDiscounts(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     const { search } = req.query as { search: string };
     const page = parseInt(req.query.page as string) || null;
@@ -19,7 +21,7 @@ export class DiscountController {
 
     try {
       const whereClause: Prisma.DiscountWhereInput = {
-        outletId: user.outletId,
+        outletId,
       };
 
       if (searchStr) {
@@ -84,8 +86,8 @@ export class DiscountController {
 
   async getDiscountByName(req: Request, res: Response) {
     const { code } = req.params;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const discount = await prisma.discount.findFirst({
@@ -112,11 +114,12 @@ export class DiscountController {
   }
 
   async createDiscount(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
     const discountData: CreateDiscountDTO = req.body;
 
     try {
-      if (!user.outletId) {
+      if (!outletId) {
         return ResponseHandler.error(res, {
           message: 'Outlet not found',
           statusCode: 404,
@@ -124,7 +127,7 @@ export class DiscountController {
       }
 
       const findDiscount = await prisma.discount.findFirst({
-        where: { name: discountData.name, outletId: user.outletId },
+        where: { name: discountData.name, outletId },
       });
       if (findDiscount) {
         return ResponseHandler.error(res, {
@@ -135,7 +138,7 @@ export class DiscountController {
 
       const discount = await prisma.discount.create({
         data: {
-          outletId: user.outletId,
+          outletId,
           name: discountData.name,
           description: discountData.description,
           type: discountData.type,
@@ -161,12 +164,13 @@ export class DiscountController {
   }
 
   async updateDiscount(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
     const { id } = req.params;
     const discountData: UpdateDiscountDTO = req.body;
 
     try {
-      if (!user.outletId) {
+      if (!outletId) {
         return ResponseHandler.error(res, {
           message: 'Outlet not found',
           statusCode: 404,
@@ -174,7 +178,7 @@ export class DiscountController {
       }
 
       const findDiscount = await prisma.discount.findUnique({
-        where: { id, outletId: user.outletId },
+        where: { id, outletId },
       });
       if (!findDiscount) {
         return ResponseHandler.error(res, {
@@ -184,7 +188,7 @@ export class DiscountController {
       }
 
       const discount = await prisma.discount.update({
-        where: { id, outletId: user.outletId },
+        where: { id, outletId },
         data: {
           name: discountData.name,
           description: discountData.description,
@@ -210,11 +214,12 @@ export class DiscountController {
   }
 
   async deleteDiscount(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletForWrite(user, req.query.outletId as string | undefined);
     const { id } = req.params;
 
     try {
-      if (!user.outletId) {
+      if (!outletId) {
         return ResponseHandler.error(res, {
           message: 'Outlet not found',
           statusCode: 404,
@@ -222,7 +227,7 @@ export class DiscountController {
       }
 
       const findDiscount = await prisma.discount.findUnique({
-        where: { id, outletId: user.outletId },
+        where: { id, outletId },
       });
       if (!findDiscount) {
         return ResponseHandler.error(res, {
@@ -232,7 +237,7 @@ export class DiscountController {
       }
 
       const discount = await prisma.discount.delete({
-        where: { id, outletId: user.outletId },
+        where: { id, outletId },
       });
 
       return ResponseHandler.success(res, {

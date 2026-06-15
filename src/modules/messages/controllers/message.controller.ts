@@ -4,10 +4,12 @@ import { CreateMessageDTO } from '../models/message';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
 import { Prisma } from '@prisma/client';
+import { resolveOutletFilter } from '../../../utils/auth/outletAccess';
 
 export class MessageController {
   async getAllMessages(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
     const page = parseInt(req.query.page as string) || null;
     const limit = parseInt(req.query.limit as string) || null;
     const search = (req.query.search as string)?.trim() || null;
@@ -17,7 +19,7 @@ export class MessageController {
 
     try {
       const where: Prisma.MessageWhereInput = {
-        outletId: user.outletId,
+        outletId,
       };
 
       if (search) {
@@ -64,12 +66,13 @@ export class MessageController {
   }
 
   async getMessageById(req: Request, res: Response) {
-    const user = (req as Request & { user: { outletId: string } }).user;
+    const user = (req as Request & { user: { outletId?: string; role?: string } }).user;
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
     const { id } = req.params;
 
     try {
       const message = await prisma.message.findFirst({
-        where: { id, outletId: user.outletId },
+        where: { id, outletId },
       });
       if (!message) {
         return ResponseHandler.error(res, {

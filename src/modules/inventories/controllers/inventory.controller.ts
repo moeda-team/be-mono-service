@@ -4,12 +4,17 @@ import { CreateInventoryDTO, UpdateInventoryDTO, StockStatus } from '../models/i
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import prisma from '../../../config/database';
 import { Prisma } from '@prisma/client';
+import {
+  resolveOutletFilter,
+  resolveOutletForWrite,
+  isAllOutletRole,
+} from '../../../utils/auth/outletAccess';
 
 export class InventoryController {
   async getAllInventories(req: Request, res: Response) {
     try {
-      const { user } = req as Request & { user?: { outletId?: string } };
-      const outletId = user?.outletId;
+      const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+      const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
       const { status } = req.query;
       const page = parseInt(req.query.page as string) || null;
       const limit = parseInt(req.query.limit as string) || null;
@@ -75,8 +80,8 @@ export class InventoryController {
 
   async getInventoryById(req: Request, res: Response) {
     const { id } = req.params;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const inventory = await (outletId
@@ -136,16 +141,21 @@ export class InventoryController {
   }
 
   async createInventory(req: Request, res: Response) {
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletForWrite(user, req.body.outletId);
     const inventoryData: CreateInventoryDTO = {
       ...req.body,
+      outletId,
       currentStock: parseFloat(req.body.currentStock),
       minimumStock: parseFloat(req.body.minimumStock),
     };
 
     try {
-      const outlet = await prisma.outlet.findUnique({
-        where: { id: inventoryData.outletId },
-      });
+      const outlet = outletId
+        ? await prisma.outlet.findUnique({
+            where: { id: outletId },
+          })
+        : null;
 
       if (!outlet) {
         return ResponseHandler.error(res, {
@@ -212,6 +222,7 @@ export class InventoryController {
 
   async updateInventory(req: Request, res: Response) {
     const { id } = req.params;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
 
     const inventoryData: UpdateInventoryDTO = {
       ...req.body,
@@ -227,6 +238,18 @@ export class InventoryController {
           message: 'Inventory not found',
           statusCode: 404,
         });
+      }
+
+      // Non-admin users can only modify inventory in their own outlet
+      if (!isAllOutletRole(user?.role)) {
+        if (inventory.outletId !== user?.outletId) {
+          return ResponseHandler.error(res, {
+            message: 'Access denied',
+            statusCode: 403,
+          });
+        }
+        // Prevent moving the inventory to a different outlet
+        inventoryData.outletId = user?.outletId;
       }
 
       if (inventoryData.outletId) {
@@ -288,6 +311,7 @@ export class InventoryController {
 
   async deleteInventory(req: Request, res: Response) {
     const { id } = req.params;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
 
     try {
       const inventory = await prisma.inventory.findUnique({
@@ -298,6 +322,14 @@ export class InventoryController {
         return ResponseHandler.error(res, {
           message: 'Inventory not found',
           statusCode: 404,
+        });
+      }
+
+      // Non-admin users can only delete inventory in their own outlet
+      if (!isAllOutletRole(user?.role) && inventory.outletId !== user?.outletId) {
+        return ResponseHandler.error(res, {
+          message: 'Access denied',
+          statusCode: 403,
         });
       }
 
@@ -326,8 +358,8 @@ export class InventoryController {
 
   async countByStatus(req: Request, res: Response) {
     try {
-      const { user } = req as Request & { user?: { outletId?: string } };
-      const outletId = user?.outletId;
+      const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+      const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
       const where: any = {};
       if (outletId) where.outletId = outletId as string;

@@ -79,7 +79,7 @@ export class TableService {
   }
 
   async getTablesByOutlet(
-    outletId: string,
+    outletId: string | undefined,
     page?: number | null,
     limit?: number | null,
     search?: string | null,
@@ -245,7 +245,7 @@ export class TableService {
     }
   }
 
-  async getTablesByStatus(outletId: string, status: string): Promise<Table[]> {
+  async getTablesByStatus(outletId: string | undefined, status: string): Promise<Table[]> {
     try {
       const tables = await prisma.tables.findMany({
         where: {

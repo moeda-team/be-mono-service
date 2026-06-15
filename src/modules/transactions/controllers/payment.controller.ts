@@ -5,6 +5,7 @@ import prisma from '../../../config/database';
 import { MidtransPayload, PaymentDTO, PaymentNotification } from '../models/payment';
 import { axiosPost } from '../../../utils/common/axios.custom';
 import { IngredientService } from '../../../services/ingredient.service';
+import { resolveOutletFilter } from '../../../utils/auth/outletAccess';
 
 export class PaymentController {
   async paymentTransaction(req: Request, res: Response) {
@@ -240,8 +241,8 @@ export class PaymentController {
 
   async getPaymentStatus(req: Request, res: Response) {
     const { paymentNumber } = req.params;
-    const { user } = req as Request & { user?: { outletId?: string } };
-    const outletId = user?.outletId;
+    const { user } = req as Request & { user?: { outletId?: string; role?: string } };
+    const outletId = resolveOutletFilter(user, req.query.outletId as string | undefined);
 
     try {
       const transaction = await prisma.transaction.findFirst({

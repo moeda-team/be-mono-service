@@ -4,6 +4,7 @@ import { UpsertMenuIngredientDTO } from '../models/menu-ingredient.model';
 import { ResponseHandler } from '../../../utils/response/responseHandler';
 import { JwtPayload } from '../../../utils/auth/jwt';
 import prisma from '../../../config/database';
+import { resolveOutletFilter, resolveOutletForWrite } from '../../../utils/auth/outletAccess';
 
 interface AuthenticatedRequest extends Request {
   user?: JwtPayload;
@@ -13,7 +14,10 @@ export class MenuIngredientController {
   upsertMenuIngredient = async (req: AuthenticatedRequest, res: Response) => {
     const { menuId } = req.body;
     const ingredients = req.body.ingredients || [req.body];
-    const outletId = req.user?.outletId;
+    const outletId = resolveOutletForWrite(
+      req.user as { outletId?: string; role?: string } | undefined,
+      req.query.outletId as string | undefined,
+    );
 
     try {
       // Check if menu exists
@@ -126,7 +130,10 @@ export class MenuIngredientController {
     const { menuId } = req.params;
     const page = parseInt(req.query.page as string) || null;
     const limit = parseInt(req.query.limit as string) || null;
-    const outletId = req.user?.outletId;
+    const outletId = resolveOutletFilter(
+      req.user as { outletId?: string; role?: string } | undefined,
+      req.query.outletId as string | undefined,
+    );
 
     const skip = page && limit ? (page - 1) * limit : undefined;
     const take = limit || undefined;
@@ -195,7 +202,10 @@ export class MenuIngredientController {
 
   removeIngredientFromMenu = async (req: AuthenticatedRequest, res: Response) => {
     const { menuId, ingredientId } = req.params;
-    const outletId = req.user?.outletId;
+    const outletId = resolveOutletForWrite(
+      req.user as { outletId?: string; role?: string } | undefined,
+      req.query.outletId as string | undefined,
+    );
 
     try {
       const menuIngredient = await prisma.menuIngredient.findFirst({
