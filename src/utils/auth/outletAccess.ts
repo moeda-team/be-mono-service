@@ -14,11 +14,16 @@ export function isAllOutletRole(role?: string): boolean {
 /**
  * Resolve the outlet filter for READ operations (list / detail / report).
  *
- * - ADMIN / OWNER  -> use the outletId requested via query (if any),
- *                     otherwise `undefined` which means "all outlets"
- *                     (Prisma treats `outletId: undefined` as no filter).
+ * - ADMIN / OWNER  -> may access ANY registered outlet, but is NOT aggregated
+ *                     across all outlets by default. The outlet is taken from
+ *                     the requested `outletId` (any outlet), falling back to
+ *                     their own `outletId` when none is supplied.
  * - EMPLOYEE / STORE_MANAGER -> always forced to their own outletId,
  *                     any client supplied outletId is ignored.
+ *
+ * Note: this only returns `undefined` (i.e. "all outlets", no filter) for an
+ * ADMIN/OWNER who has no own outlet AND supplied no `outletId`. Clients should
+ * send a concrete `outletId` for such users to keep results scoped to one outlet.
  */
 export function resolveOutletFilter(
   user: OutletAccessUser | undefined,
@@ -26,7 +31,7 @@ export function resolveOutletFilter(
 ): string | undefined {
   if (isAllOutletRole(user?.role)) {
     const requested = requestedOutletId?.trim();
-    return requested ? requested : undefined;
+    return requested ? requested : user?.outletId;
   }
   return user?.outletId;
 }
