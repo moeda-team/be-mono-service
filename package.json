@@ -11,7 +11,7 @@
     "format": "prettier --write \"src/**/*.{ts,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,json}\"",
     "typecheck": "tsc --noEmit",
-    "prepare": "is-ci || husky install",
+    "prepare": "if [ -d .git ]; then husky install; fi",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name \"$npm_package_name\"",
     "prisma:seed": "ts-node prisma/seed.ts",
