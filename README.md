@@ -31,7 +31,7 @@ A robust, production-ready Node.js TypeScript REST API service for restaurant ma
 - **Health Check** endpoints with database status
 - **Request Tracing** with unique request IDs
 
-### Database & Performance
+### Database & Performances
 
 - **Prisma ORM** with PostgreSQL
 - **Singleton DatabaseManager** with connection lifecycle
