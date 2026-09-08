@@ -1,110 +1,104 @@
-name: Deploy to VPS
+name: Deploy to VPS (Docker)
 
 on:
   push:
-    branches: [ development ]
+    branches: [development]
+
+# Cancel an in-flight deploy when a newer commit is pushed.
+concurrency:
+  group: deploy-development
+  cancel-in-progress: true
 
 jobs:
-  lint-test-build:
-    name: Lint, Type Check, and Build
+  build-push:
+    name: Build and push image
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.img.outputs.image }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Compute image name (lowercase)
+        id: img
+        run: |
+          REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "image=ghcr.io/$REPO:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "repo=ghcr.io/$REPO" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
         with:
-          fetch-depth: 0
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Build and push
+        uses: docker/build-push-action@v6
         with:
-          node-version: 20
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run Prettier (format check)
-        run: npm run format:check
-
-      - name: Type check (TypeScript)
-        run: npm run typecheck
-
-      - name: Build the project
-        run: npm run build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: |
-            dist/
-            package.json
-            pm2.config.js
-            ./prisma/
+          context: .
+          target: runtime
+          push: true
+          tags: |
+            ${{ steps.img.outputs.image }}
+            ${{ steps.img.outputs.repo }}:development
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
     name: Deploy to VPS
     runs-on: ubuntu-latest
-    needs: lint-test-build
-
+    needs: build-push
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build
-          path: build-output
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Prepare new release folder
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST_DEVELOPMENT }}
-          username: ${{ secrets.VPS_USER_DEVELOPMENT }}
-          key: ${{ secrets.VPS_SSH_KEY_DEVELOPMENT }}
-          passphrase: ${{ secrets.VPS_SSH_PASSPHRASE_DEVELOPMENT }}
-          script: |
-            APP_DIR=~/apps/moeda
-            RELEASES_DIR=$APP_DIR/releases
-            NEW_RELEASE=$RELEASES_DIR/$(date +%Y%m%d%H%M%S)
-
-            mkdir -p $RELEASES_DIR
-            mkdir -p $NEW_RELEASE
-
-      - name: Copy files to new release folder
+      - name: Copy compose file to VPS
         uses: appleboy/scp-action@v0.1.6
         with:
           host: ${{ secrets.VPS_HOST_DEVELOPMENT }}
           username: ${{ secrets.VPS_USER_DEVELOPMENT }}
           key: ${{ secrets.VPS_SSH_KEY_DEVELOPMENT }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE_DEVELOPMENT }}
-          source: "build-output/*"
-          target: "/home/${{ secrets.VPS_USER_DEVELOPMENT }}/apps/moeda/releases/"
+          source: 'docker-compose.prod.yml'
+          target: '/home/${{ secrets.VPS_USER_DEVELOPMENT }}/apps/moeda/'
 
-      - name: Activate new release, reload PM2, and cleanup
+      - name: Pull image and restart container
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          IMAGE: ${{ needs.build-push.outputs.image }}
+          ENV_CONTENTS: ${{ secrets.ENV_CONTENTS_DEVELOPMENT }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         with:
           host: ${{ secrets.VPS_HOST_DEVELOPMENT }}
           username: ${{ secrets.VPS_USER_DEVELOPMENT }}
           key: ${{ secrets.VPS_SSH_KEY_DEVELOPMENT }}
           passphrase: ${{ secrets.VPS_SSH_PASSPHRASE_DEVELOPMENT }}
+          envs: IMAGE,ENV_CONTENTS,GHCR_USER,GHCR_TOKEN
           script: |
+            set -euo pipefail
             APP_DIR=~/apps/moeda
-            RELEASES_DIR=$APP_DIR/releases
-            LATEST_RELEASE=$(ls -td $RELEASES_DIR/* | head -1)
+            mkdir -p "$APP_DIR"
+            cd "$APP_DIR"
 
-            echo "${{ secrets.ENV_CONTENTS_DEVELOPMENT }}" > $LATEST_RELEASE/.env
-            cd $LATEST_RELEASE
-            npm install --omit=dev
-            npx prisma generate
+            # Write the runtime environment consumed by Docker Compose.
+            printf '%s' "$ENV_CONTENTS" > .env
 
-            # Update symlink to latest release
-            ln -sfn $LATEST_RELEASE $APP_DIR/current
+            # Authenticate to GHCR to pull the private image.
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
 
-            # Reload with zero downtime
-            cd $APP_DIR/current
-            pm2 start pm2.config.js || pm2 reload moeda
-            pm2 save
+            export IMAGE
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
-            # Cleanup old releases (keep last 3)
-            ls -td $RELEASES_DIR/* | tail -n +4 | xargs rm -rf || true
+            # Drop dangling images from previous deploys.
+            docker image prune -f
+            docker logout ghcr.io
