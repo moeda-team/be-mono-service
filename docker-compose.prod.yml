@@ -1,0 +1,10 @@
+services:
+  app:
+    image: ${IMAGE}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PORT: 4000
+    ports:
+      - '4000:4000'
